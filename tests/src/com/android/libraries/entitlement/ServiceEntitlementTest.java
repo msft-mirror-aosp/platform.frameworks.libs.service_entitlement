@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.google.android.libraries.entitlement;
+package com.android.libraries.entitlement;
 
-import com.google.auto.value.AutoValue;
+import static com.google.common.truth.Truth.assertThat;
 
-/**
- * Carrier specific customization to be used in the service entitlement queries and operations.
- *
- * @see #ServiceEntitlement
- */
-@AutoValue
-public abstract class CarrierData {
-  /**
-   * The carrier's entitlement server URL. If not set, will use {@code
-   * https://aes.mnc<MNC>.mcc<MCC>.pub.3gppnetwork.org} as defined in GSMA spec TS.43 section 2.1.
-   */
-  public abstract String serverUrl();
+import androidx.test.runner.AndroidJUnit4;
 
-  // Builder...
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+// TODO(b/173450048) add tests
+@RunWith(AndroidJUnit4.class)
+public class ServiceEntitlementTest {
+    @Test
+    public void test() {
+        assertThat(1).isEqualTo(1);
+    }
 }
