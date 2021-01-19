@@ -18,6 +18,7 @@ package com.android.libraries.entitlement.testing;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.Nullable;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -40,137 +42,150 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamHandlerFactory {
 
-  private Map<String, FakeResponse> response;
+    private Map<String, FakeResponse> mResponseMap;
 
-  private static final String ACCESS_TOKEN = "8dGozfI6%2FEaSsE7LaTfJKwdy";
-  private static final String LOCATION = "Location";
-  private static final String CONTENT_TYPE = "Content-Type";
+    private static final String ACCESS_TOKEN = "8dGozfI6%2FEaSsE7LaTfJKwdy";
+    private static final String LOCATION = "Location";
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String RETRY_AFTER = "Retry-After";
 
-  @Override
-  public URLConnection openConnection(URL u) {
-    FakeHttpsURLConnection connection = new FakeHttpsURLConnection(u);
-    return connection;
-  }
-
-  @Override
-  public URLStreamHandler createURLStreamHandler(String protocol) {
-    return this;
-  }
-
-  public FakeURLStreamHandler stubResponse(Map<String, FakeResponse> response) {
-    this.response = response;
-    return this;
-  }
-
-  /** Fakes {@linkplain java.net.HttpURLConnection} to avoid making any network connection. */
-  public class FakeHttpsURLConnection extends HttpsURLConnection {
-
-    public ByteArrayOutputStream outputStream;
-
-    private final String urlString;
-
-    protected FakeHttpsURLConnection(URL url) {
-      super(url);
-      this.urlString = url.toString();
+    @Override
+    public URLConnection openConnection(URL u) {
+        FakeHttpsURLConnection connection = new FakeHttpsURLConnection(u);
+        return connection;
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
-      InputStream inputStream = new ByteArrayInputStream(response.get(urlString).responseBody());
-      if (inputStream == null) {
-        throw new IOException();
-      }
-      return inputStream;
+    public URLStreamHandler createURLStreamHandler(String protocol) {
+        return this;
     }
 
-    @Override
-    public OutputStream getOutputStream() {
-      outputStream = new ByteArrayOutputStream();
-      return outputStream;
+    public FakeURLStreamHandler stubResponse(Map<String, FakeResponse> response) {
+        this.mResponseMap = response;
+        return this;
     }
 
-    @Override
-    public int getResponseCode() {
-      return response.get(urlString).responseCode();
+    /**
+     * Fakes {@linkplain java.net.HttpURLConnection} to avoid making any network connection.
+     */
+    public class FakeHttpsURLConnection extends HttpsURLConnection {
+
+        public ByteArrayOutputStream mByteArrayOutputStream;
+
+        private final String mUrlString;
+
+        protected FakeHttpsURLConnection(URL url) {
+            super(url);
+            this.mUrlString = url.toString();
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            InputStream inputStream = new ByteArrayInputStream(
+                    mResponseMap.get(mUrlString).responseBody());
+            if (inputStream == null) {
+                throw new IOException();
+            }
+            return inputStream;
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            mByteArrayOutputStream = new ByteArrayOutputStream();
+            return mByteArrayOutputStream;
+        }
+
+        @Override
+        public int getResponseCode() {
+            return mResponseMap.get(mUrlString).responseCode();
+        }
+
+        @Override
+        public Map<String, List<String>> getHeaderFields() {
+            List<String> locationList = new ArrayList<>();
+            locationList.add("access_token=" + ACCESS_TOKEN);
+            return ImmutableMap.of("Location", locationList);
+        }
+
+        @Override
+        public String getHeaderField(String name) {
+            switch (name) {
+                case LOCATION:
+                    return "Location: " + mResponseMap.get(mUrlString).responseLocation();
+                case CONTENT_TYPE:
+                    return mResponseMap.get(mUrlString).contentType();
+                case RETRY_AFTER:
+                    return mResponseMap.get(mUrlString).retryAfter();
+                default:
+                    return null;
+            }
+        }
+
+        @Override
+        public void connect() {
+        }
+
+        @Override
+        public void disconnect() {
+        }
+
+        @Override
+        public boolean usingProxy() {
+            return false;
+        }
+
+        @Override
+        public String getCipherSuite() {
+            return null;
+        }
+
+        @Override
+        public Certificate[] getLocalCertificates() {
+            return null;
+        }
+
+        @Override
+        public Certificate[] getServerCertificates() {
+            return null;
+        }
     }
 
-    @Override
-    public Map<String, List<String>> getHeaderFields() {
-      List<String> locationList = new ArrayList<>();
-      locationList.add("access_token=" + ACCESS_TOKEN);
-      return ImmutableMap.of("Location", locationList);
+    @AutoValue
+    public abstract static class FakeResponse {
+        public abstract int responseCode();
+
+        @Nullable
+        public abstract String responseLocation();
+
+        @SuppressWarnings("mutable") // For test only
+        public abstract byte[] responseBody();
+
+        public abstract String contentType();
+
+        public abstract String retryAfter();
+
+        public static Builder builder() {
+            return new AutoValue_FakeURLStreamHandler_FakeResponse.Builder()
+                    .setResponseBody(new byte[]{})
+                    .setContentType("")
+                    .setResponseCode(0)
+                    .setResponseLocation("")
+                    .setRetryAfter("");
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder setResponseCode(int value);
+
+            public abstract Builder setResponseLocation(String value);
+
+            public abstract Builder setResponseBody(byte[] value);
+
+            public abstract Builder setContentType(String contentType);
+
+            public abstract Builder setRetryAfter(String retryAfter);
+
+            public abstract FakeResponse build();
+        }
     }
-
-    @Override
-    public String getHeaderField(String name) {
-      switch (name) {
-        case LOCATION:
-          return "Location: " + response.get(urlString).responseLocation();
-        case CONTENT_TYPE:
-          return response.get(urlString).contentType();
-        default:
-          return null;
-      }
-    }
-
-    @Override
-    public void connect() {}
-
-    @Override
-    public void disconnect() {}
-
-    @Override
-    public boolean usingProxy() {
-      return false;
-    }
-
-    @Override
-    public String getCipherSuite() {
-      return null;
-    }
-
-    @Override
-    public Certificate[] getLocalCertificates() {
-      return null;
-    }
-
-    @Override
-    public Certificate[] getServerCertificates() {
-      return null;
-    }
-  }
-
-  @AutoValue
-  public abstract static class FakeResponse {
-    public abstract int responseCode();
-
-    @Nullable
-    public abstract String responseLocation();
-
-    @SuppressWarnings("mutable") // For test only
-    public abstract byte[] responseBody();
-
-    public abstract String contentType();
-
-    public static Builder builder() {
-      return new AutoValue_FakeURLStreamHandler_FakeResponse.Builder()
-          .setResponseBody(new byte[] {})
-          .setContentType("")
-          .setResponseCode(0)
-          .setResponseLocation("");
-    }
-
-    @AutoValue.Builder
-    public abstract static class Builder {
-      public abstract Builder setResponseCode(int value);
-
-      public abstract Builder setResponseLocation(String value);
-
-      public abstract Builder setResponseBody(byte[] value);
-
-      public abstract Builder setContentType(String contentType);
-
-      public abstract FakeResponse build();
-    }
-  }
 }

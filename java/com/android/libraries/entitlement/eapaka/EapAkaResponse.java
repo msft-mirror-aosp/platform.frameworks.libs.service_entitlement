@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement.eapaka;
 
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE;
+
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -23,11 +25,10 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
-
-import com.google.common.annotations.VisibleForTesting;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -216,7 +217,8 @@ class EapAkaResponse {
     public String getEapAkaChallengeResponse(Context context, int simSubscriptionId)
             throws ServiceEntitlementException {
         if (!mValid) {
-            throw new ServiceEntitlementException("EAP-AKA Challenge message not valid!");
+            throw new ServiceEntitlementException(
+                    ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "EAP-AKA Challenge message not valid!");
         }
 
         TelephonyManager telephonyManager =
@@ -241,7 +243,8 @@ class EapAkaResponse {
                         securityContext.getCk());
         // K_aut is the key used to calculate MAC
         if (mk.getAut() == null) {
-            throw new ServiceEntitlementException("Can't generate K_Aut!");
+            throw new ServiceEntitlementException(
+                    ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "Can't generate K_Aut!");
         }
 
         // generate EAP-AKA Challenge Response message
@@ -249,6 +252,7 @@ class EapAkaResponse {
                 generateEapAkaChallengeResponse(securityContext.getRes(), mk.getAut());
         if (challengeResponse == null) {
             throw new ServiceEntitlementException(
+                    ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
                     "Failed to generate EAP-AKA Challenge Response data!");
         }
 
