@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement.eapaka;
 
+import static com.android.libraries.entitlement.ServiceEntitlementException.MALFORMED_HTTP_RESPONSE;
+
 import android.content.Context;
 import android.net.Uri;
 import android.telephony.TelephonyManager;
@@ -23,6 +25,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
@@ -32,7 +35,6 @@ import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
@@ -98,6 +100,16 @@ public class EapAkaApi {
      * Attribute name of the app name.
      */
     private static final String APP_NAME = "app_name";
+    /**
+     * Expected content type of the response body.
+     */
+    private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
+            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
+    /**
+     * Required content type to the response body.
+     */
+    private static final String REQUEST_CONTENT_TYPE_JSON =
+            "application/vnd.gsma.eap-relay.v1.0+json";
 
     private final Context mContext;
     private final int mSimSubscriptionId;
@@ -132,64 +144,57 @@ public class EapAkaApi {
                 HttpRequest.builder()
                         .setUrl(entitlementStatusUrl(appId, serverUrl, request))
                         .setRequestMethod(RequestMethod.GET)
-                        .addRequestProperty(
-                                HttpHeaders.ACCEPT,
-                                "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap"
-                                        + ".connectivity-xml")
+                        .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
                         .build();
         HttpResponse response = mHttpClient.request(httpRequest);
-        if (response == null) {
-            throw new ServiceEntitlementException("Null http response");
-        }
-        if (response.contentType() == ContentType.JSON) {
-            try {
-                // EapAka token challenge for initial AuthN
-                Log.d(TAG, "initial AuthN");
-                String akaChallengeResponse =
-                        new EapAkaResponse(
-                                new JSONObject(response.body()).getString(EAP_CHALLENGE_RESPONSE))
-                                .getEapAkaChallengeResponse(mContext, mSimSubscriptionId);
-                JSONObject postData = new JSONObject();
-                postData.put(EAP_CHALLENGE_RESPONSE, akaChallengeResponse);
-                return challengeResponse(postData, serverUrl);
-            } catch (JSONException jsonException) {
-                Log.e(TAG, "queryEntitlementStatus failed. jsonException: " + jsonException);
-                return null;
+        if (request.authenticationToken().isEmpty()) {
+            // EapAka token challenge for initial AuthN
+            if (response.contentType() != ContentType.JSON) {
+                throw new ServiceEntitlementException(
+                        MALFORMED_HTTP_RESPONSE, "Unexpected http ContentType");
             }
-        } else if (response.contentType() == ContentType.XML) {
+
+            Log.d(TAG, "initial AuthN");
+            String responseData = "";
+            try {
+                responseData = new JSONObject(response.body()).getString(
+                        EAP_CHALLENGE_RESPONSE);
+            } catch (JSONException jsonException) {
+                throw new ServiceEntitlementException(
+                        MALFORMED_HTTP_RESPONSE, "Failed to parse json object", jsonException);
+            }
+            return challengeResponse(
+                    new EapAkaResponse(responseData).getEapAkaChallengeResponse(mContext,
+                            mSimSubscriptionId), serverUrl);
+        } else {
             // Result of fast AuthN
             Log.d(TAG, "fast AuthN");
             return response.body();
         }
-        throw new ServiceEntitlementException("Unexpected http ContentType");
     }
 
-    private String challengeResponse(JSONObject postData, String serverUrl)
+    private String challengeResponse(String akaChallengeResponse, String serverUrl)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
+        JSONObject postData = new JSONObject();
+        try {
+            postData.put(EAP_CHALLENGE_RESPONSE, akaChallengeResponse);
+        } catch (JSONException jsonException) {
+            throw new ServiceEntitlementException(
+                    MALFORMED_HTTP_RESPONSE, "Failed to put post data", jsonException);
+        }
         HttpRequest request =
                 HttpRequest.builder()
                         .setUrl(serverUrl)
                         .setRequestMethod(RequestMethod.POST)
                         .setPostData(postData)
-                        .addRequestProperty(
-                                HttpHeaders.ACCEPT,
-                                "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap"
-                                        + ".connectivity-xml")
-                        .addRequestProperty(HttpHeaders.CONTENT_TYPE,
-                                "application/vnd.gsma.eap-relay.v1.0+json")
+                        .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
+                        .addRequestProperty(HttpHeaders.CONTENT_TYPE, REQUEST_CONTENT_TYPE_JSON)
                         .build();
-
-        HttpResponse response = mHttpClient.request(request);
-        if (response == null || response.contentType() != ContentType.XML) {
-            throw new ServiceEntitlementException("Unexpected http response.");
-        }
-
-        return response.body();
+        return mHttpClient.request(request).body();
     }
 
-    @VisibleForTesting
-    String entitlementStatusUrl(
+    private String entitlementStatusUrl(
             String appId, String serverUrl, ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager = mContext.getSystemService(
                 TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);

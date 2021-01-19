@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.fail;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
@@ -29,11 +30,13 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.ServiceEntitlement;
+import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpResponse;
 
+import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -139,5 +142,45 @@ public class EapAkaApiTest {
         assertThat(
                 mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request))
                 .isEqualTo(RESPONSE_XML);
+    }
+
+    @Test
+    public void queryEntitlementStatus_noAuthenticationTokenContentTypeNotJson_throwException()
+            throws Exception {
+        HttpResponse xmlResponse =
+                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
+
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        try {
+            mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request);
+            fail();
+        } catch (ServiceEntitlementException exception) {
+            assertThat(exception.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+            assertThat(exception.getMessage()).isEqualTo("Unexpected http ContentType");
+        }
+    }
+
+    @Test
+    public void queryEntitlementStatus_noAuthenticationTokenEmptyResponseBody_throwException()
+            throws Exception {
+        HttpResponse eapChallengeResponse =
+                HttpResponse.builder().setContentType(ContentType.JSON).build();
+        when(mMockHttpClient.request(any())).thenReturn(eapChallengeResponse);
+
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        try {
+            mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request);
+            fail();
+        } catch (ServiceEntitlementException exception) {
+            assertThat(exception.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+            assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
+            assertThat(exception.getCause()).isInstanceOf(JSONException.class);
+        }
     }
 }

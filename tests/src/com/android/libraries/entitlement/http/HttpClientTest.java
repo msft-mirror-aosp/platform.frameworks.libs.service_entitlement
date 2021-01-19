@@ -18,7 +18,7 @@ package com.android.libraries.entitlement.http;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.fail;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -45,6 +45,7 @@ public class HttpClientTest {
     private static final String TEST_URL = "https://test.url";
     private static final String TEST_RESPONSE_BODY = "TEST_RESPONSE_BODY";
     private static final String CONTENT_TYPE_STRING_JSON = "application/json";
+    private static final String RETRY_AFTER = "RETRY_AFTER";
 
     private static FakeURLStreamHandler sFakeURLStreamHandler;
 
@@ -85,12 +86,22 @@ public class HttpClientTest {
                         .setResponseLocation(null)
                         .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
                         .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .setRetryAfter(RETRY_AFTER)
                         .build();
         HttpRequest request =
                 HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
         Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
         sFakeURLStreamHandler.stubResponse(response);
 
-        assertThrows(ServiceEntitlementException.class, () -> mHttpClient.request(request));
+        try {
+            mHttpClient.request(request);
+            fail();
+        } catch (ServiceEntitlementException exception) {
+            assertThat(exception.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS);
+            assertThat(exception.getHttpStatus()).isEqualTo(HttpURLConnection.HTTP_BAD_REQUEST);
+            assertThat(exception.getMessage()).isEqualTo("Invalid connection response");
+            assertThat(exception.getRetryAfter()).isEqualTo(RETRY_AFTER);
+        }
     }
 }

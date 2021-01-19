@@ -19,6 +19,7 @@ package com.android.libraries.entitlement.eapaka;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.fail;
 
 import android.content.Context;
 import android.util.Base64;
@@ -250,6 +251,23 @@ public class EapAkaResponseTest {
         assertThrows(
                 ServiceEntitlementException.class,
                 () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
+    }
+
+    @Test
+    public void parseEapAkaChallengeRequest_notValid_throwException() {
+        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_WRONG_LENGTH);
+        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
+
+        EapAkaResponse message = new EapAkaResponse(encodedData);
+
+        try {
+            message.getEapAkaChallengeResponse(mMockContext, SUB_ID);
+            fail();
+        } catch (ServiceEntitlementException exception) {
+            assertThat(exception.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE);
+            assertThat(exception.getMessage()).isEqualTo("EAP-AKA Challenge message not valid!");
+        }
     }
 
     @Test
