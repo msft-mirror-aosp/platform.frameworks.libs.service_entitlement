@@ -24,6 +24,7 @@ android_test {
         "androidx.test.rules",
         "mockito-target-minus-junit4",
         "platform-test-annotations",
+        "service-entitlement",
         "testables",
         "testng",
         "truth-prebuilt",

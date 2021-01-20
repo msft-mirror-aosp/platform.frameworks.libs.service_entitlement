@@ -35,6 +35,7 @@ import org.json.JSONObject;
 
 import androidx.annotation.Nullable;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HttpHeaders;
 
 import java.net.CookieHandler;
@@ -84,6 +85,13 @@ public class EapAkaApi {
         this.context = context;
         this.simSubscriptionId = simSubscriptionId;
         this.httpClient = new HttpClient();
+    }
+
+    @VisibleForTesting
+    EapAkaApi(Context context, int simSubscriptionId, HttpClient httpClient) {
+        this.context = context;
+        this.simSubscriptionId = simSubscriptionId;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -160,11 +168,12 @@ public class EapAkaApi {
         return response.body();
     }
 
-    private String entitlementStatusUrl(
+    @VisibleForTesting
+    String entitlementStatusUrl(
             String appId, String serverUrl, ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager =
-                context.getSystemService(TelephonyManager.class).createForSubscriptionId(
-                        simSubscriptionId);
+                (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        telephonyManager = telephonyManager.createForSubscriptionId(simSubscriptionId);
         Uri.Builder urlBuilder = Uri.parse(serverUrl).buildUpon();
         if (TextUtils.isEmpty(request.authenticationToken())) {
             // EAP_ID required for initial AuthN

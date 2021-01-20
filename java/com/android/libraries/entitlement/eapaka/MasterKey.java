@@ -93,7 +93,7 @@ class MasterKey {
             messageDigest.update(data);
             masterKey = messageDigest.digest();
         } catch (NoSuchAlgorithmException e) {
-            Log.d(TAG, "process sHA-1 failed", e);
+            Log.d(TAG, "process SHA-1 failed", e);
         }
 
         // Generate TEKs
