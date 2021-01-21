@@ -20,6 +20,8 @@ import android.content.Context;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.List;
 
 import androidx.annotation.Nullable;
@@ -41,8 +43,8 @@ public class ServiceEntitlement {
     public static final String APP_ODSA_PRIMARY = "ap2009";
 
     private final Context context;
-    private final int simSubscriptionId;
     private final CarrierConfig carrierConfig;
+    private final EapAkaApi eapAkaApi;
 
     /**
      * Creates an instance for service entitlement configuration query and operation for the
@@ -58,8 +60,15 @@ public class ServiceEntitlement {
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
         this.context = context;
-        this.simSubscriptionId = simSubscriptionId;
         this.carrierConfig = carrierConfig;
+        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId);
+    }
+
+    @VisibleForTesting
+    ServiceEntitlement(Context context, CarrierConfig carrierConfig, EapAkaApi eapAkaApi) {
+        this.context = context;
+        this.carrierConfig = carrierConfig;
+        this.eapAkaApi = eapAkaApi;
     }
 
     /**
@@ -105,7 +114,6 @@ public class ServiceEntitlement {
     @Nullable
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        EapAkaApi eapAkaApi = new EapAkaApi(context, simSubscriptionId);
         return eapAkaApi.queryEntitlementStatus(appId, carrierConfig.serverUrl(), request);
     }
 
