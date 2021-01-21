@@ -25,6 +25,8 @@ import android.util.Log;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -72,6 +74,9 @@ class EapAkaResponse {
     private byte[] rand;
 
     private boolean valid;
+
+    @VisibleForTesting
+    static String challengeResponseForTesting;
 
     public EapAkaResponse(String eapAkaChallenge) {
         try {
@@ -201,6 +206,10 @@ class EapAkaResponse {
      */
     public String getEapAkaChallengeResponse(Context context, int simSubscriptionId)
             throws ServiceEntitlementException {
+        if(challengeResponseForTesting != null) {
+            return challengeResponseForTesting;
+        }
+
         if (!valid) {
             throw new ServiceEntitlementException("EAP-AKA Challenge message not valid!");
         }
