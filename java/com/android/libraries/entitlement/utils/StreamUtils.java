@@ -22,15 +22,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/** Utility methods about InputStream. */
+/**
+ * Utility methods about InputStream.
+ */
 public final class StreamUtils {
-
     private static final int BUFFER_SIZE = 1024;
 
     private StreamUtils() {
     }
 
-    /** Reads an {@link InputStream} into a string. */
+    /**
+     * Reads an {@link InputStream} into a string.
+     */
     public static String inputStreamToString(InputStream inputStream) throws IOException {
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
              ByteArrayOutputStream result = new ByteArrayOutputStream()) {
@@ -43,7 +46,9 @@ public final class StreamUtils {
         }
     }
 
-    /** Reads an {@link InputStream} into a string. Returns an empty string if any error. */
+    /**
+     * Reads an {@link InputStream} into a string. Returns an empty string if any error.
+     */
     public static String inputStreamToStringSafe(InputStream inputStream) {
         try {
             return inputStreamToString(inputStream);

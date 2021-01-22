@@ -21,14 +21,15 @@ import android.util.ArrayMap;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 
-import java.util.Map;
-
 import org.json.JSONObject;
 
-/** The parameters of the http request. */
+import java.util.Map;
+
+/**
+ * The parameters of the http request.
+ */
 @AutoValue
 public abstract class HttpRequest {
-
     public abstract String url();
 
     public abstract String requestMethod();
@@ -39,7 +40,9 @@ public abstract class HttpRequest {
 
     public abstract ImmutableMap<String, String> requestProperties();
 
-    /** Builder of {@link HttpRequest}. */
+    /**
+     * Builder of {@link HttpRequest}.
+     */
     @AutoValue.Builder
     public abstract static class Builder {
 

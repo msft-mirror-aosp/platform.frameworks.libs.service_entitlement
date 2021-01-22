@@ -22,6 +22,8 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
 
@@ -33,9 +35,10 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import androidx.annotation.Nullable;
-
-/** Generate the response of EAP-AKA token challenge for initial AUTN. */
+/**
+ * Generate the response of EAP-AKA token challenge. Refer to RFC 4187 Section 8.1 Message
+ * Format/RFC 3748 Session 4 EAP Packet Format.
+ */
 class EapAkaResponse {
     private static final String TAG = "ServiceEntitlement";
 
@@ -49,45 +52,52 @@ class EapAkaResponse {
     private static final byte ATTRIBUTE_RES = 0x03;
     private static final byte ATTRIBUTE_MAC = 0x0B;
     private static final String ALGORITHM_HMAC_SHA1 = "HmacSHA1";
-    private static final int RAND_LENGTH = 20;
-    private static final int AUTN_LENGTH = 20;
+    private static final int ATTRIBUTE_LENGTH = 20;
     private static final int SHA1_OUTPUT_LENGTH = 20;
 
-    /** RAND length 16. */
     private static final byte RAND_LEN = 0x10;
-    /** AUTN length 16. */
     private static final byte AUTN_LEN = 0x10;
 
-    /* 1 for Request, 2 for Response*/
-    private byte code = -1;
-    /* The identifier of Response must same as Request */
-    private byte identifier = -1;
-    /* The total length of full EAP-AKA message, include code, identifier, ... */
-    private int length = -1;
-    /* In EAP-AKA, the Type field is set to 23 */
-    private byte type = -1;
-    /* SubType for AKA-Challenge should be 1 */
-    private byte subType = -1;
-    /* The value of AT_AUTN, network authentication token */
-    private byte[] autn;
-    /* The value of AT_RAND, RAND random number*/
-    private byte[] rand;
+    /**
+     * {@link #CODE_REQUEST} for Request, {@link #CODE_RESPONSE} for Response
+     */
+    private byte mCode = -1;
+    /**
+     * The identifier of Response must same as Request
+     */
+    private byte mIdentifier = -1;
+    /**
+     * The total length of full EAP-AKA message, include code, identifier, ...
+     */
+    private int mLength = -1;
+    /**
+     * In EAP-AKA, the Type field is set to {@link #TYPE_EAP_AKA}
+     */
+    private byte mType = -1;
+    /**
+     * SubType for AKA-Challenge should be {@link #SUBTYPE_AKA_CHALLENGE}
+     */
+    private byte mSubType = -1;
+    /**
+     * The value of AT_AUTN, network authentication token
+     */
+    private byte[] mAutn;
+    /**
+     * The value of AT_RAND, RAND random number
+     */
+    private byte[] mRand;
 
-    private boolean valid;
-
-    @VisibleForTesting
-    static String challengeResponseForTesting;
+    private boolean mValid;
 
     public EapAkaResponse(String eapAkaChallenge) {
         try {
             parseEapAkaChallengeRequest(eapAkaChallenge);
         } catch (Exception e) {
             Log.e(TAG, "parseEapAkaChallengeRequest Exception:", e);
-            valid = false;
+            mValid = false;
         }
     }
 
-    /** Refer to RFC 4187 Section 8.1 Message Format/RFC 3748 Session 4 EAP Packet Format. */
     private void parseEapAkaChallengeRequest(String request) {
         if (TextUtils.isEmpty(request)) {
             return;
@@ -96,7 +106,7 @@ class EapAkaResponse {
         try {
             byte[] data = Base64.decode(request, Base64.DEFAULT);
             if (parseEapAkaHeader(data) && parseRandAndAutn(data)) {
-                valid = true;
+                mValid = true;
             } else {
                 Log.d(TAG, "Invalid data!");
             }
@@ -115,29 +125,29 @@ class EapAkaResponse {
         if (data.length <= EAP_AKA_HEADER_LENGTH) {
             return false;
         }
-        code = data[0];
-        identifier = data[1];
-        length = ((data[2] & 0xff) << 8) | (data[3] & 0xff);
-        type = data[4];
-        subType = data[5];
+        mCode = data[0];
+        mIdentifier = data[1];
+        mLength = ((data[2] & 0xff) << 8) | (data[3] & 0xff);
+        mType = data[4];
+        mSubType = data[5];
 
         // valid header
-        if (code != CODE_REQUEST
-                || length != data.length
-                || type != TYPE_EAP_AKA
-                || subType != SUBTYPE_AKA_CHALLENGE) {
+        if (mCode != CODE_REQUEST
+                || mLength != data.length
+                || mType != TYPE_EAP_AKA
+                || mSubType != SUBTYPE_AKA_CHALLENGE) {
             Log.d(
                     TAG,
                     "Invalid EAP-AKA Header, code="
-                            + code
+                            + mCode
                             + ", length="
-                            + length
+                            + mLength
                             + ", real length="
                             + data.length
                             + ", type="
-                            + type
+                            + mType
                             + ", subType="
-                            + subType);
+                            + mSubType);
             return false;
         }
 
@@ -172,26 +182,26 @@ class EapAkaResponse {
 
             // see RFC 4187 section 11 for attribute type
             if (attributeType == ATTRIBUTE_RAND) {
-                if (length != RAND_LENGTH) {
+                if (length != ATTRIBUTE_LENGTH) {
                     Log.d(TAG, "AT_RAND length is " + length);
                     return false;
                 }
-                rand = new byte[16];
-                System.arraycopy(data, index + 4, rand, 0, 16);
+                mRand = new byte[16];
+                System.arraycopy(data, index + 4, mRand, 0, 16);
             } else if (attributeType == ATTRIBUTE_AUTN) {
-                if (length != AUTN_LENGTH) {
+                if (length != ATTRIBUTE_LENGTH) {
                     Log.d(TAG, "AT_AUTN length is " + length);
                     return false;
                 }
-                autn = new byte[16];
-                System.arraycopy(data, index + 4, autn, 0, 16);
+                mAutn = new byte[16];
+                System.arraycopy(data, index + 4, mAutn, 0, 16);
             }
 
             index += length;
-        } // while
+        }
 
         // check has AT_RAND and AT_AUTH
-        if (rand == null || autn == null) {
+        if (mRand == null || mAutn == null) {
             Log.d(TAG, "Invalid Type Datas!");
             return false;
         }
@@ -201,16 +211,11 @@ class EapAkaResponse {
 
     /**
      * Returns EAP-AKA challenge response message which generated with SIM EAP-AKA authentication
-     * with
-     * network provided EAP-AKA challenge request message.
+     * with network provided EAP-AKA challenge request message.
      */
     public String getEapAkaChallengeResponse(Context context, int simSubscriptionId)
             throws ServiceEntitlementException {
-        if(challengeResponseForTesting != null) {
-            return challengeResponseForTesting;
-        }
-
-        if (!valid) {
+        if (!mValid) {
             throw new ServiceEntitlementException("EAP-AKA Challenge message not valid!");
         }
 
@@ -230,8 +235,8 @@ class EapAkaResponse {
         // generate master key
         MasterKey mk =
                 MasterKey.create(
-                        EapAkaApi.getImsiEap(telephonyManager.getSubscriberId(),
-                                telephonyManager.getSimOperator()),
+                        EapAkaApi.getImsiEap(telephonyManager.getSimOperator(),
+                                telephonyManager.getSubscriberId()),
                         securityContext.getIk(),
                         securityContext.getCk());
         // K_aut is the key used to calculate MAC
@@ -250,25 +255,30 @@ class EapAkaResponse {
         return Base64.encodeToString(challengeResponse, Base64.NO_WRAP).trim();
     }
 
-    /** Returns Base64 encoded GSM/3G security context for SIM Authentication request. */
+    /**
+     * Returns Base64 encoded GSM/3G security context for SIM Authentication request.
+     */
     @Nullable
     private String getSimAuthChallengeData() {
-        if (!valid) {
+        if (!mValid) {
             return null;
         }
 
         byte[] challengeData = new byte[RAND_LEN + AUTN_LEN + 2];
         challengeData[0] = RAND_LEN;
-        System.arraycopy(rand, 0, challengeData, 1, RAND_LEN);
+        System.arraycopy(mRand, 0, challengeData, 1, RAND_LEN);
         challengeData[RAND_LEN + 1] = AUTN_LEN;
-        System.arraycopy(autn, 0, challengeData, RAND_LEN + 2, AUTN_LEN);
+        System.arraycopy(mAutn, 0, challengeData, RAND_LEN + 2, AUTN_LEN);
 
         return Base64.encodeToString(challengeData, Base64.NO_WRAP).trim();
     }
 
-    /** Returns EAP-AKA Challenge response message byte array data or null if failed to generate. */
+    /**
+     * Returns EAP-AKA Challenge response message or {@code null} if failed to generate.
+     */
+    @VisibleForTesting
     @Nullable
-    public byte[] generateEapAkaChallengeResponse(@Nullable byte[] res, byte[] aut) {
+    byte[] generateEapAkaChallengeResponse(@Nullable byte[] res, @Nullable byte[] aut) {
         if (res == null || aut == null) {
             return null;
         }
@@ -301,7 +311,7 @@ class EapAkaResponse {
         // set up header
         message[0] = CODE_RESPONSE;
         // Identifier need to same with request
-        message[1] = identifier;
+        message[1] = mIdentifier;
         // length include entire EAP-AKA message
         byte[] lengthBytes = BytesConverter.convertIntegerTo4Bytes(message.length);
         message[2] = lengthBytes[2];
