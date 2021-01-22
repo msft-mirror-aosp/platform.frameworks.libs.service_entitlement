@@ -23,7 +23,7 @@ import android.util.Log;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 
 /**
- * Provide format to handle request/response SIM Authentication with GSM/3G security context.
+ * Provides format to handle request/response SIM Authentication with GSM/3G security context.
  *
  * <p>Reference ETSI TS 131 102, Section 7.1.2.1 GSM/3G security context.
  */
@@ -32,19 +32,21 @@ class EapAkaSecurityContext {
 
     private static final byte RESPONSE_TAG_SUCCESS = (byte) 0xDB;
 
-    private boolean valid;
+    private boolean mValid;
 
     /* Authentication result from SIM */
-    private byte[] res;
+    private byte[] mRes;
     /* Cipher Key */
-    private byte[] ck;
+    private byte[] mCk;
     /* Integrity Key */
-    private byte[] ik;
+    private byte[] mIk;
 
     private EapAkaSecurityContext() {
     }
 
-    /** Provide {@link EapAkaSecurityContext} from response data. */
+    /**
+     * Provide {@link EapAkaSecurityContext} from response data.
+     */
     public static EapAkaSecurityContext from(String response)
             throws ServiceEntitlementException {
         EapAkaSecurityContext securityContext = new EapAkaSecurityContext();
@@ -56,11 +58,9 @@ class EapAkaSecurityContext {
     }
 
     /**
-     * Parses SIM EAP-AKA Authentication responsed data and returns valid {@link
-     * EapAkaSecurityContext}
-     * for successful data; otherwise, returns invalid.
+     * Parses SIM EAP-AKA Authentication responded data.
      */
-    void parseResponseData(String response) {
+    private void parseResponseData(String response) {
         if (TextUtils.isEmpty(response)) {
             Log.d(TAG, "parseResponseData but input empty data!");
             return;
@@ -84,27 +84,27 @@ class EapAkaSecurityContext {
 
             // Parse RES
             index++; // move to RES length byte
-            res = parseTag(index, data);
-            if (res == null) {
+            mRes = parseTag(index, data);
+            if (mRes == null) {
                 Log.d(TAG, "Invalid data! can't parse RES!");
                 return;
             }
             // Parse CK
-            index += res.length + 1; // move to CK length byte
-            ck = parseTag(index, data);
-            if (ck == null) {
+            index += mRes.length + 1; // move to CK length byte
+            mCk = parseTag(index, data);
+            if (mCk == null) {
                 Log.d(TAG, "Invalid data! can't parse CK!");
                 return;
             }
             // Parse IK
-            index += ck.length + 1; // move to IK length byte
-            ik = parseTag(index, data);
-            if (ik == null) {
+            index += mCk.length + 1; // move to IK length byte
+            mIk = parseTag(index, data);
+            if (mIk == null) {
                 Log.d(TAG, "Invalid data! can't parse IK!");
                 return;
             }
 
-            valid = true;
+            mValid = true;
         } catch (IllegalArgumentException illegalArgumentException) {
             Log.e(TAG, "Invalid base-64 content");
         }
@@ -129,23 +129,31 @@ class EapAkaSecurityContext {
         return dest;
     }
 
-    /** Returns {@code valid}. */
+    /**
+     * Returns {@code valid}.
+     */
     boolean isValid() {
-        return valid;
+        return mValid;
     }
 
-    /** Returns {@code res}. */
+    /**
+     * Returns {@code res}.
+     */
     public byte[] getRes() {
-        return res;
+        return mRes;
     }
 
-    /** Returns {@code ck}. */
+    /**
+     * Returns {@code ck}.
+     */
     public byte[] getCk() {
-        return ck;
+        return mCk;
     }
 
-    /** Returns {@code ik}. */
+    /**
+     * Returns {@code ik}.
+     */
     public byte[] getIk() {
-        return ik;
+        return mIk;
     }
 }

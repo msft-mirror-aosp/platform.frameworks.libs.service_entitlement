@@ -22,36 +22,23 @@ import static org.testng.Assert.assertThrows;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.android.libraries.entitlement.http.HttpClient;
-import com.android.libraries.entitlement.http.HttpConstants.ContentType;
-import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
-
-import android.content.Context;
-import android.os.Build;
-import android.os.Build.VERSION;
-
-import android.telephony.TelephonyManager;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
+import com.android.libraries.entitlement.http.HttpConstants.ContentType;
+import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.testing.FakeURLStreamHandler;
 import com.android.libraries.entitlement.testing.FakeURLStreamHandler.FakeResponse;
 
 import com.google.common.collect.ImmutableMap;
 
-import androidx.test.runner.AndroidJUnit4;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
 @RunWith(AndroidJUnit4.class)
 public class HttpClientTest {
@@ -59,31 +46,31 @@ public class HttpClientTest {
     private static final String TEST_RESPONSE_BODY = "TEST_RESPONSE_BODY";
     private static final String CONTENT_TYPE_STRING_JSON = "application/json";
 
-    private static FakeURLStreamHandler fakeURLStreamHandler;
+    private static FakeURLStreamHandler sFakeURLStreamHandler;
 
-    private final HttpClient httpClient = new HttpClient();
+    private final HttpClient mHttpClient = new HttpClient();
 
     @BeforeClass
     public static void setupURLStreamHandlerFactory() {
-        fakeURLStreamHandler = new FakeURLStreamHandler();
-        URL.setURLStreamHandlerFactory(fakeURLStreamHandler);
+        sFakeURLStreamHandler = new FakeURLStreamHandler();
+        URL.setURLStreamHandlerFactory(sFakeURLStreamHandler);
     }
 
     @Test
     public void request_contentTypeXml_returnsXmlBody() throws Exception {
         FakeResponse responseContent =
-            FakeResponse.builder()
-                .setResponseCode(HttpURLConnection.HTTP_OK)
-                .setResponseLocation(null)
-                .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
-                .setContentType(CONTENT_TYPE_STRING_JSON)
-                .build();
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_OK)
+                        .setResponseLocation(null)
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .build();
         HttpRequest request =
-            HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
+                HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
         Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
-        fakeURLStreamHandler.stubResponse(response);
+        sFakeURLStreamHandler.stubResponse(response);
 
-        HttpResponse httpResponse = httpClient.request(request);
+        HttpResponse httpResponse = mHttpClient.request(request);
 
         assertThat(httpResponse.contentType()).isEqualTo(ContentType.JSON);
         assertThat(httpResponse.body()).isEqualTo(TEST_RESPONSE_BODY);
@@ -93,17 +80,17 @@ public class HttpClientTest {
     @Test
     public void request_httpGetResponseBadRequest_throwsException() {
         FakeResponse responseContent =
-            FakeResponse.builder()
-                .setResponseCode(HttpURLConnection.HTTP_BAD_REQUEST)
-                .setResponseLocation(null)
-                .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
-                .setContentType(CONTENT_TYPE_STRING_JSON)
-                .build();
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_BAD_REQUEST)
+                        .setResponseLocation(null)
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .build();
         HttpRequest request =
-            HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
+                HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
         Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
-        fakeURLStreamHandler.stubResponse(response);
+        sFakeURLStreamHandler.stubResponse(response);
 
-        assertThrows(ServiceEntitlementException.class, () -> httpClient.request(request));
+        assertThrows(ServiceEntitlementException.class, () -> mHttpClient.request(request));
     }
 }
