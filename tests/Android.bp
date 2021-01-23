@@ -13,6 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+java_library {
+    name: "service-entitlement-testing-utils",
+    srcs: [
+        "utils/**/*.java",
+    ],
+    libs: [
+        "auto_value_annotations",
+    ],
+    static_libs: [
+        "guava",
+    ],
+    plugins: ["auto_value_plugin"],
+    sdk_version: "current",
+    min_sdk_version: "29",
+}
+
 android_test {
     name: "service-entitlement-tests",
     srcs: ["src/**/*.java"],
@@ -25,6 +41,7 @@ android_test {
         "mockito-target-minus-junit4",
         "platform-test-annotations",
         "service-entitlement",
+        "service-entitlement-testing-utils",
         "testables",
         "testng",
         "truth-prebuilt",
