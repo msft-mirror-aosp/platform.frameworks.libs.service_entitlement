@@ -40,37 +40,42 @@ public class ServiceEntitlementTest {
     private static final String QUERY_APP_VOWIFI_RESULT = "QUERY_APP_VOWIFI_RESULT";
     private static final String TEST_URL = "https://test.url";
 
-    @Rule public final MockitoRule rule = MockitoJUnit.rule();
-    @Mock Context mockContext;
-    CarrierConfig carrierConfig;
-    @Mock EapAkaApi mockEapAkaApi;
+    @Rule
+    public final MockitoRule rule = MockitoJUnit.rule();
+    @Mock
+    Context mMockContext;
+    @Mock
+    EapAkaApi mMockEapAkaApi;
 
-    private ServiceEntitlement serviceEntitlement;
+    private ServiceEntitlement mServiceEntitlement;
+    private CarrierConfig mCarrierConfig;
 
     @Before
     public void setUp() {
-        carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        serviceEntitlement = new ServiceEntitlement(mockContext, carrierConfig, mockEapAkaApi);
+        mCarrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        mServiceEntitlement = new ServiceEntitlement(mMockContext, mCarrierConfig, mMockEapAkaApi);
     }
 
     @Test
     public void queryEntitlementStatus_appVolte_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, TEST_URL, request))
-            .thenReturn(QUERY_APP_VOLTE_RESULT);
+        when(mMockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, TEST_URL, request))
+                .thenReturn(QUERY_APP_VOLTE_RESULT);
 
-        assertThat(serviceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, request))
-            .isEqualTo(QUERY_APP_VOLTE_RESULT);
+        assertThat(
+                mServiceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, request))
+                .isEqualTo(QUERY_APP_VOLTE_RESULT);
     }
 
     @Test
     public void queryEntitlementStatus_appVowifi_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request))
-            .thenReturn(QUERY_APP_VOWIFI_RESULT);
+        when(mMockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL,
+                request))
+                .thenReturn(QUERY_APP_VOWIFI_RESULT);
 
         assertThat(
-            serviceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, request))
+                mServiceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, request))
                 .isEqualTo(QUERY_APP_VOWIFI_RESULT);
     }
 }
