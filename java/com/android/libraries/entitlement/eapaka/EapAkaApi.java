@@ -41,9 +41,6 @@ import com.google.common.net.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.CookieHandler;
-import java.net.CookieManager;
-
 public class EapAkaApi {
     private static final String TAG = "ServiceEntitlement";
 
@@ -138,9 +135,6 @@ public class EapAkaApi {
     public String queryEntitlementStatus(
             ImmutableList<String> appIds, String serverUrl, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        // TODO(b/177562073): localize cookie management instead of VM global CookieHandler
-        CookieHandler.setDefault(new CookieManager());
-
         HttpRequest httpRequest =
                 HttpRequest.builder()
                         .setUrl(entitlementStatusUrl(appIds, serverUrl, request))
@@ -166,7 +160,7 @@ public class EapAkaApi {
             }
             return challengeResponse(
                     new EapAkaResponse(responseData).getEapAkaChallengeResponse(mContext,
-                            mSimSubscriptionId), serverUrl);
+                            mSimSubscriptionId), serverUrl, response.cookie());
         } else {
             // Result of fast AuthN
             Log.d(TAG, "fast AuthN");
@@ -174,7 +168,7 @@ public class EapAkaApi {
         }
     }
 
-    private String challengeResponse(String akaChallengeResponse, String serverUrl)
+    private String challengeResponse(String akaChallengeResponse, String serverUrl, String cookie)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
         JSONObject postData = new JSONObject();
@@ -191,6 +185,7 @@ public class EapAkaApi {
                         .setPostData(postData)
                         .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
                         .addRequestProperty(HttpHeaders.CONTENT_TYPE, REQUEST_CONTENT_TYPE_JSON)
+                        .addRequestProperty(HttpHeaders.COOKIE, cookie)
                         .build();
         return mHttpClient.request(request).body();
     }
