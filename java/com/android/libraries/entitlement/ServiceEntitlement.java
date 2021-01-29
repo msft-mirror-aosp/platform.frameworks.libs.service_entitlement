@@ -23,7 +23,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Implemnets protocol for carrier service entitlement configuration query and operation, based on
@@ -121,7 +121,8 @@ public class ServiceEntitlement {
     @Nullable
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return eapAkaApi.queryEntitlementStatus(appId, carrierConfig.serverUrl(), request);
+        return eapAkaApi.queryEntitlementStatus(ImmutableList.of(appId), carrierConfig.serverUrl(),
+                request);
     }
 
     /**
@@ -133,10 +134,10 @@ public class ServiceEntitlement {
      * multiple "app" parameters will be set in the HTTP request, in the order as they appear in
      * parameter {@code appIds}.
      */
-    public String queryEntitlementStatus(List<String> appIds, ServiceEntitlementRequest request)
+    public String queryEntitlementStatus(ImmutableList<String> appIds,
+            ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        // TODO(b/177544547): Add implementation
-        return null;
+        return eapAkaApi.queryEntitlementStatus(appIds, carrierConfig.serverUrl(), request);
     }
 
     /**
