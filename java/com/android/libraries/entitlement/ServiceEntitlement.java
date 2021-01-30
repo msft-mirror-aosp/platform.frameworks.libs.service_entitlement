@@ -19,10 +19,9 @@ package com.android.libraries.entitlement;
 import android.content.Context;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
-
-import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
 
