@@ -16,18 +16,22 @@
 
 package com.android.libraries.entitlement;
 
-/** Indicates errors happened in retrieving service entitlement configuration. */
+/**
+ * Indicates errors happened in retrieving service entitlement configuration.
+ */
 public class ServiceEntitlementException extends Exception {
-    /** Unknown error. */
+    /**
+     * Unknown error.
+     */
     public static final int ERROR_UNKNOWN = 0;
-    /** Android telephony is unable to provide info like IMSI, e.g. when modem crashed. */
+    /**
+     * Android telephony is unable to provide info like IMSI, e.g. when modem crashed.
+     */
     public static final int ERROR_PHONE_NOT_AVAILABLE = 1;
     /**
      * SIM not returning a response to the EAP-AKA challenge, e.g. when the challenge is invalid.
-     * This
-     * can happen only when an embedded EAP-AKA challange is conducted, as per GMSA spec TS.43
-     * section
-     * 2.6.1.
+     * This can happen only when an embedded EAP-AKA challange is conducted, as per GMSA spec TS.43
+     * section 2.6.1.
      */
     public static final int ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE = 2;
     /**
@@ -51,13 +55,17 @@ public class ServiceEntitlementException extends Exception {
         // TODO(b/177544547): add implementation
     }
 
-    /** Returns the error code, see {@link #ERROR_*}. */
+    /**
+     * Returns the error code, see {@link #ERROR_*}.
+     */
     public int getErrorCode() {
         // TODO(b/177544547): add implementation
         return ERROR_UNKNOWN;
     }
 
-    /** Returns the HTTP status code returned by entitlement server; 0 if unavailable. */
+    /**
+     * Returns the HTTP status code returned by entitlement server; 0 if unavailable.
+     */
     public int getHttpStatus() {
         // TODO(b/177544547): add implementation
         return ERROR_SEVER_NOT_CONNECTABLE;

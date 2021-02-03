@@ -21,12 +21,18 @@ import android.os.Build.VERSION;
 
 import com.google.auto.value.AutoValue;
 
-/** Service entitlement HTTP request parameters, as defiend in GSMA spec TS.43 section 2.2. */
+/**
+ * Service entitlement HTTP request parameters, as defiend in GSMA spec TS.43 section 2.2.
+ */
 @AutoValue
 public abstract class ServiceEntitlementRequest {
-    /** Disables notification token. */
+    /**
+     * Disables notification token.
+     */
     public static final int NOTICATION_ACTION_DISABLE = 0;
-    /** Enables FCM notification token. */
+    /**
+     * Enables FCM notification token.
+     */
     public static final int NOTICATION_ACTION_ENABLE_FCM = 2;
 
     /**
@@ -41,7 +47,9 @@ public abstract class ServiceEntitlementRequest {
      */
     public abstract String entitlementVersion();
 
-    /** Returns the authentication token. Used by HTTP parameter "token". */
+    /**
+     * Returns the authentication token. Used by HTTP parameter "token".
+     */
     public abstract String authenticationToken();
 
     /**
@@ -49,13 +57,19 @@ public abstract class ServiceEntitlementRequest {
      */
     public abstract String terminalId();
 
-    /** Returns the OEM of the device. Used by HTTP parameter "terminal_vendor". */
+    /**
+     * Returns the OEM of the device. Used by HTTP parameter "terminal_vendor".
+     */
     public abstract String terminalVendor();
 
-    /** Returns the model of the device. Used by HTTP parameter "terminal_model". */
+    /**
+     * Returns the model of the device. Used by HTTP parameter "terminal_model".
+     */
     public abstract String terminalModel();
 
-    /** Returns the software version of the device. Used by HTTP parameter "terminal_sw_version". */
+    /**
+     * Returns the software version of the device. Used by HTTP parameter "terminal_sw_version".
+     */
     public abstract String terminalSoftwareVersion();
 
     /**
@@ -72,8 +86,7 @@ public abstract class ServiceEntitlementRequest {
 
     /**
      * Returns the FCM registration token used to register for entitlement configuration request
-     * from
-     * network. Used by HTTP parameter "notif_token".
+     * from network. Used by HTTP parameter "notif_token".
      */
     public abstract String notificationToken();
 
@@ -86,7 +99,9 @@ public abstract class ServiceEntitlementRequest {
      */
     public abstract int notificationAction();
 
-    /** Returns a new {@link Builder} object. */
+    /**
+     * Returns a new {@link Builder} object.
+     */
     public static Builder builder() {
         return new AutoValue_ServiceEntitlementRequest.Builder()
                 .setConfigurationVersion(0)
@@ -102,7 +117,9 @@ public abstract class ServiceEntitlementRequest {
                 .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM);
     }
 
-    /** Builder. */
+    /**
+     * Builder.
+     */
     @AutoValue.Builder
     public abstract static class Builder {
         /**
@@ -130,7 +147,8 @@ public abstract class ServiceEntitlementRequest {
         public abstract Builder setAuthenticationToken(String value);
 
         /**
-         * Sets the unique identifier of the device like IMEI. Used by HTTP parameter "terminal_id".
+         * Sets the unique identifier of the device like IMEI. Used by HTTP parameter
+         * "terminal_id".
          *
          * <p>If not set, will use the device IMEI.
          */
@@ -175,8 +193,7 @@ public abstract class ServiceEntitlementRequest {
 
         /**
          * Sets the FCM registration token used to register for entitlement configuration request
-         * from
-         * network. Used by HTTP parameter "notif_token".
+         * from network. Used by HTTP parameter "notif_token".
          *
          * <p>Optional.
          */

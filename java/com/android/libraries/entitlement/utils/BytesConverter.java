@@ -16,9 +16,9 @@
 
 package com.android.libraries.entitlement.eapaka.utils;
 
-import java.nio.ByteBuffer;
-
 import androidx.annotation.Nullable;
+
+import java.nio.ByteBuffer;
 
 public class BytesConverter {
     private static final int INTEGER_SIZE = 4; // 4 bytes
@@ -53,7 +53,9 @@ public class BytesConverter {
         return ret.toString();
     }
 
-    /** Converts integer to 4 bytes. */
+    /**
+     * Converts integer to 4 bytes.
+     */
     public static byte[] convertIntegerTo4Bytes(int value) {
         return ByteBuffer.allocate(INTEGER_SIZE).putInt(value).array();
     }
