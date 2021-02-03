@@ -16,21 +16,30 @@
 
 package com.android.libraries.entitlement.http;
 
-/** Http constants using for entitlement flow of TS.43. */
+/**
+ * Http constants using for entitlement flow of TS.43.
+ */
 public final class HttpConstants {
-    private HttpConstants() {}
+    private HttpConstants() {
+    }
 
-    /** Possible request methods for Entitlement server response. */
+    /**
+     * Possible request methods for Entitlement server response.
+     */
     public static final class RequestMethod {
-        private RequestMethod() {}
+        private RequestMethod() {
+        }
 
         public static final String GET = "GET";
         public static final String POST = "POST";
     }
 
-    /** Possible content type for Entitlement server response. */
+    /**
+     * Possible content type for Entitlement server response.
+     */
     public static final class ContentType {
-        private ContentType() {}
+        private ContentType() {
+        }
 
         public static final int UNKNOWN = -1;
         public static final int JSON = 0;

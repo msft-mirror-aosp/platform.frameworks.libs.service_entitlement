@@ -35,10 +35,10 @@ public class MasterKeyTest {
     @Test
     public void generateTransientEapKeys_getAutPassed() throws Exception {
         MasterKey masterKey =
-            MasterKey.create(
-                IMSI_EAP,
-                convertHexStringToBytes(EXPECTED_IK),
-                convertHexStringToBytes(EXPECTED_CK));
+                MasterKey.create(
+                        IMSI_EAP,
+                        convertHexStringToBytes(EXPECTED_IK),
+                        convertHexStringToBytes(EXPECTED_CK));
 
         assertThat(masterKey.getAut()).isEqualTo(convertHexStringToBytes(EXPECTED_AUT));
     }
@@ -46,10 +46,10 @@ public class MasterKeyTest {
     @Test
     public void generateTransientEapKeys_withoutImsiEap_getNull() throws Exception {
         MasterKey masterKey =
-            MasterKey.create(
-                null,
-                convertHexStringToBytes(EXPECTED_IK),
-                convertHexStringToBytes(EXPECTED_CK));
+                MasterKey.create(
+                        null,
+                        convertHexStringToBytes(EXPECTED_IK),
+                        convertHexStringToBytes(EXPECTED_CK));
 
         assertThat(masterKey).isNull();
     }
@@ -57,10 +57,10 @@ public class MasterKeyTest {
     @Test
     public void generateTransientEapKeys_withoutIk_getNull() throws Exception {
         MasterKey masterKey =
-            MasterKey.create(
-                IMSI_EAP,
-                null,
-                convertHexStringToBytes(EXPECTED_CK));
+                MasterKey.create(
+                        IMSI_EAP,
+                        null,
+                        convertHexStringToBytes(EXPECTED_CK));
 
         assertThat(masterKey).isNull();
     }
@@ -68,10 +68,10 @@ public class MasterKeyTest {
     @Test
     public void generateTransientEapKeys_withoutCk_getNull() throws Exception {
         MasterKey masterKey =
-            MasterKey.create(
-                IMSI_EAP,
-                convertHexStringToBytes(EXPECTED_IK),
-                null);
+                MasterKey.create(
+                        IMSI_EAP,
+                        convertHexStringToBytes(EXPECTED_IK),
+                        null);
 
         assertThat(masterKey).isNull();
     }
