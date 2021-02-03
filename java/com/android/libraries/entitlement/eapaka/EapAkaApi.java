@@ -22,6 +22,8 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
@@ -30,13 +32,11 @@ import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import androidx.annotation.Nullable;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HttpHeaders;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -46,52 +46,72 @@ public class EapAkaApi {
 
     public static final String EAP_CHALLENGE_RESPONSE = "eap-relay-packet";
 
-    /** Current version of the entitlement configuration. */
+    /**
+     * Current version of the entitlement configuration.
+     */
     private static final String VERS = "vers";
-    /** Version of the entitlement configuration. */
+    /**
+     * Version of the entitlement configuration.
+     */
     private static final String ENTITLEMENT_VERSION = "entitlement_version";
     /**
-     * Unique identifier for the device. Refer to {@link
-     * android.telephony.TelephonyManager#getImei()}.
+     * Unique identifier for the device. Refer to
+     * {@link android.telephony.TelephonyManager#getImei()}.
      */
     private static final String TERMINAL_ID = "terminal_id";
-    /** Device manufacturer. */
+    /**
+     * Device manufacturer.
+     */
     private static final String TERMINAL_VENDOR = "terminal_vendor";
-    /** Device model. */
+    /**
+     * Device model.
+     */
     private static final String TERMINAL_MODEL = "terminal_model";
-    /** Device software version. */
+    /**
+     * Device software version.
+     */
     private static final String TERMIAL_SW_VERSION = "terminal_sw_version";
-    /** Identifier for the requested entitlement. */
+    /**
+     * Identifier for the requested entitlement.
+     */
     private static final String APP = "app";
-    /** NAI needed for EAP-AKA authentication. */
+    /**
+     * NAI needed for EAP-AKA authentication.
+     */
     private static final String EAP_ID = "EAP_ID";
 
     private static final String IMSI = "IMSI";
     private static final String TOKEN = "token";
-    /** Action for the notification registration token. */
+    /**
+     * Action for the notification registration token.
+     */
     private static final String NOTIF_ACTION = "notif_action";
-    /** Attribute name of the notification registration token. */
+    /**
+     * Attribute name of the notification registration token.
+     */
     private static final String NOTIF_TOKEN = "notif_token";
-    /** Attribute name of the app version. */
+    /**
+     * Attribute name of the app version.
+     */
     private static final String APP_VERSION = "app_version";
-    /** Attribute name of the app name. */
+    /**
+     * Attribute name of the app name.
+     */
     private static final String APP_NAME = "app_name";
 
-    private final Context context;
-    private final int simSubscriptionId;
-    private final HttpClient httpClient;
+    private final Context mContext;
+    private final int mSimSubscriptionId;
+    private final HttpClient mHttpClient;
 
     public EapAkaApi(Context context, int simSubscriptionId) {
-        this.context = context;
-        this.simSubscriptionId = simSubscriptionId;
-        this.httpClient = new HttpClient();
+        this(context, simSubscriptionId, new HttpClient());
     }
 
     @VisibleForTesting
     EapAkaApi(Context context, int simSubscriptionId, HttpClient httpClient) {
-        this.context = context;
-        this.simSubscriptionId = simSubscriptionId;
-        this.httpClient = httpClient;
+        this.mContext = context;
+        this.mSimSubscriptionId = simSubscriptionId;
+        this.mHttpClient = httpClient;
     }
 
     /**
@@ -117,7 +137,7 @@ public class EapAkaApi {
                                 "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap"
                                         + ".connectivity-xml")
                         .build();
-        HttpResponse response = httpClient.request(httpRequest);
+        HttpResponse response = mHttpClient.request(httpRequest);
         if (response == null) {
             throw new ServiceEntitlementException("Null http response");
         }
@@ -128,7 +148,7 @@ public class EapAkaApi {
                 String akaChallengeResponse =
                         new EapAkaResponse(
                                 new JSONObject(response.body()).getString(EAP_CHALLENGE_RESPONSE))
-                                .getEapAkaChallengeResponse(context, simSubscriptionId);
+                                .getEapAkaChallengeResponse(mContext, mSimSubscriptionId);
                 JSONObject postData = new JSONObject();
                 postData.put(EAP_CHALLENGE_RESPONSE, akaChallengeResponse);
                 return challengeResponse(postData, serverUrl);
@@ -160,7 +180,7 @@ public class EapAkaApi {
                                 "application/vnd.gsma.eap-relay.v1.0+json")
                         .build();
 
-        HttpResponse response = httpClient.request(request);
+        HttpResponse response = mHttpClient.request(request);
         if (response == null || response.contentType() != ContentType.XML) {
             throw new ServiceEntitlementException("Unexpected http response.");
         }
@@ -171,16 +191,15 @@ public class EapAkaApi {
     @VisibleForTesting
     String entitlementStatusUrl(
             String appId, String serverUrl, ServiceEntitlementRequest request) {
-        TelephonyManager telephonyManager =
-                (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        telephonyManager = telephonyManager.createForSubscriptionId(simSubscriptionId);
+        TelephonyManager telephonyManager = mContext.getSystemService(
+                TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
         Uri.Builder urlBuilder = Uri.parse(serverUrl).buildUpon();
         if (TextUtils.isEmpty(request.authenticationToken())) {
             // EAP_ID required for initial AuthN
             urlBuilder.appendQueryParameter(
                     EAP_ID,
                     getImsiEap(telephonyManager.getSimOperator(),
-                               telephonyManager.getSubscriberId()));
+                            telephonyManager.getSubscriberId()));
         } else {
             // IMSI and token required for fast AuthN.
             urlBuilder

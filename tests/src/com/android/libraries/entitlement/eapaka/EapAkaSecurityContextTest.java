@@ -46,37 +46,38 @@ public class EapAkaSecurityContextTest {
     // KC Length : 08
     // KC : 85DE920D9E1B8FBB
     private static final String GSM_SECURITY_CONTEXT_RESPONSE =
-        "2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=";
+            "2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=";
     private static final String EXPECTED_IK = "06C4880743EF17AAA99EE7B17CEE9119";
     private static final String EXPECTED_CK = "F330A26F2C1CCC1ED9B45FD48D06C516";
     private static final String EXPECTED_RES = "C79F02A59FC9A38F";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_TAG_DC =
-        "DC08C79F02A59FC9A38F10F330A"
-            + "26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91190885DE920D9E1B8FBB";
+            "DC08C79F02A59FC9A38F10F330A"
+                    + "26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91190885DE920D9E1B"
+                    + "8FBB";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_INVALID_RES_LENGTH =
-        "DC40C79F02A59FC"
-            + "9A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91190885DE920D9"
-            + "E1B8FBB";
+            "DC40C79F02A59FC"
+                    + "9A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE911908"
+                    + "85DE920D9E1B8FBB";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_INVALID_CK_LENGTH =
-        "DB08C79F02A59FC9"
-            + "A38F40F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91190885DE920D9E"
-            + "1B8FBB";
+            "DB08C79F02A59FC9"
+                    + "A38F40F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE9119088"
+                    + "5DE920D9E1B8FBB";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_INVALID_IK_LENGTH =
-        "DB08C79F02A59FC9"
-            + "A38F10F330A26F2C1CCC1ED9B45FD48D06C5164006C4880743EF17AAA99EE7B17CEE91190885DE920D9E"
-            + "1B8FBB";
+            "DB08C79F02A59FC9"
+                    + "A38F10F330A26F2C1CCC1ED9B45FD48D06C5164006C4880743EF17AAA99EE7B17CEE9119088"
+                    + "5DE920D9E1B8FBB";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_INVALID_KC_LENGTH =
-        "DB08C79F02A59FC9"
-            + "A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91191085DE920D9E"
-            + "1B8FBB";
+            "DB08C79F02A59FC9"
+                    + "A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE9119108"
+                    + "5DE920D9E1B8FBB";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_NO_KC_KEY =
-        "DB08C79F02A59FC9A38F10F3"
-            + "30A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE9119";
+            "DB08C79F02A59FC9A38F10F3"
+                    + "30A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE9119";
 
     @Test
     public void parseResponseData_validResponse_pass() throws Exception {
         EapAkaSecurityContext securityContext =
-            EapAkaSecurityContext.from(GSM_SECURITY_CONTEXT_RESPONSE);
+                EapAkaSecurityContext.from(GSM_SECURITY_CONTEXT_RESPONSE);
 
         assertThat(securityContext.isValid()).isTrue();
         assertThat(securityContext.getIk()).isEqualTo(convertHexStringToBytes(EXPECTED_IK));
@@ -90,7 +91,7 @@ public class EapAkaSecurityContextTest {
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
         assertThrows(
-            ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
+                ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
     }
 
     @Test
@@ -99,7 +100,7 @@ public class EapAkaSecurityContextTest {
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
         assertThrows(
-            ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
+                ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
     }
 
     @Test
@@ -108,7 +109,7 @@ public class EapAkaSecurityContextTest {
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
         assertThrows(
-            ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
+                ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
     }
 
     @Test
@@ -117,7 +118,7 @@ public class EapAkaSecurityContextTest {
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
         assertThrows(
-            ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
+                ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
     }
 
     @Test
@@ -135,7 +136,7 @@ public class EapAkaSecurityContextTest {
     }
 
     @Test
-    public void parseResponseData_noKcKey() throws Exception  {
+    public void parseResponseData_noKcKey() throws Exception {
         byte[] data = convertHexStringToBytes(GSM_SECURITY_CONTEXT_RESPONSE_NO_KC_KEY);
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
