@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement.eapaka;
 
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE;
+
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
@@ -52,7 +54,9 @@ class EapAkaSecurityContext {
         EapAkaSecurityContext securityContext = new EapAkaSecurityContext();
         securityContext.parseResponseData(response);
         if (!securityContext.isValid()) {
-            throw new ServiceEntitlementException("Invalid SIM EAP-AKA authentication response!");
+            throw new ServiceEntitlementException(
+                ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
+                "Invalid SIM EAP-AKA authentication response!");
         }
         return securityContext;
     }
