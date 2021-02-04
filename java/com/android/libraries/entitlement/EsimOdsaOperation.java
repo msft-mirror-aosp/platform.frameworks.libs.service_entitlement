@@ -24,22 +24,38 @@ import com.google.auto.value.AutoValue;
  */
 @AutoValue
 public abstract class EsimOdsaOperation {
-    /** OSDA operation: CheckEligibility. */
+    /**
+     * OSDA operation: CheckEligibility.
+     */
     public static final String OPERATION_CHECK_ELIGIBILITY = "CheckEligibility";
-    /** OSDA operation: ManageSubscription. */
+    /**
+     * OSDA operation: ManageSubscription.
+     */
     public static final String OPERATION_MANAGE_SUBSCRIPTION = "ManageSubscription";
-    /** OSDA operation: ManageService. */
+    /**
+     * OSDA operation: ManageService.
+     */
     public static final String OPERATION_MANAGE_SERVICE = "ManageService";
-    /** OSDA operation: AcquireConfiguration. */
+    /**
+     * OSDA operation: AcquireConfiguration.
+     */
     public static final String OPERATION_ACQUIRE_CONFIGURATION = "AcquireConfiguration";
 
-    /** Indicates that operation_type is not set. */
+    /**
+     * Indicates that operation_type is not set.
+     */
     static final int OPERATION_TYPE_NOT_SET = -1;
-    /** To activate a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}. */
+    /**
+     * To activate a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
+     */
     public static final int OPERATION_TYPE_SUBSCRIBE = 0;
-    /** To cancel a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}. */
+    /**
+     * To cancel a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
+     */
     public static final int OPERATION_TYPE_UNSUBSCRIBE = 1;
-    /** To manage an existing subscription, for {@link #OPERATION_MANAGE_SUBSCRIPTION}. */
+    /**
+     * To manage an existing subscription, for {@link #OPERATION_MANAGE_SUBSCRIPTION}.
+     */
     public static final int OPERATION_TYPE_CHANGE_SUBSCRIPTION = 2;
     /**
      * To transfer a subscription from an existing device, used by {@link
@@ -51,21 +67,32 @@ public abstract class EsimOdsaOperation {
      * {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_UPDATE_SUBSCRIPTION = 4;
-    /** To activate a service, used by {@link #OPERATION_MANAGE_SERVICE}. */
+    /**
+     * To activate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
+     */
     public static final int OPERATION_TYPE_ACTIVATE_SERVICE = 10;
-    /** To deactivate a service, used by {@link #OPERATION_MANAGE_SERVICE}. */
+    /**
+     * To deactivate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
+     */
     public static final int OPERATION_TYPE_DEACTIVATE_SERVICE = 11;
 
-    /** Indicates the companion device carries the same MSISDN as the primary device. */
+    /**
+     * Indicates the companion device carries the same MSISDN as the primary device.
+     */
     public static final String COMPANION_SERVICE_SHAERED_NUMBER = "SharedNumber";
-    /** Indicates the companion device carries a different MSISDN as the primary device. */
+    /**
+     * Indicates the companion device carries a different MSISDN as the primary device.
+     */
     public static final String COMPANION_SERVICE_DIFFERENT_NUMBER = "DiffNumber";
 
-    /** Returns the eSIM ODSA operation. Used by HTTP parameter "operation". */
+    /**
+     * Returns the eSIM ODSA operation. Used by HTTP parameter "operation".
+     */
     public abstract String operation();
 
     /**
-     * Returns the detiled type of the eSIM ODSA operation. Used by HTTP parameter "operation_type".
+     * Returns the detiled type of the eSIM ODSA operation. Used by HTTP parameter
+     * "operation_type".
      */
     public abstract int operationType();
 
@@ -81,7 +108,8 @@ public abstract class EsimOdsaOperation {
     public abstract String companionTerminalVendor();
 
     /**
-     * Returns the model of the companion device. Used by HTTP parameter "companion_terminal_model".
+     * Returns the model of the companion device. Used by HTTP parameter
+     * "companion_terminal_model".
      */
     public abstract String companionTerminalModel();
 
@@ -104,16 +132,20 @@ public abstract class EsimOdsaOperation {
     public abstract String companionTerminalService();
 
     /**
-     * Returns the ICCID of the companion device. Used by HTTP parameter "companion_terminal_iccid".
+     * Returns the ICCID of the companion device. Used by HTTP parameter
+     * "companion_terminal_iccid".
      */
     public abstract String companionTerminalIccid();
 
     /**
-     * Returns the ICCID of the companion device. Used by HTTP parameter "companion_terminal_iccid".
+     * Returns the ICCID of the companion device. Used by HTTP parameter
+     * "companion_terminal_iccid".
      */
     public abstract String companionTerminalEid();
 
-    /** Returns the ICCID of the primary device eSIM. Used by HTTP parameter "terminal_eid". */
+    /**
+     * Returns the ICCID of the primary device eSIM. Used by HTTP parameter "terminal_eid".
+     */
     public abstract String terminalIccid();
 
     /**
@@ -128,7 +160,9 @@ public abstract class EsimOdsaOperation {
      */
     public abstract String targetTerminalId();
 
-    /** Returns the ICCID primary device eSIM. Used by HTTP parameter "target_terminal_iccid". */
+    /**
+     * Returns the ICCID primary device eSIM. Used by HTTP parameter "target_terminal_iccid".
+     */
     public abstract String targetTerminalIccid();
 
     /**
@@ -137,7 +171,9 @@ public abstract class EsimOdsaOperation {
      */
     public abstract String targetTerminalEid();
 
-    /** Returns a new {@link Builder} object. */
+    /**
+     * Returns a new {@link Builder} object.
+     */
     public static Builder builder() {
         return new AutoValue_EsimOdsaOperation.Builder().setOperationType(OPERATION_TYPE_NOT_SET);
     }
@@ -146,10 +182,8 @@ public abstract class EsimOdsaOperation {
      * Builder.
      *
      * <p>For ODSA, the rule of which parameters are required varies or each
-     * operation/opeation_type.
-     * The Javadoc below gives high-level description, but please refer to GMSA spec TS.43 section
-     * 6.2
-     * for details.
+     * operation/opeation_type. The Javadoc below gives high-level description, but please refer to
+     * GMSA spec TS.43 section 6.2 for details.
      */
     @AutoValue.Builder
     public abstract static class Builder {

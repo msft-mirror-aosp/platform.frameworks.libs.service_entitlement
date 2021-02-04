@@ -21,14 +21,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import androidx.annotation.Nullable;
 
 /**
  * The class for Master Key.
@@ -49,13 +49,13 @@ class MasterKey {
     private static final int LENGTH_TEKS = 160;
 
     /* Master Key */
-    private byte[] masterKey;
+    private byte[] mMasterKey;
 
     /* Transient EAP Keys */
-    private byte[] encr;
-    private byte[] aut;
-    private byte[] msk;
-    private byte[] emsk;
+    private byte[] mEncr;
+    private byte[] mAut;
+    private byte[] mMsk;
+    private byte[] mEmsk;
 
     private MasterKey() {
     }
@@ -91,7 +91,7 @@ class MasterKey {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
             messageDigest.update(data);
-            masterKey = messageDigest.digest();
+            mMasterKey = messageDigest.digest();
         } catch (NoSuchAlgorithmException e) {
             Log.d(TAG, "process SHA-1 failed", e);
         }
@@ -118,29 +118,29 @@ class MasterKey {
         }
 
         int index = 0;
-        encr = new byte[LENGTH_K_ENCR];
-        System.arraycopy(teks, index, encr, 0, LENGTH_K_ENCR);
+        mEncr = new byte[LENGTH_K_ENCR];
+        System.arraycopy(teks, index, mEncr, 0, LENGTH_K_ENCR);
         index += LENGTH_K_ENCR;
-        aut = new byte[LENGTH_K_AUT];
-        System.arraycopy(teks, index, aut, 0, LENGTH_K_AUT);
+        mAut = new byte[LENGTH_K_AUT];
+        System.arraycopy(teks, index, mAut, 0, LENGTH_K_AUT);
         index += LENGTH_K_AUT;
-        msk = new byte[LENGTH_MSK];
-        System.arraycopy(teks, index, msk, 0, LENGTH_MSK);
+        mMsk = new byte[LENGTH_MSK];
+        System.arraycopy(teks, index, mMsk, 0, LENGTH_MSK);
         index += LENGTH_MSK;
-        emsk = new byte[LENGTH_EMSK];
-        System.arraycopy(teks, index, emsk, 0, LENGTH_EMSK);
+        mEmsk = new byte[LENGTH_EMSK];
+        System.arraycopy(teks, index, mEmsk, 0, LENGTH_EMSK);
     }
 
     /** Returns {@code aut}. */
     public byte[] getAut() {
-        return aut;
+        return mAut;
     }
 
     // RFC 4187 Appendix A.  Pseudo-Random Number Generator
     @Nullable
     private byte[] generatePsudoRandomNumber() {
         // Step 1: Choose a new, secret value for the seed-key, XKEY
-        byte[] key = masterKey;
+        byte[] key = mMasterKey;
 
         // 160-bit XKEY and XVAL values are used, so b = 160.  On each full
         // authentication, the Master Key is used as the initial secret seed-key

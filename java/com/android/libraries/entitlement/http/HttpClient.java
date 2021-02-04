@@ -26,6 +26,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.WorkerThread;
+
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.StreamUtils;
@@ -39,9 +41,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
 
-import androidx.annotation.WorkerThread;
-
-/** Implement the HTTP request method according to TS.43 specification. */
+/**
+ * Implement the HTTP request method according to TS.43 specification.
+ */
 public class HttpClient {
     private static final String TAG = "ServiceEntitlement";
     private static final boolean DEBUG = false; // STOPSHIP if true
@@ -49,7 +51,7 @@ public class HttpClient {
     private static final int SOCKET_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
     private static final int CONNECT_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
 
-    private HttpURLConnection connection;
+    private HttpURLConnection mConnection;
 
     @WorkerThread
     // TODO(b/177544547): Add debug messages
@@ -57,23 +59,23 @@ public class HttpClient {
         try {
             logd("HttpClient.request url: " + request.url());
             createConnection(request);
-            if (connection == null) {
+            if (mConnection == null) {
                 logd("HttpClient.request connection is null");
                 throw new ServiceEntitlementException("No connection");
             }
-            logd("HttpClient.request headers (partial): " + connection.getRequestProperties());
+            logd("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
             if (POST.equals(request.requestMethod())) {
-                try (OutputStream out = new DataOutputStream(connection.getOutputStream())) {
+                try (OutputStream out = new DataOutputStream(mConnection.getOutputStream())) {
                     out.write(request.postData().toString().getBytes(UTF_8));
                     logd("HttpClient.request post data: " + request.postData());
                 }
             }
-            connection.connect(); // This is to trigger SocketTimeoutException early
-            HttpResponse response = getHttpResponse(connection);
+            mConnection.connect(); // This is to trigger SocketTimeoutException early
+            HttpResponse response = getHttpResponse(mConnection);
             Log.d(TAG, "HttpClient.response : " + response);
             return response;
         } catch (IOException e) {
-            InputStream errorStream = connection.getErrorStream();
+            InputStream errorStream = mConnection.getErrorStream();
             Log.e(
                     TAG,
                     "HttpClient.request() error: " + StreamUtils.inputStreamToStringSafe(
@@ -87,19 +89,19 @@ public class HttpClient {
     private void createConnection(HttpRequest request) throws ServiceEntitlementException {
         try {
             URL url = new URL(request.url());
-            connection = (HttpURLConnection) url.openConnection();
+            mConnection = (HttpURLConnection) url.openConnection();
 
             // add HTTP headers
             for (Map.Entry<String, String> entry : request.requestProperties().entrySet()) {
-                connection.addRequestProperty(entry.getKey(), entry.getValue());
+                mConnection.addRequestProperty(entry.getKey(), entry.getValue());
             }
 
             // set parameters
-            connection.setRequestMethod(request.requestMethod());
-            connection.setConnectTimeout(CONNECT_TIMEOUT_VALUE);
-            connection.setReadTimeout(SOCKET_TIMEOUT_VALUE);
+            mConnection.setRequestMethod(request.requestMethod());
+            mConnection.setConnectTimeout(CONNECT_TIMEOUT_VALUE);
+            mConnection.setReadTimeout(SOCKET_TIMEOUT_VALUE);
             if (POST.equals(request.requestMethod())) {
-                connection.setDoOutput(true);
+                mConnection.setDoOutput(true);
             }
         } catch (IOException e) {
             Log.e(TAG, "IOException: " + e.getMessage());
@@ -108,9 +110,9 @@ public class HttpClient {
     }
 
     private void closeConnection() {
-        if (connection != null) {
-            connection.disconnect();
-            connection = null;
+        if (mConnection != null) {
+            mConnection.disconnect();
+            mConnection = null;
         }
     }
 
@@ -121,8 +123,9 @@ public class HttpClient {
             logd("HttpClient.response headers: " + connection.getHeaderFields());
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw new ServiceEntitlementException(
-                  ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode, null,
-                  "Invalid connection response", null);
+                        ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
+                        null,
+                        "Invalid connection response", null);
             }
             String responseBody = readResponse(connection);
             logd("HttpClient.response body: " + responseBody);
@@ -134,8 +137,8 @@ public class HttpClient {
                     .build();
         } catch (IOException e) {
             throw new ServiceEntitlementException(
-              ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, 0,  null,
-              "Read response failed!", e);
+                    ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, 0, null,
+                    "Read response failed!", e);
         }
     }
 

@@ -20,11 +20,14 @@ import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 
 import com.google.auto.value.AutoValue;
 
-/** The response of the http request. */
+/**
+ * The response of the http request.
+ */
 @AutoValue
 public abstract class HttpResponse {
-
-    /** Content type of the response. */
+    /**
+     * Content type of the response.
+     */
     public abstract int contentType();
 
     public abstract String body();
@@ -33,7 +36,9 @@ public abstract class HttpResponse {
 
     public abstract String responseMessage();
 
-    /** Builder of {@link HttpResponse}. */
+    /**
+     * Builder of {@link HttpResponse}.
+     */
     @AutoValue.Builder
     public abstract static class Builder {
 
