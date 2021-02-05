@@ -16,6 +16,9 @@
 
 package com.android.libraries.entitlement.http;
 
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_SEVER_NOT_CONNECTABLE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.MALFORMED_HTTP_RESPONSE;
 import static com.android.libraries.entitlement.http.HttpConstants.RequestMethod.POST;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -31,6 +34,8 @@ import androidx.annotation.WorkerThread;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.StreamUtils;
+
+import com.google.common.net.HttpHeaders;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -56,14 +61,10 @@ public class HttpClient {
     @WorkerThread
     // TODO(b/177544547): Add debug messages
     public HttpResponse request(HttpRequest request) throws ServiceEntitlementException {
+        logd("HttpClient.request url: " + request.url());
+        createConnection(request);
+        logd("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
         try {
-            logd("HttpClient.request url: " + request.url());
-            createConnection(request);
-            if (mConnection == null) {
-                logd("HttpClient.request connection is null");
-                throw new ServiceEntitlementException("No connection");
-            }
-            logd("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
             if (POST.equals(request.requestMethod())) {
                 try (OutputStream out = new DataOutputStream(mConnection.getOutputStream())) {
                     out.write(request.postData().toString().getBytes(UTF_8));
@@ -74,13 +75,11 @@ public class HttpClient {
             HttpResponse response = getHttpResponse(mConnection);
             Log.d(TAG, "HttpClient.response : " + response);
             return response;
-        } catch (IOException e) {
-            InputStream errorStream = mConnection.getErrorStream();
-            Log.e(
-                    TAG,
-                    "HttpClient.request() error: " + StreamUtils.inputStreamToStringSafe(
-                            errorStream));
-            throw new ServiceEntitlementException("request failed! exception: " + e.getMessage());
+        } catch (IOException ioe) {
+            throw new ServiceEntitlementException(
+                    ERROR_HTTP_STATUS_NOT_SUCCESS,
+                    StreamUtils.inputStreamToStringSafe(mConnection.getErrorStream()),
+                    ioe);
         } finally {
             closeConnection();
         }
@@ -103,9 +102,9 @@ public class HttpClient {
             if (POST.equals(request.requestMethod())) {
                 mConnection.setDoOutput(true);
             }
-        } catch (IOException e) {
-            Log.e(TAG, "IOException: " + e.getMessage());
-            throw new ServiceEntitlementException("Configure connection failed!" + e.getMessage());
+        } catch (IOException ioe) {
+            throw new ServiceEntitlementException(
+                    ERROR_SEVER_NOT_CONNECTABLE, "Configure connection failed!", ioe);
         }
     }
 
@@ -118,28 +117,31 @@ public class HttpClient {
 
     private static HttpResponse getHttpResponse(HttpURLConnection connection)
             throws ServiceEntitlementException {
+        HttpResponse.Builder responseBuilder = HttpResponse.builder();
+        responseBuilder.setContentType(getContentType(connection));
         try {
             int responseCode = connection.getResponseCode();
             logd("HttpClient.response headers: " + connection.getHeaderFields());
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw new ServiceEntitlementException(
-                        ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
-                        null,
-                        "Invalid connection response", null);
+                throw new ServiceEntitlementException(ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
+                        connection.getHeaderField(HttpHeaders.RETRY_AFTER),
+                        "Invalid connection response");
             }
-            String responseBody = readResponse(connection);
-            logd("HttpClient.response body: " + responseBody);
-            return HttpResponse.builder()
-                    .setContentType(getContentType(connection))
-                    .setBody(responseBody)
-                    .setResponseCode(responseCode)
-                    .setResponseMessage(nullToEmpty(connection.getResponseMessage()))
-                    .build();
+            responseBuilder.setResponseCode(responseCode);
+            responseBuilder.setResponseMessage(nullToEmpty(connection.getResponseMessage()));
         } catch (IOException e) {
             throw new ServiceEntitlementException(
-                    ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, 0, null,
-                    "Read response failed!", e);
+                    ERROR_HTTP_STATUS_NOT_SUCCESS, "Read response code failed!", e);
         }
+        try {
+            String responseBody = readResponse(connection);
+            logd("HttpClient.response body: " + responseBody);
+            responseBuilder.setBody(responseBody);
+        } catch (IOException e) {
+            throw new ServiceEntitlementException(
+            MALFORMED_HTTP_RESPONSE, "Read response body/message failed!", e);
+        }
+        return responseBuilder.build();
     }
 
     private static String readResponse(URLConnection connection) throws IOException {
