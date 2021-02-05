@@ -19,6 +19,7 @@ package com.android.libraries.entitlement.eapaka;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.fail;
 
 import android.util.Base64;
 
@@ -90,8 +91,15 @@ public class EapAkaSecurityContextTest {
         byte[] data = convertHexStringToBytes(GSM_SECURITY_CONTEXT_RESPONSE_TAG_DC);
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
-        assertThrows(
-                ServiceEntitlementException.class, () -> EapAkaSecurityContext.from(encodedData));
+        try {
+            EapAkaSecurityContext.from(encodedData);
+            fail();
+        } catch (ServiceEntitlementException exception) {
+            assertThat(exception.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE);
+            assertThat(exception.getMessage()).isEqualTo(
+                    "Invalid SIM EAP-AKA authentication response!");
+        }
     }
 
     @Test
