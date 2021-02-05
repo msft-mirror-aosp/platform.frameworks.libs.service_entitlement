@@ -26,6 +26,8 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 
+import com.google.common.collect.ImmutableList;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,7 +61,9 @@ public class ServiceEntitlementTest {
     @Test
     public void queryEntitlementStatus_appVolte_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mMockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, TEST_URL, request))
+        when(mMockEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOLTE),
+                TEST_URL,
+                request))
                 .thenReturn(QUERY_APP_VOLTE_RESULT);
 
         assertThat(
@@ -70,12 +74,15 @@ public class ServiceEntitlementTest {
     @Test
     public void queryEntitlementStatus_appVowifi_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mMockEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL,
+        when(mMockEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                TEST_URL,
                 request))
                 .thenReturn(QUERY_APP_VOWIFI_RESULT);
 
         assertThat(
-                mServiceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, request))
+                mServiceEntitlement.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        request))
                 .isEqualTo(QUERY_APP_VOWIFI_RESULT);
     }
 }
