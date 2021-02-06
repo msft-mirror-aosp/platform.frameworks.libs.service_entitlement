@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.fail;
 
@@ -33,14 +34,21 @@ import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
+import com.android.libraries.entitlement.http.HttpConstants;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
+import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -77,17 +85,17 @@ public class EapAkaApiTest {
     private static final String TOKEN = "kZYfCEpSsMr88KZVmab5UsZVzl+nWSsX";
     private static final String IMSI = "234107813240779";
     private static final String MCCMNC = "23410";
+    private static final String IMEI = "355494343566743";
     private static final int SUB_ID = 1;
+    private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
+            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
 
-    @Rule
-    public final MockitoRule rule = MockitoJUnit.rule();
+    @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
-    @Mock
-    private HttpClient mMockHttpClient;
-    @Mock
-    private TelephonyManager mMockTelephonyManager;
-    @Mock
-    private TelephonyManager mMockTelephonyManagerForSubId;
+    @Mock private HttpClient mMockHttpClient;
+    @Mock private TelephonyManager mMockTelephonyManager;
+    @Mock private TelephonyManager mMockTelephonyManagerForSubId;
+    @Captor private ArgumentCaptor<HttpRequest> mHttpRequestCaptor;
 
     private Context mContext;
     private EapAkaApi mEapAkaApi;
@@ -113,7 +121,7 @@ public class EapAkaApiTest {
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
 
         assertThat(mEapAkaApi.queryEntitlementStatus(
-                ServiceEntitlement.APP_VOWIFI, TEST_URL, request))
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request))
                 .isEqualTo(RESPONSE_XML);
     }
 
@@ -140,8 +148,32 @@ public class EapAkaApiTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         assertThat(
-                mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request))
+                mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        TEST_URL,
+                        request))
                 .isEqualTo(RESPONSE_XML);
+    }
+
+    @Test
+    public void queryEntitlementStatus_multipleAppIds_verifyEntitlementUrl() throws Exception {
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
+        when(mMockTelephonyManagerForSubId.getImei()).thenReturn(IMEI);
+        HttpResponse response =
+                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any())).thenReturn(response);
+
+        ImmutableList<String> appIds = ImmutableList.of(ServiceEntitlement.APP_VOWIFI,
+                ServiceEntitlement.APP_VOLTE);
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
+        mEapAkaApi.queryEntitlementStatus(appIds, TEST_URL, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
+                .contains(ServiceEntitlement.APP_VOWIFI);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
+                .contains(ServiceEntitlement.APP_VOLTE);
     }
 
     @Test
@@ -155,7 +187,9 @@ public class EapAkaApiTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         try {
-            mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request);
+            mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                    TEST_URL,
+                    request);
             fail();
         } catch (ServiceEntitlementException exception) {
             assertThat(exception.getErrorCode()).isEqualTo(
@@ -174,7 +208,9 @@ public class EapAkaApiTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         try {
-            mEapAkaApi.queryEntitlementStatus(ServiceEntitlement.APP_VOWIFI, TEST_URL, request);
+            mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                    TEST_URL,
+                    request);
             fail();
         } catch (ServiceEntitlementException exception) {
             assertThat(exception.getErrorCode()).isEqualTo(
