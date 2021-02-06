@@ -35,6 +35,7 @@ import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
@@ -135,14 +136,14 @@ public class EapAkaApi {
      */
     @Nullable
     public String queryEntitlementStatus(
-            String appId, String serverUrl, ServiceEntitlementRequest request)
+            ImmutableList<String> appIds, String serverUrl, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         // TODO(b/177562073): localize cookie management instead of VM global CookieHandler
         CookieHandler.setDefault(new CookieManager());
 
         HttpRequest httpRequest =
                 HttpRequest.builder()
-                        .setUrl(entitlementStatusUrl(appId, serverUrl, request))
+                        .setUrl(entitlementStatusUrl(appIds, serverUrl, request))
                         .setRequestMethod(RequestMethod.GET)
                         .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
                         .build();
@@ -194,8 +195,8 @@ public class EapAkaApi {
         return mHttpClient.request(request).body();
     }
 
-    private String entitlementStatusUrl(
-            String appId, String serverUrl, ServiceEntitlementRequest request) {
+    String entitlementStatusUrl(
+            ImmutableList<String> appIds, String serverUrl, ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager = mContext.getSystemService(
                 TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
         Uri.Builder urlBuilder = Uri.parse(serverUrl).buildUpon();
@@ -235,13 +236,16 @@ public class EapAkaApi {
             urlBuilder.appendQueryParameter(APP_NAME, request.appName());
         }
 
+        for (String appId : appIds) {
+            urlBuilder.appendQueryParameter(APP, appId);
+        }
+
         return urlBuilder
                 // Identity and Authentication parameters
                 .appendQueryParameter(TERMINAL_VENDOR, request.terminalVendor())
                 .appendQueryParameter(TERMINAL_MODEL, request.terminalModel())
                 .appendQueryParameter(TERMIAL_SW_VERSION, request.terminalSoftwareVersion())
                 // General Service parameters
-                .appendQueryParameter(APP, appId)
                 .appendQueryParameter(VERS, Integer.toString(request.configurationVersion()))
                 .appendQueryParameter(ENTITLEMENT_VERSION, request.entitlementVersion())
                 .toString();

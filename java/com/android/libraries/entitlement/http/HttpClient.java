@@ -20,6 +20,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_SEVER_NOT_CONNECTABLE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.MALFORMED_HTTP_RESPONSE;
 import static com.android.libraries.entitlement.http.HttpConstants.RequestMethod.POST;
+import static com.android.libraries.entitlement.utils.DebugUtils.logPii;
 
 import static com.google.common.base.Strings.nullToEmpty;
 
@@ -46,12 +47,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
 
-/**
- * Implement the HTTP request method according to TS.43 specification.
- */
+/** Implement the HTTP request method according to TS.43 specification. */
 public class HttpClient {
     private static final String TAG = "ServiceEntitlement";
-    private static final boolean DEBUG = false; // STOPSHIP if true
 
     private static final int SOCKET_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
     private static final int CONNECT_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
@@ -59,16 +57,15 @@ public class HttpClient {
     private HttpURLConnection mConnection;
 
     @WorkerThread
-    // TODO(b/177544547): Add debug messages
     public HttpResponse request(HttpRequest request) throws ServiceEntitlementException {
-        logd("HttpClient.request url: " + request.url());
+        logPii("HttpClient.request url: " + request.url());
         createConnection(request);
-        logd("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
+        logPii("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
         try {
             if (POST.equals(request.requestMethod())) {
                 try (OutputStream out = new DataOutputStream(mConnection.getOutputStream())) {
                     out.write(request.postData().toString().getBytes(UTF_8));
-                    logd("HttpClient.request post data: " + request.postData());
+                    logPii("HttpClient.request post data: " + request.postData());
                 }
             }
             mConnection.connect(); // This is to trigger SocketTimeoutException early
@@ -121,7 +118,7 @@ public class HttpClient {
         responseBuilder.setContentType(getContentType(connection));
         try {
             int responseCode = connection.getResponseCode();
-            logd("HttpClient.response headers: " + connection.getHeaderFields());
+            logPii("HttpClient.response headers: " + connection.getHeaderFields());
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw new ServiceEntitlementException(ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
                         connection.getHeaderField(HttpHeaders.RETRY_AFTER),
@@ -135,7 +132,7 @@ public class HttpClient {
         }
         try {
             String responseBody = readResponse(connection);
-            logd("HttpClient.response body: " + responseBody);
+            logPii("HttpClient.response body: " + responseBody);
             responseBuilder.setBody(responseBody);
         } catch (IOException e) {
             throw new ServiceEntitlementException(
@@ -165,11 +162,5 @@ public class HttpClient {
             return ContentType.JSON;
         }
         return ContentType.UNKNOWN;
-    }
-
-    private static void logd(String message) {
-        if (DEBUG) {
-            Log.d(TAG, message);
-        }
     }
 }
