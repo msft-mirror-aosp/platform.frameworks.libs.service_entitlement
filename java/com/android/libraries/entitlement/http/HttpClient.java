@@ -130,6 +130,7 @@ public class HttpClient {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS, "Read response code failed!", e);
         }
+        responseBuilder.setCookie(nullToEmpty(getCookie(connection)));
         try {
             String responseBody = readResponse(connection);
             logPii("HttpClient.response body: " + responseBody);
@@ -162,5 +163,9 @@ public class HttpClient {
             return ContentType.JSON;
         }
         return ContentType.UNKNOWN;
+    }
+
+    private static String getCookie(URLConnection connection) {
+        return connection.getHeaderField(HttpHeaders.SET_COOKIE);
     }
 }
