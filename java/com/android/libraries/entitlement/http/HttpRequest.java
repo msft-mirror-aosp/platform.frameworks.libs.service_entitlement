@@ -45,7 +45,6 @@ public abstract class HttpRequest {
      */
     @AutoValue.Builder
     public abstract static class Builder {
-
         private final Map<String, String> values = new ArrayMap<>();
         private final Map<String, String> properties = new ArrayMap<>();
 

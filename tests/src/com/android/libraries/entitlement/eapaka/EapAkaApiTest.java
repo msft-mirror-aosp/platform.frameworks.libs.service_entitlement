@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.fail;
@@ -34,13 +35,11 @@ import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
-import com.android.libraries.entitlement.http.HttpConstants;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
 import org.junit.Before;
@@ -61,6 +60,9 @@ public class EapAkaApiTest {
                     + "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
                     + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
                     + "q+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==\"}";
+    // com.google.common.net.HttpHeaders.COOKIE
+    private static final String HTTP_HEADER_COOKIE = "Cookie";
+    private static final String COOKIE_VALUE = "COOKIE=abcdefg";
     private static final String GSM_SECURITY_CONTEXT_REQUEST =
             "EFzmUpAo8crIBONxlqhyb4EQa4pFhq3pAACzVOE8Zggz6A==";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE =
@@ -111,22 +113,24 @@ public class EapAkaApiTest {
     }
 
     @Test
-    public void queryEntitlementStatus_hasAuthenticationToken_fastAuthN() throws Exception {
+    public void queryEntitlementStatus_hasAuthenticationToken() throws Exception {
         HttpResponse response =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
 
-        assertThat(mEapAkaApi.queryEntitlementStatus(
-                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request))
-                .isEqualTo(RESPONSE_XML);
+        String respopnse =
+                mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request);
+
+        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
     }
 
     @Test
-    public void queryEntitlementStatus_noAuthenticationToken_initialAuthN() throws Exception {
+    public void queryEntitlementStatus_noAuthenticationToken() throws Exception {
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
         when(mMockTelephonyManagerForSubId.getIccAuthentication(
@@ -134,24 +138,26 @@ public class EapAkaApiTest {
                 TelephonyManager.AUTHTYPE_EAP_AKA,
                 GSM_SECURITY_CONTEXT_REQUEST))
                 .thenReturn(GSM_SECURITY_CONTEXT_RESPONSE);
-
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
-                        .build();
+                        .setCookie(COOKIE_VALUE).build();
         HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any()))
                 .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
-
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        assertThat(
-                mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
-                        TEST_URL,
-                        request))
-                .isEqualTo(RESPONSE_XML);
+        String respopnse =
+                mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request);
+
+        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        // Verify that the 2nd request has cookie set by the 1st response
+        verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
     }
 
     @Test
@@ -183,7 +189,6 @@ public class EapAkaApiTest {
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
-
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         try {
@@ -204,7 +209,6 @@ public class EapAkaApiTest {
         HttpResponse eapChallengeResponse =
                 HttpResponse.builder().setContentType(ContentType.JSON).build();
         when(mMockHttpClient.request(any())).thenReturn(eapChallengeResponse);
-
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         try {
