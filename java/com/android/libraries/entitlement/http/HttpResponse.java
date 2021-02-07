@@ -37,11 +37,15 @@ public abstract class HttpResponse {
     public abstract String responseMessage();
 
     /**
+     * Content of the "Set-Cookie" response header.
+     */
+    public abstract String cookie();
+
+    /**
      * Builder of {@link HttpResponse}.
      */
     @AutoValue.Builder
     public abstract static class Builder {
-
         public abstract HttpResponse build();
 
         public abstract Builder setContentType(int contentType);
@@ -51,6 +55,11 @@ public abstract class HttpResponse {
         public abstract Builder setResponseCode(int responseCode);
 
         public abstract Builder setResponseMessage(String responseMessage);
+
+        /**
+         * Content of the "Set-Cookie" response header.
+         */
+        public abstract Builder setCookie(String cookie);
     }
 
     public static Builder builder() {
@@ -58,7 +67,8 @@ public abstract class HttpResponse {
                 .setContentType(ContentType.UNKNOWN)
                 .setBody("")
                 .setResponseCode(0)
-                .setResponseMessage("");
+                .setResponseMessage("")
+                .setCookie("");
     }
 
     @Override
@@ -73,7 +83,9 @@ public abstract class HttpResponse {
                 .append(responseCode())
                 .append(" responseMessage=")
                 .append(responseMessage())
-                .append("}")
+                .append(" cookie=(")
+                .append(cookie().length())
+                .append(" characters)}")
                 .toString();
     }
 }
