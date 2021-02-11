@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.libraries.entitlement.eapaka.utils;
+package com.android.libraries.entitlement.utils;
 
 import androidx.annotation.Nullable;
 
