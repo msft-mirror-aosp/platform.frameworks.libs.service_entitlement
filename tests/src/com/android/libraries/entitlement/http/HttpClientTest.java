@@ -18,9 +18,14 @@ package com.android.libraries.entitlement.http;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.testng.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.expectThrows;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import android.net.Network;
 
 import androidx.test.runner.AndroidJUnit4;
 
@@ -28,10 +33,12 @@ import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.testing.FakeURLStreamHandler;
+import com.android.libraries.entitlement.testing.FakeURLStreamHandler.FakeHttpsURLConnection;
 import com.android.libraries.entitlement.testing.FakeURLStreamHandler.FakeResponse;
 
 import com.google.common.collect.ImmutableMap;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,12 +56,20 @@ public class HttpClientTest {
 
     private static FakeURLStreamHandler sFakeURLStreamHandler;
 
-    private final HttpClient mHttpClient = new HttpClient();
+    private HttpClient mHttpClient;
 
     @BeforeClass
     public static void setupURLStreamHandlerFactory() {
         sFakeURLStreamHandler = new FakeURLStreamHandler();
         URL.setURLStreamHandlerFactory(sFakeURLStreamHandler);
+    }
+
+    @Before
+    public void setUp() {
+        // Reset sFakeURLStreamHandler
+        sFakeURLStreamHandler.stubResponse(ImmutableMap.of());
+
+        mHttpClient = new HttpClient();
     }
 
     @Test
@@ -66,13 +81,23 @@ public class HttpClientTest {
                         .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
                         .setContentType(CONTENT_TYPE_STRING_JSON)
                         .build();
-        HttpRequest request =
-                HttpRequest.builder().setUrl(TEST_URL).setRequestMethod(RequestMethod.GET).build();
         Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
         sFakeURLStreamHandler.stubResponse(response);
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.GET)
+                        .setTimeoutInSec(70)
+                        .build();
 
         HttpResponse httpResponse = mHttpClient.request(request);
 
+        // Verify that one HttpURLConnection was opened and its timeout is 70 seconds.
+        assertThat(sFakeURLStreamHandler.getConnections()).hasSize(1);
+        HttpURLConnection connection = sFakeURLStreamHandler.getConnections().get(0);
+        assertThat(connection.getConnectTimeout()).isEqualTo(70 * 1000);
+        assertThat(connection.getReadTimeout()).isEqualTo(70 * 1000);
+        // Verify the HttpResponse.
         assertThat(httpResponse.contentType()).isEqualTo(ContentType.JSON);
         assertThat(httpResponse.body()).isEqualTo(TEST_RESPONSE_BODY);
         assertThat(httpResponse.responseCode()).isEqualTo(HttpURLConnection.HTTP_OK);
@@ -93,15 +118,53 @@ public class HttpClientTest {
         Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
         sFakeURLStreamHandler.stubResponse(response);
 
-        try {
-            mHttpClient.request(request);
-            fail();
-        } catch (ServiceEntitlementException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo(
-                    ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS);
-            assertThat(exception.getHttpStatus()).isEqualTo(HttpURLConnection.HTTP_BAD_REQUEST);
-            assertThat(exception.getMessage()).isEqualTo("Invalid connection response");
-            assertThat(exception.getRetryAfter()).isEqualTo(RETRY_AFTER);
-        }
+        ServiceEntitlementException exception =
+                expectThrows(ServiceEntitlementException.class, () -> mHttpClient.request(request));
+
+         // Verify the ServiceEntitlementException.
+        assertThat(exception.getErrorCode()).isEqualTo(
+                ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS);
+        assertThat(exception.getHttpStatus()).isEqualTo(HttpURLConnection.HTTP_BAD_REQUEST);
+        assertThat(exception).hasMessageThat().contains("Invalid connection response");
+        assertThat(exception.getRetryAfter()).isEqualTo(RETRY_AFTER);
+        // Verify that one HttpURLConnection was opened and its timeout is 30 seconds.
+        assertThat(sFakeURLStreamHandler.getConnections()).hasSize(1);
+        HttpURLConnection connection = sFakeURLStreamHandler.getConnections().get(0);
+        assertThat(connection.getConnectTimeout()).isEqualTo(30 * 1000);
+        assertThat(connection.getReadTimeout()).isEqualTo(30 * 1000);
+    }
+
+    @Test
+    public void request_contentTypeXml_returnsXmlBody_useSpecificNetwork() throws Exception {
+        FakeResponse responseContent =
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_OK)
+                        .setResponseLocation(null)
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .build();
+        Network network = mock(Network.class);
+        URL url = new URL(TEST_URL);
+        FakeHttpsURLConnection connection = new FakeHttpsURLConnection(url, responseContent);
+        when(network.openConnection(url)).thenReturn(connection);
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.GET)
+                        .setNetwork(network)
+                        .setTimeoutInSec(70)
+                        .build();
+
+        HttpResponse httpResponse = mHttpClient.request(request);
+
+        // Verify that the HttpURLConnection associsted with Netwotk was opened
+        // and its timeout is 70 seconds.
+        verify(network).openConnection(url);
+        assertThat(connection.getConnectTimeout()).isEqualTo(70 * 1000);
+        assertThat(connection.getReadTimeout()).isEqualTo(70 * 1000);
+        // Verify the HttpResponse.
+        assertThat(httpResponse.contentType()).isEqualTo(ContentType.JSON);
+        assertThat(httpResponse.body()).isEqualTo(TEST_RESPONSE_BODY);
+        assertThat(httpResponse.responseCode()).isEqualTo(HttpURLConnection.HTTP_OK);
     }
 }
