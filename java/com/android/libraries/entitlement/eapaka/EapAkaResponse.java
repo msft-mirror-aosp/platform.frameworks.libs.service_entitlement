@@ -28,7 +28,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
-import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
+import com.android.libraries.entitlement.utils.BytesConverter;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
