@@ -24,7 +24,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
-import com.android.libraries.entitlement.eapaka.utils.BytesConverter;
+import com.android.libraries.entitlement.utils.BytesConverter;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
