@@ -253,7 +253,7 @@ public class EapAkaApi {
      * <p>{@code 0<IMSI>@nai.epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org}
      */
     @Nullable
-    static String getImsiEap(@Nullable String mccmnc, @Nullable String imsi) {
+    public static String getImsiEap(@Nullable String mccmnc, @Nullable String imsi) {
         if (mccmnc == null || mccmnc.length() < 5 || imsi == null) {
             return null;
         }
