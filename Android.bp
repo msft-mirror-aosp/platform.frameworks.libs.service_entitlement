@@ -58,6 +58,7 @@ java_library {
     ],
     srcs: [
         "java/com/android/libraries/entitlement/ServiceEntitlement.java",
+        "java/com/android/libraries/entitlement/EapAkaHelper.java",
     ],
     static_libs: [
         "guava",
