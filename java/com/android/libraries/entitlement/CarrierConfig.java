@@ -16,6 +16,10 @@
 
 package com.android.libraries.entitlement;
 
+import android.net.Network;
+
+import androidx.annotation.Nullable;
+
 import com.google.auto.value.AutoValue;
 
 /**
@@ -25,16 +29,24 @@ import com.google.auto.value.AutoValue;
  */
 @AutoValue
 public abstract class CarrierConfig {
-    /**
-     * Returns the carrier's entitlement server URL. If not set, will use {@code
-     * https://aes.mnc<MNC>.mcc<MCC>.pub.3gppnetwork.org} as defined in GSMA spec TS.43 section 2.1.
-     */
+    /** Default value of {@link #timeoutInSec} if not set. */
+    public static final int DEFAULT_TIMEOUT_IN_SEC = 30;
+
+    /** The carrier's entitlement server URL. See {@link Builder#setServerUrl}. */
     public abstract String serverUrl();
+
+    /** Client side timeout for HTTP connection. See {@link Builder#setTimeoutInSec}. */
+    public abstract int timeoutInSec();
+
+    /** The {@link Network} used for HTTP connection. See {@link Builder#setNetwork}. */
+    @Nullable
+    public abstract Network network();
 
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
-                .setServerUrl("");
+                .setServerUrl("")
+                .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC);
     }
 
     /** Builder. */
@@ -43,9 +55,24 @@ public abstract class CarrierConfig {
         public abstract CarrierConfig build();
 
         /**
-         * Set's the carrier's entitlement server URL. If not set, will use {@code
-         * https://aes.mnc<MNC>.mcc<MCC>.pub.3gppnetwork.org} as defined in GSMA spec TS.43 section 2.1.
+         * Sets the carrier's entitlement server URL. If not set, will use {@code
+         * https://aes.mnc<MNC>.mcc<MCC>.pub.3gppnetwork.org} as defined in GSMA TS.43 section 2.1.
          */
         public abstract Builder setServerUrl(String url);
+
+        /**
+         * Sets the client side timeout for HTTP connection. Default to
+         * {@link DEFAULT_TIMEOUT_IN_SEC}.
+         *
+         * <p>This timeout is used by both {@link java.net.URLConnection#setConnectTimeout} and
+         * {@link java.net.URLConnection#setReadTimeout}.
+         */
+        public abstract Builder setTimeoutInSec(int timeoutInSec);
+
+        /**
+         * Sets the {@link Network} used for HTTP connection. If not set, the device default network
+         * is used.
+         */
+        public abstract Builder setNetwork(Network network);
     }
 }
