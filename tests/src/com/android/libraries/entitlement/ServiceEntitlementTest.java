@@ -61,9 +61,8 @@ public class ServiceEntitlementTest {
     @Test
     public void queryEntitlementStatus_appVolte_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mMockEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOLTE),
-                TEST_URL,
-                request))
+        when(mMockEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOLTE), mCarrierConfig, request))
                 .thenReturn(QUERY_APP_VOLTE_RESULT);
 
         assertThat(
@@ -74,9 +73,8 @@ public class ServiceEntitlementTest {
     @Test
     public void queryEntitlementStatus_appVowifi_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        when(mMockEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
-                TEST_URL,
-                request))
+        when(mMockEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), mCarrierConfig, request))
                 .thenReturn(QUERY_APP_VOWIFI_RESULT);
 
         assertThat(
