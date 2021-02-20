@@ -12,7 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+java_defaults {
+    name: "service-entitlement-defaults",
+    libs: [
+        "androidx.annotation_annotation",
+        "auto_value_annotations",
+    ],
+    plugins: ["auto_value_plugin"],
+    sdk_version: "system_current",
+    min_sdk_version: "29",
+}
+
 java_library {
+    defaults: ["service-entitlement-defaults"],
     name: "service-entitlement-impl",
     visibility: [
         "//visibility:private"
@@ -22,40 +35,30 @@ java_library {
         "java/com/android/libraries/entitlement/http/*.java",
         "java/com/android/libraries/entitlement/utils/*.java",
     ],
-    libs: [
-        "androidx.annotation_annotation",
-        "auto_value_annotations",
-    ],
     static_libs: [
         "guava",
         "service-entitlement-data",
     ],
-    plugins: ["auto_value_plugin"],
-    sdk_version: "system_current",
-    min_sdk_version: "29",
 }
 
 java_library {
+    defaults: ["service-entitlement-defaults"],
     name: "service-entitlement",
     static_libs: [
         "service-entitlement-api",
         "service-entitlement-data",
     ],
-    sdk_version: "system_current",
-    min_sdk_version: "29",
 }
 
 java_library {
+    defaults: ["service-entitlement-defaults"],
     name: "service-entitlement-api",
     visibility: [
         "//visibility:private",
     ],
     srcs: [
         "java/com/android/libraries/entitlement/ServiceEntitlement.java",
-    ],
-    libs: [
-        "androidx.annotation_annotation",
-        "auto_value_annotations",
+        "java/com/android/libraries/entitlement/EapAkaHelper.java",
     ],
     static_libs: [
         "guava",
@@ -63,12 +66,10 @@ java_library {
         "service-entitlement-impl",
 
     ],
-    plugins: ["auto_value_plugin"],
-    sdk_version: "system_current",
-    min_sdk_version: "29",
 }
 
 java_library {
+    defaults: ["service-entitlement-defaults"],
     name: "service-entitlement-data",
     visibility: [
         "//visibility:private",
@@ -79,10 +80,4 @@ java_library {
         "java/com/android/libraries/entitlement/ServiceEntitlementException.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
     ],
-    libs: [
-        "auto_value_annotations",
-    ],
-    plugins: ["auto_value_plugin"],
-    sdk_version: "current",
-    min_sdk_version: "29",
 }

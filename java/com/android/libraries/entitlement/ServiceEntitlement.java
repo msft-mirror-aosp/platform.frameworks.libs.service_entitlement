@@ -121,8 +121,7 @@ public class ServiceEntitlement {
     @Nullable
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return eapAkaApi.queryEntitlementStatus(ImmutableList.of(appId), carrierConfig.serverUrl(),
-                request);
+        return eapAkaApi.queryEntitlementStatus(ImmutableList.of(appId), carrierConfig, request);
     }
 
     /**
@@ -137,7 +136,7 @@ public class ServiceEntitlement {
     public String queryEntitlementStatus(ImmutableList<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return eapAkaApi.queryEntitlementStatus(appIds, carrierConfig.serverUrl(), request);
+        return eapAkaApi.queryEntitlementStatus(appIds, carrierConfig, request);
     }
 
     /**
