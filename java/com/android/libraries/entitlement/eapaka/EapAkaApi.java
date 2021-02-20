@@ -27,6 +27,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.android.libraries.entitlement.CarrierConfig;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
@@ -132,14 +133,17 @@ public class EapAkaApi {
      * @throws ServiceEntitlementException when getting an unexpected http response.
      */
     @Nullable
-    public String queryEntitlementStatus(
-            ImmutableList<String> appIds, String serverUrl, ServiceEntitlementRequest request)
+    public String queryEntitlementStatus(ImmutableList<String> appIds,
+                                         CarrierConfig carrierConfig,
+                                         ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         HttpRequest httpRequest =
                 HttpRequest.builder()
-                        .setUrl(entitlementStatusUrl(appIds, serverUrl, request))
+                        .setUrl(entitlementStatusUrl(appIds, carrierConfig.serverUrl(), request))
                         .setRequestMethod(RequestMethod.GET)
                         .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
+                        .setTimeoutInSec(carrierConfig.timeoutInSec())
+                        .setNetwork(carrierConfig.network())
                         .build();
         HttpResponse response = mHttpClient.request(httpRequest);
         if (request.authenticationToken().isEmpty()) {
@@ -160,7 +164,7 @@ public class EapAkaApi {
             }
             return challengeResponse(
                     new EapAkaResponse(responseData).getEapAkaChallengeResponse(mContext,
-                            mSimSubscriptionId), serverUrl, response.cookie());
+                            mSimSubscriptionId), carrierConfig, response.cookie());
         } else {
             // Result of fast AuthN
             Log.d(TAG, "fast AuthN");
@@ -168,7 +172,9 @@ public class EapAkaApi {
         }
     }
 
-    private String challengeResponse(String akaChallengeResponse, String serverUrl, String cookie)
+    private String challengeResponse(String akaChallengeResponse,
+                                     CarrierConfig carrierConfig,
+                                     String cookie)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
         JSONObject postData = new JSONObject();
@@ -180,12 +186,14 @@ public class EapAkaApi {
         }
         HttpRequest request =
                 HttpRequest.builder()
-                        .setUrl(serverUrl)
+                        .setUrl(carrierConfig.serverUrl())
                         .setRequestMethod(RequestMethod.POST)
                         .setPostData(postData)
                         .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
                         .addRequestProperty(HttpHeaders.CONTENT_TYPE, REQUEST_CONTENT_TYPE_JSON)
                         .addRequestProperty(HttpHeaders.COOKIE, cookie)
+                        .setTimeoutInSec(carrierConfig.timeoutInSec())
+                        .setNetwork(carrierConfig.network())
                         .build();
         return mHttpClient.request(request).body();
     }
@@ -253,7 +261,7 @@ public class EapAkaApi {
      * <p>{@code 0<IMSI>@nai.epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org}
      */
     @Nullable
-    static String getImsiEap(@Nullable String mccmnc, @Nullable String imsi) {
+    public static String getImsiEap(@Nullable String mccmnc, @Nullable String imsi) {
         if (mccmnc == null || mccmnc.length() < 5 || imsi == null) {
             return null;
         }

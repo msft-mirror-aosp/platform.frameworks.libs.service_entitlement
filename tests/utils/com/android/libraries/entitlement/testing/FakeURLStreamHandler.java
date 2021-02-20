@@ -17,6 +17,7 @@
 package com.android.libraries.entitlement.testing;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.ByteArrayInputStream;
@@ -37,12 +38,12 @@ import javax.annotation.Nullable;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Fakes {@linkplain java.net.URLStreamHandler} which is used to set URLStreamHandlerFactory for URL
- * as {@linkplain java.net.URL} is a final class and cannot be mocked using mockito.
+ * A {@link URLStreamHandlerFactory} to return faked {@link URLConnection}, as {@link URL} is a
+ * final class and {@link URL#openConnection} cannot be mocked using mockito.
  */
 public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamHandlerFactory {
-
-    private Map<String, FakeResponse> mResponseMap;
+    private Map<String, FakeResponse> mResponses = ImmutableMap.of();
+    private List<FakeHttpsURLConnection> mConnections = new ArrayList<>();
 
     private static final String ACCESS_TOKEN = "8dGozfI6%2FEaSsE7LaTfJKwdy";
     private static final String LOCATION = "Location";
@@ -51,7 +52,9 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
 
     @Override
     public URLConnection openConnection(URL u) {
-        FakeHttpsURLConnection connection = new FakeHttpsURLConnection(u);
+        FakeHttpsURLConnection connection =
+                new FakeHttpsURLConnection(u, mResponses.get(u.toString()));
+        mConnections.add(connection);
         return connection;
     }
 
@@ -60,50 +63,48 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
         return this;
     }
 
+    /**
+     * Prepares canned responses. Must be called before using this handler to open any {@link
+     * URLConnection}.
+     */
     public FakeURLStreamHandler stubResponse(Map<String, FakeResponse> response) {
-        this.mResponseMap = response;
+        mResponses = response;
+        mConnections = new ArrayList<>();
         return this;
     }
 
-    /**
-     * Fakes {@linkplain java.net.HttpURLConnection} to avoid making any network connection.
-     */
-    public class FakeHttpsURLConnection extends HttpsURLConnection {
+    /** Returns {@link URLConnection}s opened by this handler since last {@link #stubResponse}. */
+    public ImmutableList<FakeHttpsURLConnection> getConnections() {
+        return ImmutableList.copyOf(mConnections);
+    }
 
-        public ByteArrayOutputStream mByteArrayOutputStream;
+    /** Faked {@link HttpsURLConnection} to avoid making any network connection. */
+    public static class FakeHttpsURLConnection extends HttpsURLConnection {
+        private final FakeResponse mResponse;
 
-        private final String mUrlString;
-
-        protected FakeHttpsURLConnection(URL url) {
+        public FakeHttpsURLConnection(URL url, FakeResponse response) {
             super(url);
-            this.mUrlString = url.toString();
+            mResponse = response;
         }
 
         @Override
         public InputStream getInputStream() throws IOException {
-            InputStream inputStream = new ByteArrayInputStream(
-                    mResponseMap.get(mUrlString).responseBody());
-            if (inputStream == null) {
-                throw new IOException();
-            }
-            return inputStream;
+            return new ByteArrayInputStream(mResponse.responseBody());
         }
 
         @Override
         public OutputStream getOutputStream() {
-            mByteArrayOutputStream = new ByteArrayOutputStream();
-            return mByteArrayOutputStream;
+            return new ByteArrayOutputStream();
         }
 
         @Override
         public int getResponseCode() {
-            return mResponseMap.get(mUrlString).responseCode();
+            return mResponse.responseCode();
         }
 
         @Override
         public Map<String, List<String>> getHeaderFields() {
-            List<String> locationList = new ArrayList<>();
-            locationList.add("access_token=" + ACCESS_TOKEN);
+            List<String> locationList = ImmutableList.of("access_token=" + ACCESS_TOKEN);
             return ImmutableMap.of("Location", locationList);
         }
 
@@ -111,11 +112,11 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
         public String getHeaderField(String name) {
             switch (name) {
                 case LOCATION:
-                    return "Location: " + mResponseMap.get(mUrlString).responseLocation();
+                    return "Location: " + mResponse.responseLocation();
                 case CONTENT_TYPE:
-                    return mResponseMap.get(mUrlString).contentType();
+                    return mResponse.contentType();
                 case RETRY_AFTER:
-                    return mResponseMap.get(mUrlString).retryAfter();
+                    return mResponse.retryAfter();
                 default:
                     return null;
             }
