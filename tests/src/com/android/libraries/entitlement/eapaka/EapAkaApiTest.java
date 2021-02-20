@@ -23,14 +23,16 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.expectThrows;
 
 import android.content.Context;
+import android.net.Network;
 import android.telephony.TelephonyManager;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.libraries.entitlement.CarrierConfig;
 import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
@@ -95,6 +97,7 @@ public class EapAkaApiTest {
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
     @Mock private HttpClient mMockHttpClient;
+    @Mock private Network mMockNetwork;
     @Mock private TelephonyManager mMockTelephonyManager;
     @Mock private TelephonyManager mMockTelephonyManagerForSubId;
     @Captor private ArgumentCaptor<HttpRequest> mHttpRequestCaptor;
@@ -110,6 +113,13 @@ public class EapAkaApiTest {
                 .thenReturn(mMockTelephonyManager);
         when(mMockTelephonyManager.createForSubscriptionId(SUB_ID))
                 .thenReturn(mMockTelephonyManagerForSubId);
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
+        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                GSM_SECURITY_CONTEXT_REQUEST))
+                .thenReturn(GSM_SECURITY_CONTEXT_RESPONSE);
     }
 
     @Test
@@ -118,26 +128,24 @@ public class EapAkaApiTest {
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(response);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder().setServerUrl(TEST_URL).setNetwork(mMockNetwork).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
 
         String respopnse =
                 mEapAkaApi.queryEntitlementStatus(
-                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request);
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
         assertThat(respopnse).isEqualTo(RESPONSE_XML);
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getValue().timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getValue().network()).isEqualTo(mMockNetwork);
     }
 
     @Test
     public void queryEntitlementStatus_noAuthenticationToken() throws Exception {
-        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
-        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
-        when(mMockTelephonyManagerForSubId.getIccAuthentication(
-                TelephonyManager.APPTYPE_USIM,
-                TelephonyManager.AUTHTYPE_EAP_AKA,
-                GSM_SECURITY_CONTEXT_REQUEST))
-                .thenReturn(GSM_SECURITY_CONTEXT_RESPONSE);
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
@@ -147,80 +155,91 @@ public class EapAkaApiTest {
                         .build();
         when(mMockHttpClient.request(any()))
                 .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         String respopnse =
                 mEapAkaApi.queryEntitlementStatus(
-                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), TEST_URL, request);
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
         assertThat(respopnse).isEqualTo(RESPONSE_XML);
         // Verify that the 2nd request has cookie set by the 1st response
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
                 .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
     }
 
     @Test
-    public void queryEntitlementStatus_multipleAppIds_verifyEntitlementUrl() throws Exception {
-        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
-        when(mMockTelephonyManagerForSubId.getImei()).thenReturn(IMEI);
+    public void queryEntitlementStatus_hasAuthenticationToken_multipleAppIds() throws Exception {
         HttpResponse response =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-
         ImmutableList<String> appIds = ImmutableList.of(ServiceEntitlement.APP_VOWIFI,
                 ServiceEntitlement.APP_VOLTE);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder().setServerUrl(TEST_URL).setTimeoutInSec(70).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
-        mEapAkaApi.queryEntitlementStatus(appIds, TEST_URL, request);
+
+        mEapAkaApi.queryEntitlementStatus(appIds, carrierConfig, request);
 
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
-                .contains(ServiceEntitlement.APP_VOWIFI);
-        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
-                .contains(ServiceEntitlement.APP_VOLTE);
+        assertThat(mHttpRequestCaptor.getValue().url()).contains(ServiceEntitlement.APP_VOWIFI);
+        assertThat(mHttpRequestCaptor.getValue().url()).contains(ServiceEntitlement.APP_VOLTE);
+        assertThat(mHttpRequestCaptor.getValue().timeoutInSec()).isEqualTo(70);
+        assertThat(mHttpRequestCaptor.getValue().network()).isNull();
     }
 
     @Test
-    public void queryEntitlementStatus_noAuthenticationTokenContentTypeNotJson_throwException()
+    public void queryEntitlementStatus_noAuthenticationToken_contentTypeNotJson_throwException()
             throws Exception {
         HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        try {
-            mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
-                    TEST_URL,
-                    request);
-            fail();
-        } catch (ServiceEntitlementException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo(
-                    ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
-            assertThat(exception.getMessage()).isEqualTo("Unexpected http ContentType");
-        }
+        ServiceEntitlementException exception = expectThrows(
+                ServiceEntitlementException.class,
+                () ->  mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        carrierConfig,
+                        request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(
+                ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+        assertThat(exception.getMessage()).isEqualTo("Unexpected http ContentType");
     }
 
     @Test
-    public void queryEntitlementStatus_noAuthenticationTokenEmptyResponseBody_throwException()
+    public void queryEntitlementStatus_noAuthenticationToken_emptyResponseBody_throwException()
             throws Exception {
         HttpResponse eapChallengeResponse =
                 HttpResponse.builder().setContentType(ContentType.JSON).build();
         when(mMockHttpClient.request(any())).thenReturn(eapChallengeResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        try {
-            mEapAkaApi.queryEntitlementStatus(ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
-                    TEST_URL,
-                    request);
-            fail();
-        } catch (ServiceEntitlementException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo(
-                    ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
-            assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
-            assertThat(exception.getCause()).isInstanceOf(JSONException.class);
-        }
+        ServiceEntitlementException exception = expectThrows(
+                ServiceEntitlementException.class,
+                () ->  mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        carrierConfig,
+                        request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(
+                ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+        assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
+        assertThat(exception.getCause()).isInstanceOf(JSONException.class);
     }
 }
