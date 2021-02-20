@@ -27,6 +27,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.net.Network;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -50,9 +51,6 @@ import java.util.Map;
 /** Implement the HTTP request method according to TS.43 specification. */
 public class HttpClient {
     private static final String TAG = "ServiceEntitlement";
-
-    private static final int SOCKET_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
-    private static final int CONNECT_TIMEOUT_VALUE = (int) SECONDS.toMillis(30);
 
     private HttpURLConnection mConnection;
 
@@ -85,7 +83,12 @@ public class HttpClient {
     private void createConnection(HttpRequest request) throws ServiceEntitlementException {
         try {
             URL url = new URL(request.url());
-            mConnection = (HttpURLConnection) url.openConnection();
+            Network network = request.network();
+            if (network == null) {
+                mConnection = (HttpURLConnection) url.openConnection();
+            } else {
+                mConnection = (HttpURLConnection) network.openConnection(url);
+            }
 
             // add HTTP headers
             for (Map.Entry<String, String> entry : request.requestProperties().entrySet()) {
@@ -94,8 +97,8 @@ public class HttpClient {
 
             // set parameters
             mConnection.setRequestMethod(request.requestMethod());
-            mConnection.setConnectTimeout(CONNECT_TIMEOUT_VALUE);
-            mConnection.setReadTimeout(SOCKET_TIMEOUT_VALUE);
+            mConnection.setConnectTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
+            mConnection.setReadTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
             if (POST.equals(request.requestMethod())) {
                 mConnection.setDoOutput(true);
             }
