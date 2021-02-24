@@ -16,7 +16,8 @@
 
 package com.android.libraries.entitlement.eapaka;
 
-import static com.android.libraries.entitlement.ServiceEntitlementException.MALFORMED_HTTP_RESPONSE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
 
 import android.content.Context;
 import android.net.Uri;
@@ -110,6 +111,9 @@ public class EapAkaApi {
     private static final String REQUEST_CONTENT_TYPE_JSON =
             "application/vnd.gsma.eap-relay.v1.0+json";
 
+    // In case of EAP-AKA synchronization failure, we try to recover for at most two times.
+    private static final int FOLLOW_SYNC_FAILURE_MAX_COUNT = 2;
+
     private final Context mContext;
     private final int mSimSubscriptionId;
     private final HttpClient mHttpClient;
@@ -146,43 +150,84 @@ public class EapAkaApi {
                         .setNetwork(carrierConfig.network())
                         .build();
         HttpResponse response = mHttpClient.request(httpRequest);
-        if (request.authenticationToken().isEmpty()) {
-            // EapAka token challenge for initial AuthN
-            if (response.contentType() != ContentType.JSON) {
-                throw new ServiceEntitlementException(
-                        MALFORMED_HTTP_RESPONSE, "Unexpected http ContentType");
-            }
-
-            Log.d(TAG, "initial AuthN");
-            String responseData = "";
-            try {
-                responseData = new JSONObject(response.body()).getString(
-                        EAP_CHALLENGE_RESPONSE);
-            } catch (JSONException jsonException) {
-                throw new ServiceEntitlementException(
-                        MALFORMED_HTTP_RESPONSE, "Failed to parse json object", jsonException);
-            }
-            return challengeResponse(
-                    new EapAkaResponse(responseData).getEapAkaChallengeResponse(mContext,
-                            mSimSubscriptionId), carrierConfig, response.cookie());
-        } else {
-            // Result of fast AuthN
-            Log.d(TAG, "fast AuthN");
+        if (!request.authenticationToken().isEmpty()) {
+            // Fast Re-Authentication flow with pre-existing auth token
+            Log.d(TAG, "Fast Re-Authentication");
             return response.body();
+        }
+        // Full Authentication flow
+        Log.d(TAG, "Full Authentication");
+        return respondToEapAkaChallenge(carrierConfig, response, FOLLOW_SYNC_FAILURE_MAX_COUNT)
+                .body();
+    }
+
+    /**
+     * Sends a follow-up HTTP request to the HTTP {@code response} using the same cookie, and
+     * returns the follow-up HTTP response.
+     *
+     * <p>The {@code response} should contain a EAP-AKA challenge from server, and the
+     * follow-up request could contain:
+     *
+     * <ul>
+     *   <li>The EAP-AKA response message, and the follow-up response should contain the
+     *       service entitlement configuration; or,
+     *   <li>The EAP-AKA synchronization failure message, and the follow-up response should
+     *       contain the new EAP-AKA challenge. Then this method calls itself to follow-up
+     *       the new challenge and return a new response, if {@code followSyncFailureCount}
+     *       is greater than zero. When this method call itself {@code followSyncFailureCount} is
+     *       reduced by one to prevent infinite loop (unlikely in practice, but just in case).
+     * </ul>
+     */
+    private HttpResponse respondToEapAkaChallenge(
+            CarrierConfig carrierConfig, HttpResponse response, int followSyncFailureCount)
+            throws ServiceEntitlementException {
+        if (response.contentType() != ContentType.JSON) {
+            throw new ServiceEntitlementException(
+                    ERROR_MALFORMED_HTTP_RESPONSE, "Unexpected http ContentType");
+        }
+        String eapAkaChallenge;
+        try {
+            eapAkaChallenge = new JSONObject(response.body()).getString(EAP_CHALLENGE_RESPONSE);
+        } catch (JSONException jsonException) {
+            throw new ServiceEntitlementException(
+                    ERROR_MALFORMED_HTTP_RESPONSE, "Failed to parse json object", jsonException);
+        }
+        EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(eapAkaChallenge);
+        EapAkaResponse eapAkaResponse =
+                EapAkaResponse.respondToEapAkaChallenge(mContext, mSimSubscriptionId, challenge);
+        // This could be a successful authentication, or synchronization failure.
+        if (eapAkaResponse.response() != null) { // successful authentication
+            return challengeResponse(eapAkaResponse.response(), carrierConfig, response.cookie());
+        } else if (eapAkaResponse.synchronizationFailureResponse() != null) {
+            Log.d(TAG, "synchronization failure");
+            HttpResponse newChallenge =
+                    challengeResponse(
+                            eapAkaResponse.synchronizationFailureResponse(),
+                            carrierConfig,
+                            response.cookie());
+            if (followSyncFailureCount > 0) {
+                return respondToEapAkaChallenge(
+                        carrierConfig, newChallenge, followSyncFailureCount - 1);
+            } else {
+                throw new ServiceEntitlementException(
+                    ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE,
+                    "Unable to recover from EAP-AKA synchroinization failure");
+            }
+        } else { // not possible
+            throw new AssertionError("EapAkaResponse invalid.");
         }
     }
 
-    private String challengeResponse(String akaChallengeResponse,
-                                     CarrierConfig carrierConfig,
-                                     String cookie)
+    private HttpResponse challengeResponse(
+            String eapAkaChallengeResponse, CarrierConfig carrierConfig, String cookie)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
         JSONObject postData = new JSONObject();
         try {
-            postData.put(EAP_CHALLENGE_RESPONSE, akaChallengeResponse);
+            postData.put(EAP_CHALLENGE_RESPONSE, eapAkaChallengeResponse);
         } catch (JSONException jsonException) {
             throw new ServiceEntitlementException(
-                    MALFORMED_HTTP_RESPONSE, "Failed to put post data", jsonException);
+                    ERROR_MALFORMED_HTTP_RESPONSE, "Failed to put post data", jsonException);
         }
         HttpRequest request =
                 HttpRequest.builder()
@@ -195,7 +240,7 @@ public class EapAkaApi {
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
                         .build();
-        return mHttpClient.request(request).body();
+        return mHttpClient.request(request);
     }
 
     String entitlementStatusUrl(

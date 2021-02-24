@@ -17,8 +17,8 @@
 package com.android.libraries.entitlement.http;
 
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS;
-import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_SEVER_NOT_CONNECTABLE;
-import static com.android.libraries.entitlement.ServiceEntitlementException.MALFORMED_HTTP_RESPONSE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_SERVER_NOT_CONNECTABLE;
 import static com.android.libraries.entitlement.http.HttpConstants.RequestMethod.POST;
 import static com.android.libraries.entitlement.utils.DebugUtils.logPii;
 
@@ -107,7 +107,7 @@ public class HttpClient {
             }
         } catch (IOException ioe) {
             throw new ServiceEntitlementException(
-                    ERROR_SEVER_NOT_CONNECTABLE, "Configure connection failed!", ioe);
+                    ERROR_SERVER_NOT_CONNECTABLE, "Configure connection failed!", ioe);
         }
     }
 
@@ -143,7 +143,7 @@ public class HttpClient {
             responseBuilder.setBody(responseBody);
         } catch (IOException e) {
             throw new ServiceEntitlementException(
-            MALFORMED_HTTP_RESPONSE, "Read response body/message failed!", e);
+                    ERROR_MALFORMED_HTTP_RESPONSE, "Read response body/message failed!", e);
         }
         return responseBuilder.build();
     }

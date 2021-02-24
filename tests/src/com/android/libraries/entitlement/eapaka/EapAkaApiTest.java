@@ -16,6 +16,11 @@
 
 package com.android.libraries.entitlement.eapaka;
 
+import static com.android.libraries.entitlement.eapaka.EapAkaChallengeTest.EAP_AKA_CHALLENGE_REQUEST;
+import static com.android.libraries.entitlement.eapaka.EapAkaChallengeTest.EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED;
+import static com.android.libraries.entitlement.eapaka.EapAkaResponseTest.EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS;
+import static com.android.libraries.entitlement.eapaka.EapAkaResponseTest.EAP_AKA_SECURITY_CONTEXT_RESPONSE_SYNC_FAILURE;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
@@ -58,17 +63,10 @@ import org.mockito.junit.MockitoRule;
 public class EapAkaApiTest {
     private static final String TEST_URL = "https://test.url/test-path";
     private static final String EAP_AKA_CHALLENGE =
-            "{\"eap-relay-packet\":\""
-                    + "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
-                    + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
-                    + "q+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==\"}";
+            "{\"eap-relay-packet\":\"" + EAP_AKA_CHALLENGE_REQUEST + "\"}";
     // com.google.common.net.HttpHeaders.COOKIE
     private static final String HTTP_HEADER_COOKIE = "Cookie";
     private static final String COOKIE_VALUE = "COOKIE=abcdefg";
-    private static final String GSM_SECURITY_CONTEXT_REQUEST =
-            "EFzmUpAo8crIBONxlqhyb4EQa4pFhq3pAACzVOE8Zggz6A==";
-    private static final String GSM_SECURITY_CONTEXT_RESPONSE =
-            "2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=";
     private static final String RESPONSE_XML =
             "<wap-provisioningdoc version=\"1.1\">\n"
                     + "    <characteristic type=\"TOKEN\">\n"
@@ -115,11 +113,6 @@ public class EapAkaApiTest {
                 .thenReturn(mMockTelephonyManagerForSubId);
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
-        when(mMockTelephonyManagerForSubId.getIccAuthentication(
-                TelephonyManager.APPTYPE_USIM,
-                TelephonyManager.AUTHTYPE_EAP_AKA,
-                GSM_SECURITY_CONTEXT_REQUEST))
-                .thenReturn(GSM_SECURITY_CONTEXT_RESPONSE);
     }
 
     @Test
@@ -146,6 +139,11 @@ public class EapAkaApiTest {
 
     @Test
     public void queryEntitlementStatus_noAuthenticationToken() throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
@@ -216,7 +214,7 @@ public class EapAkaApiTest {
                         request));
 
         assertThat(exception.getErrorCode()).isEqualTo(
-                ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+                ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
         assertThat(exception.getMessage()).isEqualTo("Unexpected http ContentType");
     }
 
@@ -238,8 +236,44 @@ public class EapAkaApiTest {
                         request));
 
         assertThat(exception.getErrorCode()).isEqualTo(
-                ServiceEntitlementException.MALFORMED_HTTP_RESPONSE);
+                ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
         assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
         assertThat(exception.getCause()).isInstanceOf(JSONException.class);
+    }
+
+    @Test
+    public void queryEntitlementStatus_noAuthenticationToken_handleEapAkaSyncFailure()
+            throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SYNC_FAILURE)
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        HttpResponse eapChallengeResponse =
+                HttpResponse
+                        .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
+                        .setCookie(COOKIE_VALUE).build();
+        HttpResponse xmlResponse =
+                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(eapChallengeResponse)
+                .thenReturn(eapChallengeResponse)
+                .thenReturn(xmlResponse);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        String response =
+                mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        assertThat(response).isEqualTo(RESPONSE_XML);
+        // Verify that the 2nd/3rd request has cookie set by the 1st/2nd response
+        verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+        assertThat(mHttpRequestCaptor.getAllValues().get(2).requestProperties())
+                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
     }
 }
