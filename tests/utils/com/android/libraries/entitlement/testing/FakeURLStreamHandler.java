@@ -81,6 +81,7 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
     /** Faked {@link HttpsURLConnection} to avoid making any network connection. */
     public static class FakeHttpsURLConnection extends HttpsURLConnection {
         private final FakeResponse mResponse;
+        private final ByteArrayOutputStream mOutputStream = new ByteArrayOutputStream();
 
         public FakeHttpsURLConnection(URL url, FakeResponse response) {
             super(url);
@@ -94,7 +95,11 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
 
         @Override
         public OutputStream getOutputStream() {
-            return new ByteArrayOutputStream();
+            return mOutputStream;
+        }
+
+        public byte[] getBytesWrittenToOutputStream() {
+            return mOutputStream.toByteArray();
         }
 
         @Override

@@ -62,8 +62,11 @@ public class HttpClient {
         try {
             if (POST.equals(request.requestMethod())) {
                 try (OutputStream out = new DataOutputStream(mConnection.getOutputStream())) {
-                    out.write(request.postData().toString().getBytes(UTF_8));
-                    logPii("HttpClient.request post data: " + request.postData());
+                    // Android JSON toString() escapes forward-slash with back-slash. It's not
+                    // supported by some vendor and not mandatory in JSON spec. Undo escaping.
+                    String postData = request.postData().toString().replace("\\/", "/");
+                    out.write(postData.getBytes(UTF_8));
+                    logPii("HttpClient.request post data: " + postData);
                 }
             }
             mConnection.connect(); // This is to trigger SocketTimeoutException early
