@@ -38,6 +38,7 @@ import com.android.libraries.entitlement.testing.FakeURLStreamHandler.FakeRespon
 
 import com.google.common.collect.ImmutableMap;
 
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -166,5 +167,29 @@ public class HttpClientTest {
         assertThat(httpResponse.contentType()).isEqualTo(ContentType.JSON);
         assertThat(httpResponse.body()).isEqualTo(TEST_RESPONSE_BODY);
         assertThat(httpResponse.responseCode()).isEqualTo(HttpURLConnection.HTTP_OK);
+    }
+
+    @Test
+    public void request_postJson_doNotEscapeForwardSlash() throws Exception {
+        String postData = "{\"key\":\"base64/base64+b\"}";
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.POST)
+                        .setPostData(new JSONObject(postData))
+                        .build();
+        FakeResponse responseContent =
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_OK)
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .build();
+        Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
+        sFakeURLStreamHandler.stubResponse(response);
+
+        HttpResponse httpResponse = mHttpClient.request(request);
+
+        FakeHttpsURLConnection connection = sFakeURLStreamHandler.getConnections().get(0);
+        assertThat(connection.getBytesWrittenToOutputStream()).isEqualTo(postData.getBytes(UTF_8));
     }
 }
