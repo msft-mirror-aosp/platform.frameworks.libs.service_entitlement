@@ -22,6 +22,7 @@ import android.telephony.TelephonyManager;
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.eapaka.EapAkaChallenge;
 import com.android.libraries.entitlement.eapaka.EapAkaResponse;
 
 /**
@@ -76,8 +77,11 @@ public class EapAkaHelper {
     @Nullable
     public String getEapAkaChallengeResponse(String challenge) {
         try {
-            return new EapAkaResponse(challenge)
-                    .getEapAkaChallengeResponse(mContext, mSimSubscriptionId);
+            EapAkaChallenge eapAkaChallenge = EapAkaChallenge.parseEapAkaChallenge(challenge);
+            EapAkaResponse response =
+                    EapAkaResponse.respondToEapAkaChallenge(
+                            mContext, mSimSubscriptionId, eapAkaChallenge);
+            return response.response(); // Would be null on synchrinization failure
         } catch (ServiceEntitlementException e) {
             return null;
         }
