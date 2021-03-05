@@ -16,20 +16,24 @@
 
 package com.android.libraries.entitlement.eapaka;
 
+import static com.android.libraries.entitlement.eapaka.EapAkaChallengeTest.EAP_AKA_CHALLENGE_REQUEST;
+import static com.android.libraries.entitlement.eapaka.EapAkaChallengeTest.EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED;
+
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.fail;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
-
-import com.android.libraries.entitlement.ServiceEntitlementException;
 
 import com.google.common.io.BaseEncoding;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,250 +43,93 @@ import org.mockito.junit.MockitoRule;
 
 @RunWith(AndroidJUnit4.class)
 public class EapAkaResponseTest {
-    // EAP-AKA Challenge Request : AQIAfBcBAAABBQAAXOZSkCjxysgE43GWqHJvgQIFAABrikWGrekAALNU4TxmCDPo
-    //                             CwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImkq+vcCKWIZBdvuYIJAAAPRUFp
-    //                             7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==
-    // Base64 decoded : 0102007C17010000010500005CE6529028F1CAC804E37196A8726F81020500006B8A4586ADE
-    //                  90000B354E13C660833E80B05000094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF
-    //                  8489A4ABEBDC08A58864176FB9820900000F454169ECA585A3E4E1AFBF108FD844901DB3034
-    //                  8BA29A90E0ECB9F042F8125
-    // HEADER
-    // Code : 0x01 (Request)
-    // Identifier : 0x02
-    // Length : 0x007C = 124
-    // Type : 0x17=23 (EAP-AKA)
-    // SubType : 0x01 = 1 (AKA Challenge)
-    // Reserver : 0x0000
-    //
-    // Type-DATA
-    //
-    // Attribute Type : 0x01 (AT_RAND)
-    // Length : 0x05 = 5's 4 bytes = 20 bytes
-    // Reserved : 0x0000
-    // RAND value : 0x5CE6529028F1CAC804E37196A8726F81
-    //
-    // Attribute Type : 0x02 (AT_AUTN)
-    // Length : 0x05 = 5's 4 bytes = 20 bytes
-    // Reserved : 0x0000
-    // AUTN value : 0x6B8A4586ADE90000B354E13C660833E8
-    //
-    // Attribute Type : 0x0B (AT_MAC)
-    // Length : 0x05 = 20 bytes
-    // Reserved : 0x0000
-    // MAC value :  0x94F49EA5DE01896ACD3D1419720D10D5
-    //
-    // Attribute Type : 0x81 (AT_IV)
-    // Length : 0x05
-    // Reserved : 0x0000
-    // IV value : 0xEF3DDF8489A4ABEBDC08A58864176FB9
-    //
-    // Attribute Type : 0x82 (AT_ENCR_DATA)
-    // Length : 0x09 = 36 bytes
-    // Reserved : 0x0000
-    // ENCR value : 0x0F454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F8125
-    private static final String EAP_AKA_CHALLENGE_REQUEST_EXPECTED =
-            "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
-                    + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
-                    + "g+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITHOUT_RAND =
-            "0102006817010000020500006"
-                    + "B8A4586ADE90000B354E13C660833E80B05000094F49EA5DE01896ACD3D1419720D10D58105"
-                    + "0000EF3DDF8489A4ABEBDC08A58864176FB9820900000F454169ECA585A3E4E1AFBF108FD84"
-                    + "4901DB30348BA29A90E0ECB9F042F8125";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITHOUT_AUTN =
-            "0102006817010000010500005"
-                    + "CE6529028F1CAC804E37196A8726F810B05000094F49EA5DE01896ACD3D1419720D10D5810"
-                    + "50000EF3DDF8489A4ABEBDC08A58864176FB9820900000F454169ECA585A3E4E1AFBF108FD"
-                    + "844901DB30348BA29A90E0ECB9F042F8125";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITHOUT_RAND_AUTN =
-            "01020054170100000B05"
-                    + "000094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF8489A4ABEBDC08A58864176F"
-                    + "B9820900000F454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F8125";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_CODE_RESPONSE =
-            "02020054170100000B0"
-                    + "5000094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF8489A4ABEBDC08A58864176F"
-                    + "B9820900000F454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F8125";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_WRONG_LENGTH =
-            "01020099170100000B05"
-                    + "000094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF8489A4ABEBDC08A58864176FB"
-                    + "9820900000F454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F8125";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_EAP_TYPE_99 =
-            "01020054990100000B050"
-                    + "00094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF8489A4ABEBDC08A58864176FB9"
-                    + "F454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F8125820900000";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_SUBTYPE_99 =
-            "01020054179900000B0500"
-                    + "0094F49EA5DE01896ACD3D1419720D10D581050000EF3DDF8489A4ABEBDC08A58864176FB98"
-                    + "454169ECA585A3E4E1AFBF108FD844901DB30348BA29A90E0ECB9F042F812520900000F";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_LENGTH_OVER_DATA =
-            "0102001C17010000010600005CE6529028F1CAC804E37196A8726F81";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_RAND_LENGTH_16 =
-            "0102001817010000010400005CE6529028F1CAC804E37196";
-    private static final String EAP_AKA_CHALLENGE_REQUEST_WITH_AUTN_LENGTH_16 =
-            "0102001817010000020400006B8A4586ADE90000B354E13C";
+    // EAP_AKA_CHALLENGE_REQUEST:
+    // Identifier :
+    //   0x02
+    // Derived 3G security context for SIM authentication request :
+    //   EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED
 
-    // For calculate AKA challenge response
-    private static final String RES = "C79F02A59FC9A38F";
-    private static final String AUT = "4A2137E6E292679DD4C3FD8AB67F13DA";
-    private static final String EXPECTED_AKA_CHALLENGE_RESPONSE =
+    // 3G security context for SIM authentication response
+    //
+    // Success:
+    // Hex : DB08C79F02A59FC9A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17
+    //       CEE91190885DE920D9E1B8FBB
+    // Base64 encoded : 2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=
+    //
+    // Synchronization failure:
+    // Hex : DC0E33D58D39619C213367E376115315
+    // Base64 encoded : 3A4z1Y05YZwhM2fjdhFTFQ==
+    public static final String EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS =
+            "2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=";
+    public static final String EAP_AKA_SECURITY_CONTEXT_RESPONSE_SYNC_FAILURE =
+            "3A4z1Y05YZwhM2fjdhFTFQ==";
+
+    // EAP-AKA challenge response
+    // Identifier : 0x02, same as in EAP_AKA_CHALLENGE_REQUEST
+    // Success
+    private static final String EAP_AKA_CHALLENGE_RESPONSE =
             "020200281701000003030040C79F02A59FC9A38F0B0500001C141BDDDE8BEF2E502FB6793808DE7C";
+    // Synchronization failure
+    private static final String EAP_AKA_CHALLENGE_SYNC_FAILURE =
+            "0202001817040000040433D58D39619C213367E376115315";
+
     private static final int SUB_ID = 0;
+    private static final String IMSI = "234107813240779";
+    private static final String MCCMNC = "23410";
 
-    @Rule
-    public final MockitoRule rule = MockitoJUnit.rule();
-    @Mock
-    Context mMockContext;
+    @Rule public final MockitoRule rule = MockitoJUnit.rule();
+    @Mock private TelephonyManager mMockTelephonyManager;
+    @Mock private TelephonyManager mMockTelephonyManagerForSubId;
+    private Context mContext;
 
-    @Test
-    public void parseEapAkaChallengeRequest_withoutRand() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITHOUT_RAND);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
+    @Before
+    public void setUp() {
+        mContext = spy(ApplicationProvider.getApplicationContext());
+        when(mContext.getSystemService(TelephonyManager.class))
+                .thenReturn(mMockTelephonyManager);
+        when(mMockTelephonyManager.createForSubscriptionId(SUB_ID))
+                .thenReturn(mMockTelephonyManagerForSubId);
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
+        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
     }
 
     @Test
-    public void parseEapAkaChallengeRequest_withoutAutn() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITHOUT_AUTN);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
+    public void generateEapAkaChallengeResponse_authSuccess() throws Exception {
+        EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(EAP_AKA_CHALLENGE_REQUEST);
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        String expectedResponse =
+                Base64.encodeToString(
+                        convertHexStringToBytes(EAP_AKA_CHALLENGE_RESPONSE), Base64.NO_WRAP);
 
-        EapAkaResponse message = new EapAkaResponse(encodedData);
+        EapAkaResponse challengeResponse =
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
 
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
+        assertThat(challengeResponse.response()).isEqualTo(expectedResponse);
     }
 
     @Test
-    public void parseEapAkaChallengeRequest_withoutRandAndAutn() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITHOUT_RAND_AUTN);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
+    public void generateEapAkaChallengeResponse_syncFailure() throws Exception {
+        EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(EAP_AKA_CHALLENGE_REQUEST);
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SYNC_FAILURE);
+        String expectedResponse =
+                Base64.encodeToString(
+                        convertHexStringToBytes(EAP_AKA_CHALLENGE_SYNC_FAILURE), Base64.NO_WRAP);
 
-        EapAkaResponse message = new EapAkaResponse(encodedData);
+        EapAkaResponse challengeResponse =
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
 
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
+        assertThat(challengeResponse.synchronizationFailureResponse()).isEqualTo(expectedResponse);
     }
 
-    @Test
-    public void parseEapAkaChallengeRequest_withCodeResponse() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_CODE_RESPONSE);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withWrongLength() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_WRONG_LENGTH);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withEapType99() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_EAP_TYPE_99);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withSubType99() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_SUBTYPE_99);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withLengthOverData() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_LENGTH_OVER_DATA);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withRandLength16() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_RAND_LENGTH_16);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_withAutnLength16() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_AUTN_LENGTH_16);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        assertThrows(
-                ServiceEntitlementException.class,
-                () -> message.getEapAkaChallengeResponse(mMockContext, SUB_ID));
-    }
-
-    @Test
-    public void parseEapAkaChallengeRequest_notValid_throwException() {
-        byte[] data = convertHexStringToBytes(EAP_AKA_CHALLENGE_REQUEST_WITH_WRONG_LENGTH);
-        String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
-
-        EapAkaResponse message = new EapAkaResponse(encodedData);
-
-        try {
-            message.getEapAkaChallengeResponse(mMockContext, SUB_ID);
-            fail();
-        } catch (ServiceEntitlementException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo(
-                    ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE);
-            assertThat(exception.getMessage()).isEqualTo("EAP-AKA Challenge message not valid!");
-        }
-    }
-
-    @Test
-    public void generateEapAkaChallengeResponse_pass() {
-        EapAkaResponse message = new EapAkaResponse(EAP_AKA_CHALLENGE_REQUEST_EXPECTED);
-
-        byte[] challengeResponse =
-                message.generateEapAkaChallengeResponse(
-                        convertHexStringToBytes(RES), convertHexStringToBytes(AUT));
-
-        assertThat(challengeResponse)
-                .isEqualTo(convertHexStringToBytes(EXPECTED_AKA_CHALLENGE_RESPONSE));
-    }
-
-    private byte[] convertHexStringToBytes(String input) {
+    private static byte[] convertHexStringToBytes(String input) {
         return BaseEncoding.base16().decode(input);
     }
 }
