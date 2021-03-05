@@ -24,33 +24,43 @@ public class ServiceEntitlementException extends Exception {
      * Unknown error.
      */
     public static final int ERROR_UNKNOWN = 0;
+
+    // Android telephony related failures
     /**
      * Android telephony is unable to provide info like IMSI, e.g. when modem crashed.
      */
-    public static final int ERROR_PHONE_NOT_AVAILABLE = 1;
+    public static final int ERROR_PHONE_NOT_AVAILABLE = 10;
+
+    // EAP-AKA authentication related falures
     /**
      * SIM not returning a response to the EAP-AKA challenge, e.g. when the challenge is invalid.
      * This can happen only when an embedded EAP-AKA challange is conducted, as per GMSA spec TS.43
      * section 2.6.1.
      */
-    public static final int ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE = 2;
+    public static final int ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE = 20;
+    /**
+     * EAP-AKA synchronization failure that cannot be recoverd even after the "Sequence number
+     * synchronization" procedure as defined in RFC 4187.
+     */
+    public static final int ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE = 21;
+
+    // HTTP related failures
     /**
      * Cannot connect to the entitlment server, e.g. due to weak mobile network and Wi-Fi
      * connection.
      */
-    public static final int ERROR_SEVER_NOT_CONNECTABLE = 3;
+    public static final int ERROR_SERVER_NOT_CONNECTABLE = 30;
     /**
      * HTTP response received with a status code indicating failure, e.g. 4xx and 5xx. Use {@link
      * #getHttpStatus} to get the status code and {@link #getMessage} the error message in the
      * response body.
      */
-    public static final int ERROR_HTTP_STATUS_NOT_SUCCESS = 4;
-
+    public static final int ERROR_HTTP_STATUS_NOT_SUCCESS = 31;
     /**
      * HTTP response received with a malformed format. e.g. the response with content-type JSON but
      * failing JSON parser.
      */
-    public static final int MALFORMED_HTTP_RESPONSE = 5;
+    public static final int ERROR_MALFORMED_HTTP_RESPONSE = 32;
 
     /**
      * Default HTTP status if not been specified.
