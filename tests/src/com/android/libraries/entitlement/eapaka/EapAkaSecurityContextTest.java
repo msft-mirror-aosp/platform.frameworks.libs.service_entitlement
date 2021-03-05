@@ -19,7 +19,7 @@ package com.android.libraries.entitlement.eapaka;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.expectThrows;
 
 import android.util.Base64;
 
@@ -51,10 +51,8 @@ public class EapAkaSecurityContextTest {
     private static final String EXPECTED_IK = "06C4880743EF17AAA99EE7B17CEE9119";
     private static final String EXPECTED_CK = "F330A26F2C1CCC1ED9B45FD48D06C516";
     private static final String EXPECTED_RES = "C79F02A59FC9A38F";
-    private static final String GSM_SECURITY_CONTEXT_RESPONSE_TAG_DC =
-            "DC08C79F02A59FC9A38F10F330A"
-                    + "26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE91190885DE920D9E1B"
-                    + "8FBB";
+    // Invalid data
+    private static final String GSM_SECURITY_CONTEXT_RESPONSE_TAG_DE = "DE08C79F02A59FC9A38F";
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_INVALID_RES_LENGTH =
             "DC40C79F02A59FC"
                     + "9A38F10F330A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE911908"
@@ -74,13 +72,19 @@ public class EapAkaSecurityContextTest {
     private static final String GSM_SECURITY_CONTEXT_RESPONSE_NO_KC_KEY =
             "DB08C79F02A59FC9A38F10F3"
                     + "30A26F2C1CCC1ED9B45FD48D06C5161006C4880743EF17AAA99EE7B17CEE9119";
+    // Base64 data : 3A4z1Y05YZwhM2fjdhFTFQ==
+    // RAW DATA : DC0E33D58D39619C213367E376115315
+    // TAG : DC
+    // AUTS length : 0E
+    // AUTS : 33D58D39619C213367E376115315
+    private static final String RESPONSE_SYNC_FAILURE = "3A4z1Y05YZwhM2fjdhFTFQ==";
+    private static final String EXPECTED_AUTS = "33D58D39619C213367E376115315";
 
     @Test
     public void parseResponseData_validResponse_pass() throws Exception {
         EapAkaSecurityContext securityContext =
                 EapAkaSecurityContext.from(GSM_SECURITY_CONTEXT_RESPONSE);
 
-        assertThat(securityContext.isValid()).isTrue();
         assertThat(securityContext.getIk()).isEqualTo(convertHexStringToBytes(EXPECTED_IK));
         assertThat(securityContext.getCk()).isEqualTo(convertHexStringToBytes(EXPECTED_CK));
         assertThat(securityContext.getRes()).isEqualTo(convertHexStringToBytes(EXPECTED_RES));
@@ -88,18 +92,18 @@ public class EapAkaSecurityContextTest {
 
     @Test
     public void parseResponseData_invalidWithWrongTag_throwsException() {
-        byte[] data = convertHexStringToBytes(GSM_SECURITY_CONTEXT_RESPONSE_TAG_DC);
+        byte[] data = convertHexStringToBytes(GSM_SECURITY_CONTEXT_RESPONSE_TAG_DE);
         String encodedData = Base64.encodeToString(data, Base64.NO_WRAP).trim();
 
-        try {
-            EapAkaSecurityContext.from(encodedData);
-            fail();
-        } catch (ServiceEntitlementException exception) {
-            assertThat(exception.getErrorCode()).isEqualTo(
-                    ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE);
-            assertThat(exception.getMessage()).isEqualTo(
-                    "Invalid SIM EAP-AKA authentication response!");
-        }
+        ServiceEntitlementException exception =
+                expectThrows(
+                        ServiceEntitlementException.class,
+                        () -> EapAkaSecurityContext.from(encodedData));
+
+        assertThat(exception.getErrorCode())
+                .isEqualTo(ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE);
+        assertThat(exception.getMessage())
+                .isEqualTo("Invalid SIM EAP-AKA authentication response!");
     }
 
     @Test
@@ -137,7 +141,6 @@ public class EapAkaSecurityContextTest {
 
         EapAkaSecurityContext securityContext = EapAkaSecurityContext.from(encodedData);
 
-        assertThat(securityContext.isValid()).isTrue();
         assertThat(securityContext.getIk()).isEqualTo(convertHexStringToBytes(EXPECTED_IK));
         assertThat(securityContext.getCk()).isEqualTo(convertHexStringToBytes(EXPECTED_CK));
         assertThat(securityContext.getRes()).isEqualTo(convertHexStringToBytes(EXPECTED_RES));
@@ -150,10 +153,19 @@ public class EapAkaSecurityContextTest {
 
         EapAkaSecurityContext securityContext = EapAkaSecurityContext.from(encodedData);
 
-        assertThat(securityContext.isValid()).isTrue();
         assertThat(securityContext.getIk()).isEqualTo(convertHexStringToBytes(EXPECTED_IK));
         assertThat(securityContext.getCk()).isEqualTo(convertHexStringToBytes(EXPECTED_CK));
         assertThat(securityContext.getRes()).isEqualTo(convertHexStringToBytes(EXPECTED_RES));
+    }
+
+    @Test
+    public void parseResponseData_syncFailure() throws Exception {
+        EapAkaSecurityContext securityContext = EapAkaSecurityContext.from(RESPONSE_SYNC_FAILURE);
+
+        assertThat(securityContext.getAuts()).isEqualTo(convertHexStringToBytes(EXPECTED_AUTS));
+        assertThat(securityContext.getRes()).isNull();
+        assertThat(securityContext.getCk()).isNull();
+        assertThat(securityContext.getIk()).isNull();
     }
 
     private byte[] convertHexStringToBytes(String input) {

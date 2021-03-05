@@ -18,9 +18,12 @@ package com.android.libraries.entitlement.eapaka;
 
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE;
 
-import android.text.TextUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
 
@@ -33,18 +36,20 @@ class EapAkaSecurityContext {
     private static final String TAG = "ServiceEntitlement";
 
     private static final byte RESPONSE_TAG_SUCCESS = (byte) 0xDB;
+    private static final byte RESPONSE_TAG_SYNC_FAILURE = (byte) 0xDC;
 
     private boolean mValid;
 
-    /* Authentication result from SIM */
+    // User response, populated on successful authentication
     private byte[] mRes;
-    /* Cipher Key */
+    // Cipher Key, populated on successful authentication
     private byte[] mCk;
-    /* Integrity Key */
+    // Integrity Key, populated on successful authentication
     private byte[] mIk;
+    // AUTS, populated on synchronization failure
+    private byte[] mAuts;
 
-    private EapAkaSecurityContext() {
-    }
+    private EapAkaSecurityContext() {}
 
     /**
      * Provide {@link EapAkaSecurityContext} from response data.
@@ -65,55 +70,58 @@ class EapAkaSecurityContext {
      * Parses SIM EAP-AKA Authentication responded data.
      */
     private void parseResponseData(String response) {
-        if (TextUtils.isEmpty(response)) {
-            Log.d(TAG, "parseResponseData but input empty data!");
+        byte[] data = null;
+
+        try {
+            data = Base64.decode(response.getBytes(UTF_8), Base64.DEFAULT);
+            Log.d(TAG, "Decoded response data length = " + data.length + " bytes");
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Response is not a valid base-64 content");
+            return;
+        }
+        if (data.length == 0) {
             return;
         }
 
-        try {
-            byte[] data = Base64.decode(response, Base64.DEFAULT);
-            Log.d(TAG, "decoded data length=" + data.length);
-
-            if (data.length <= 2) {
-                return;
-            }
-
-            int index = 0;
-
-            // check tag
-            if (data[index] != RESPONSE_TAG_SUCCESS) {
-                Log.d(TAG, "Not successful data, tag=" + data[index]);
-                return;
-            }
-
+        // Check tag, the initial byte
+        int index = 0;
+        if (data[index] == RESPONSE_TAG_SUCCESS) {
             // Parse RES
             index++; // move to RES length byte
             mRes = parseTag(index, data);
             if (mRes == null) {
-                Log.d(TAG, "Invalid data! can't parse RES!");
+                Log.d(TAG, "Invalid data: can't parse RES!");
                 return;
             }
             // Parse CK
             index += mRes.length + 1; // move to CK length byte
             mCk = parseTag(index, data);
             if (mCk == null) {
-                Log.d(TAG, "Invalid data! can't parse CK!");
+                Log.d(TAG, "Invalid data: can't parse CK!");
                 return;
             }
             // Parse IK
             index += mCk.length + 1; // move to IK length byte
             mIk = parseTag(index, data);
             if (mIk == null) {
-                Log.d(TAG, "Invalid data! can't parse IK!");
+                Log.d(TAG, "Invalid data: can't parse IK!");
                 return;
             }
-
             mValid = true;
-        } catch (IllegalArgumentException illegalArgumentException) {
-            Log.e(TAG, "Invalid base-64 content");
+        } else if (data[index] == RESPONSE_TAG_SYNC_FAILURE) {
+            // Parse AUTS
+            index++; // move to AUTS length byte
+            mAuts = parseTag(index, data);
+            if (mAuts == null) {
+                Log.d(TAG, "Invalid data: can't parse AUTS!");
+                return;
+            }
+            mValid = true;
+        } else {
+            Log.d(TAG, "Not a valid tag, tag=" + data[index]);
+            return;
         }
     }
-
 
     private byte[] parseTag(int index, byte[] src) {
         // index at the length byte
@@ -133,31 +141,39 @@ class EapAkaSecurityContext {
         return dest;
     }
 
-    /**
-     * Returns {@code valid}.
-     */
-    boolean isValid() {
+    private boolean isValid() {
         return mValid;
     }
 
     /**
-     * Returns {@code res}.
+     * Returns RES, or {@code null} for a synchronization failure.
      */
+    @Nullable
     public byte[] getRes() {
         return mRes;
     }
 
     /**
-     * Returns {@code ck}.
+     * Returns CK, or {@code null} for a synchronization failure.
      */
+    @Nullable
     public byte[] getCk() {
         return mCk;
     }
 
     /**
-     * Returns {@code ik}.
+     * Returns IK, or {@code null} for a synchronization failure.
      */
+    @Nullable
     public byte[] getIk() {
         return mIk;
+    }
+
+    /**
+     * Returns AUTS, or {@code null} for a successful authentication.
+     */
+    @Nullable
+    public byte[] getAuts() {
+        return mAuts;
     }
 }
