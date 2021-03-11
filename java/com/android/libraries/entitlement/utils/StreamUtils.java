@@ -16,25 +16,26 @@
 
 package com.android.libraries.entitlement.utils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import androidx.annotation.Nullable;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
-/**
- * Utility methods about InputStream.
- */
+/** Utility methods about {@link InputStream}. */
 public final class StreamUtils {
     private static final int BUFFER_SIZE = 1024;
 
-    private StreamUtils() {
-    }
+    private StreamUtils() {}
 
-    /**
-     * Reads an {@link InputStream} into a string.
-     */
-    public static String inputStreamToString(InputStream inputStream) throws IOException {
+    /** Reads an {@link InputStream} into a UTF-8 string. */
+    public static String inputStreamToString(@Nullable InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            throw new IOException("inputStream is null");
+        }
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
              ByteArrayOutputStream result = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[BUFFER_SIZE];
@@ -42,14 +43,12 @@ public final class StreamUtils {
             while ((length = inputStream.read(buffer)) != -1) {
                 result.write(buffer, 0, length);
             }
-            return result.toString(StandardCharsets.UTF_8.name());
+            return result.toString(UTF_8.name());
         }
     }
 
-    /**
-     * Reads an {@link InputStream} into a string. Returns an empty string if any error.
-     */
-    public static String inputStreamToStringSafe(InputStream inputStream) {
+    /** Reads an {@link InputStream} into a UTF-8 string. Returns an empty string if any error. */
+    public static String inputStreamToStringSafe(@Nullable InputStream inputStream) {
         try {
             return inputStreamToString(inputStream);
         } catch (IOException e) {
