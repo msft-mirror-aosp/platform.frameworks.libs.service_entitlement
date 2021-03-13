@@ -152,7 +152,6 @@ public class ServiceEntitlement {
     public String performEsimOdsa(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
-        // TODO(b/177544547): Add implementation
-        return null;
+        return eapAkaApi.performEsimOdsaOperation(appId, carrierConfig, request, operation);
     }
 }
