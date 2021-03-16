@@ -51,7 +51,6 @@ public class ServiceEntitlement {
      */
     public static final String APP_ODSA_PRIMARY = "ap2009";
 
-    private final Context context;
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
 
@@ -68,14 +67,12 @@ public class ServiceEntitlement {
      *                          for how to get the subscroption ID.
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
-        this.context = context;
         this.carrierConfig = carrierConfig;
         this.eapAkaApi = new EapAkaApi(context, simSubscriptionId);
     }
 
     @VisibleForTesting
-    ServiceEntitlement(Context context, CarrierConfig carrierConfig, EapAkaApi eapAkaApi) {
-        this.context = context;
+    ServiceEntitlement(CarrierConfig carrierConfig, EapAkaApi eapAkaApi) {
         this.carrierConfig = carrierConfig;
         this.eapAkaApi = eapAkaApi;
     }
