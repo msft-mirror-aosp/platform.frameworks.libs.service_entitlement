@@ -20,8 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.when;
 
-import android.content.Context;
-
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
@@ -45,8 +43,6 @@ public class ServiceEntitlementTest {
     @Rule
     public final MockitoRule rule = MockitoJUnit.rule();
     @Mock
-    Context mMockContext;
-    @Mock
     EapAkaApi mMockEapAkaApi;
 
     private ServiceEntitlement mServiceEntitlement;
@@ -55,7 +51,7 @@ public class ServiceEntitlementTest {
     @Before
     public void setUp() {
         mCarrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        mServiceEntitlement = new ServiceEntitlement(mMockContext, mCarrierConfig, mMockEapAkaApi);
+        mServiceEntitlement = new ServiceEntitlement(mCarrierConfig, mMockEapAkaApi);
     }
 
     @Test
