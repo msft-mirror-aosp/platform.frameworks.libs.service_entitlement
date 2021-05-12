@@ -44,7 +44,7 @@ public abstract class EsimOdsaOperation {
     /**
      * Indicates that operation_type is not set.
      */
-    static final int OPERATION_TYPE_NOT_SET = -1;
+    public static final int OPERATION_TYPE_NOT_SET = -1;
     /**
      * To activate a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
@@ -138,13 +138,12 @@ public abstract class EsimOdsaOperation {
     public abstract String companionTerminalIccid();
 
     /**
-     * Returns the ICCID of the companion device. Used by HTTP parameter
-     * "companion_terminal_iccid".
+     * Returns the EID of the companion device. Used by HTTP parameter "companion_terminal_eid".
      */
     public abstract String companionTerminalEid();
 
     /**
-     * Returns the ICCID of the primary device eSIM. Used by HTTP parameter "terminal_eid".
+     * Returns the ICCID of the primary device eSIM. Used by HTTP parameter "terminal_iccid".
      */
     public abstract String terminalIccid();
 
@@ -175,7 +174,22 @@ public abstract class EsimOdsaOperation {
      * Returns a new {@link Builder} object.
      */
     public static Builder builder() {
-        return new AutoValue_EsimOdsaOperation.Builder().setOperationType(OPERATION_TYPE_NOT_SET);
+        return new AutoValue_EsimOdsaOperation.Builder()
+                .setOperation("")
+                .setOperationType(OPERATION_TYPE_NOT_SET)
+                .setCompanionTerminalId("")
+                .setCompanionTerminalVendor("")
+                .setCompanionTerminalModel("")
+                .setCompanionTerminalSoftwareVersion("")
+                .setCompanionTerminalFriendlyName("")
+                .setCompanionTerminalService("")
+                .setCompanionTerminalIccid("")
+                .setCompanionTerminalEid("")
+                .setTerminalIccid("")
+                .setTerminalEid("")
+                .setTargetTerminalId("")
+                .setTargetTerminalIccid("")
+                .setTargetTerminalEid("");
     }
 
     /**
@@ -283,39 +297,40 @@ public abstract class EsimOdsaOperation {
         public abstract Builder setCompanionTerminalEid(String value);
 
         /**
-         * Sets the ICCID of the primary device eSIM. Used by HTTP parameter "terminal_eid" if set.
+         * Sets the ICCID of the primary device eSIM in case of primary SIM not present. Used by
+         * HTTP parameter "terminal_eid" if set.
          *
          * <p>Used by primary device ODSA operation.
          */
         public abstract Builder setTerminalIccid(String value);
 
         /**
-         * Sets the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
-         * "terminal_eid" if set.
+         * Sets the eUICC identifier (EID) of the primary device eSIM in case of primary SIM not
+         * present. Used by HTTP parameter "terminal_eid" if set.
          *
          * <p>Used by primary device ODSA operation.
          */
         public abstract Builder setTerminalEid(String value);
 
         /**
-         * Sets the unique identifier of the primary device eSIM, like the IMEI associated with the
-         * eSIM. Used by HTTP parameter "target_terminal_id" if set.
+         * Sets the unique identifier of the primary device eSIM in case of multiple SIM, like the
+         * IMEI associated with the eSIM. Used by HTTP parameter "target_terminal_id" if set.
          *
          * <p>Used by primary device ODSA operation.
          */
         public abstract Builder setTargetTerminalId(String value);
 
         /**
-         * Sets the ICCID primary device eSIM. Used by HTTP parameter "target_terminal_iccid" if
-         * set.
+         * Sets the ICCID primary device eSIM in case of multiple SIM. Used by HTTP parameter
+         * "target_terminal_iccid" if set.
          *
          * <p>Used by primary device ODSA operation.
          */
         public abstract Builder setTargetTerminalIccid(String value);
 
         /**
-         * Sets the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
-         * "target_terminal_eid" if set.
+         * Sets the eUICC identifier (EID) of the primary device eSIM in case of multiple SIM. Used
+         * by HTTP parameter "target_terminal_eid" if set.
          *
          * <p>Used by primary device ODSA operation.
          */
