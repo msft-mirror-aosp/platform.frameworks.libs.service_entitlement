@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement;
 
+import static com.android.libraries.entitlement.eapaka.EapAkaResponse.respondToEapAkaChallenge;
+
 import android.content.Context;
 import android.telephony.TelephonyManager;
 
@@ -23,7 +25,6 @@ import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 import com.android.libraries.entitlement.eapaka.EapAkaChallenge;
-import com.android.libraries.entitlement.eapaka.EapAkaResponse;
 
 /**
  * Some utility methods used in EAP-AKA authentication in service entitlement, and could be
@@ -73,17 +74,69 @@ public class EapAkaHelper {
      *
      * <p>Both the challange and response are base-64 encoded EAP-AKA message: refer to
      * RFC 4187 Section 8.1 Message Format/RFC 3748 Session 4 EAP Packet Format.
+     *
+     * @deprecated use {@link getEapAkaResponse(String)} which additionally supports
+     * Synchronization-Failure case.
      */
+    @Deprecated
     @Nullable
     public String getEapAkaChallengeResponse(String challenge) {
+        EapAkaResponse eapAkaResponse = getEapAkaResponse(challenge);
+        return (eapAkaResponse == null)
+                ? null
+                : eapAkaResponse.response(); // Would be null on synchrinization failure
+    }
+
+    /**
+     * Returns the {@link EapAkaResponse} to the given EAP-AKA {@code challenge}, or
+     * {@code null} if failed.
+     *
+     * <p>Both the challange and response are base-64 encoded EAP-AKA message: refer to
+     * RFC 4187 Section 8.1 Message Format/RFC 3748 Session 4 EAP Packet Format.
+     */
+    @Nullable
+    public EapAkaResponse getEapAkaResponse(String challenge) {
         try {
             EapAkaChallenge eapAkaChallenge = EapAkaChallenge.parseEapAkaChallenge(challenge);
-            EapAkaResponse response =
-                    EapAkaResponse.respondToEapAkaChallenge(
-                            mContext, mSimSubscriptionId, eapAkaChallenge);
-            return response.response(); // Would be null on synchrinization failure
+            com.android.libraries.entitlement.eapaka.EapAkaResponse eapAkaResponse =
+                    respondToEapAkaChallenge(mContext, mSimSubscriptionId, eapAkaChallenge);
+            return new EapAkaResponse(
+                    eapAkaResponse.response(), eapAkaResponse.synchronizationFailureResponse());
         } catch (ServiceEntitlementException e) {
             return null;
+        }
+    }
+
+    // Similar to .eapaka.EapAkaResponse but with simplfied API surface for external usage.
+    /** EAP-AKA response */
+    public static class EapAkaResponse {
+        // RFC 4187 Section 9.4 EAP-Response/AKA-Challenge
+        @Nullable private final String mResponse;
+        // RFC 4187 Section 9.6 EAP-Response/AKA-Synchronization-Failure
+        @Nullable private final String mSynchronizationFailureResponse;
+
+        private EapAkaResponse(
+                @Nullable String response, @Nullable String synchronizationFailureResponse) {
+            mResponse = response;
+            mSynchronizationFailureResponse = synchronizationFailureResponse;
+        }
+
+        /**
+         * Returns EAP-Response/AKA-Challenge, if authentication success.
+         * Otherwise {@code null}.
+         */
+        @Nullable
+        public String response() {
+            return mResponse;
+        }
+
+        /**
+         * Returns EAP-Response/AKA-Synchronization-Failure, if synchronization failure detected.
+         * Otherwise {@code null}.
+         */
+        @Nullable
+        public String synchronizationFailureResponse() {
+            return mSynchronizationFailureResponse;
         }
     }
 }

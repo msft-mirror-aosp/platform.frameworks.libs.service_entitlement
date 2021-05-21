@@ -123,4 +123,61 @@ public class EapAkaHelperTest {
 
         assertThat(response).isNull();
     }
+
+    @Test
+    public void getEapAkaResponse() {
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("234107813240779");
+        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("23410");
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                    TelephonyManager.APPTYPE_USIM, TelephonyManager.AUTHTYPE_EAP_AKA,
+                    "EFzmUpAo8crIBONxlqhyb4EQa4pFhq3pAACzVOE8Zggz6A=="))
+                .thenReturn(
+                        "2wjHnwKln8mjjxDzMKJvLBzMHtm0X9SNBsUWEAbEiAdD7xeqqZ7nsXzukRkIhd6SDZ4bj7s=");
+        String challenge = "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
+                + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
+                + "q+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==";
+        String expectedResponse = "AgIAKBcBAAADAwBAx58CpZ/Jo48LBQAAHBQb3d6L7y5QL7Z5OAjefA==";
+
+        EapAkaHelper.EapAkaResponse response = mEapAkaHelper.getEapAkaResponse(challenge);
+
+        assertThat(response.response()).isEqualTo(expectedResponse);
+        assertThat(response.synchronizationFailureResponse()).isNull();
+    }
+
+    @Test
+    public void getEapAkaResponse_synchronizationFailure() {
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("234107813240779");
+        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("23410");
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                    TelephonyManager.APPTYPE_USIM, TelephonyManager.AUTHTYPE_EAP_AKA,
+                    "EFzmUpAo8crIBONxlqhyb4EQa4pFhq3pAACzVOE8Zggz6A=="))
+                .thenReturn(
+                        "3A4z1Y05YZwhM2fjdhFTFQ==");
+        String challenge = "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
+                + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
+                + "q+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==";
+        String expectedResponse = "AgIAGBcEAAAEBDPVjTlhnCEzZ+N2EVMV";
+
+        EapAkaHelper.EapAkaResponse response = mEapAkaHelper.getEapAkaResponse(challenge);
+
+        assertThat(response.response()).isNull();
+        assertThat(response.synchronizationFailureResponse()).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    public void getEapAkaResponse_getIccAuthenticationFailed() {
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("234107813240779");
+        when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("23410");
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                    TelephonyManager.APPTYPE_USIM, TelephonyManager.AUTHTYPE_EAP_AKA,
+                    "EFzmUpAo8crIBONxlqhyb4EQa4pFhq3pAACzVOE8Zggz6A=="))
+                .thenReturn(null);
+        String challenge = "AQIAfBcBAAABBQAAXOZSkCjxysgE4"
+                + "3GWqHJvgQIFAABrikWGrekAALNU4TxmCDPoCwUAAJT0nqXeAYlqzT0UGXINENWBBQAA7z3fhImk"
+                + "q+vcCKWIZBdvuYIJAAAPRUFp7KWFo+Thr78Qj9hEkB2zA0i6KakODsufBC+BJQ==";
+
+        EapAkaHelper.EapAkaResponse response = mEapAkaHelper.getEapAkaResponse(challenge);
+
+        assertThat(response).isNull();
+    }
 }
