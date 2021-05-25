@@ -26,14 +26,23 @@ import com.google.auto.value.AutoValue;
  */
 @AutoValue
 public abstract class ServiceEntitlementRequest {
-    /**
-     * Disables notification token.
-     */
+    /** Disables notification token. */
     public static final int NOTICATION_ACTION_DISABLE = 0;
-    /**
-     * Enables FCM notification token.
-     */
+    /** Enables FCM notification token. */
     public static final int NOTICATION_ACTION_ENABLE_FCM = 2;
+    /** Accepts the content type in XML format. */
+    public static final String ACCEPT_CONTENT_TYPE_XML = "text/vnd.wap.connectivity-xml";
+    /** Accepts the content type in JSON format. */
+    public static final String ACCEPT_CONTENT_TYPE_JSON =
+            "application/vnd.gsma.eap-relay.v1.0+json";
+    /** Accepts the content type in JSON or XML format. */
+    public static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
+            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
+    /** Default value of configuration version. */
+    public static final int DEFAULT_CONFIGURATION_VERSION = 0;
+    /** Default value of entitlement version. */
+    public static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
+
 
     /**
      * Returns the version of configuration currently stored on the client. Used by HTTP parameter
@@ -100,12 +109,21 @@ public abstract class ServiceEntitlementRequest {
     public abstract int notificationAction();
 
     /**
+     * Returns the accepted content type of http response.
+     *
+     * @see #ACCEPT_CONTENT_TYPE_XML
+     * @see #ACCEPT_CONTENT_TYPE_JSON
+     * @see #ACCEPT_CONTENT_TYPE_JSON_AND_XML
+     */
+    public abstract String acceptContentType();
+
+    /**
      * Returns a new {@link Builder} object.
      */
     public static Builder builder() {
         return new AutoValue_ServiceEntitlementRequest.Builder()
-                .setConfigurationVersion(0)
-                .setEntitlementVersion("2.0")
+                .setConfigurationVersion(DEFAULT_CONFIGURATION_VERSION)
+                .setEntitlementVersion(DEFAULT_ENTITLEMENT_VERSION)
                 .setAuthenticationToken("")
                 .setTerminalId("")
                 .setTerminalVendor(Build.MANUFACTURER)
@@ -114,7 +132,8 @@ public abstract class ServiceEntitlementRequest {
                 .setAppName("")
                 .setAppVersion("")
                 .setNotificationToken("")
-                .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM);
+                .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM)
+                .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML);
     }
 
     /**
@@ -126,7 +145,8 @@ public abstract class ServiceEntitlementRequest {
          * Sets the version of configuration currently stored on the client. Used by HTTP parameter
          * "vers".
          *
-         * <p>If not set, default to 0 indicating no existing configuration.
+         * <p>If not set, default to {@link #DEFAULT_CONFIGURATION_VERSION} indicating no existing
+         * configuration.
          */
         public abstract Builder setConfigurationVersion(int value);
 
@@ -134,7 +154,7 @@ public abstract class ServiceEntitlementRequest {
          * Sets the current version of the entitlement specification. Used by HTTP parameter
          * "entitlement_version".
          *
-         * <p>If not set, default to "2.0" base on TS.43-v5.0.
+         * <p>If not set, default to {@link #DEFAULT_ENTITLEMENT_VERSION} base on TS.43-v5.0.
          */
         public abstract Builder setEntitlementVersion(String value);
 
@@ -210,6 +230,18 @@ public abstract class ServiceEntitlementRequest {
          * @see #NOTICATION_ACTION_DISABLE
          */
         public abstract Builder setNotificationAction(int value);
+
+        /**
+         * Sets the configuration document format the caller accepts, e.g. XML or JSON. Used by HTTP
+         * request header "Accept".
+         *
+         * <p>If not set, will use {@link #ACCEPT_CONTENT_TYPE_JSON_AND_XML}.
+         *
+         * @see #ACCEPT_CONTENT_TYPE_XML
+         * @see #ACCEPT_CONTENT_TYPE_JSON
+         * @see #ACCEPT_CONTENT_TYPE_JSON_AND_XML
+         */
+        public abstract Builder setAcceptContentType(String contentType);
 
         public abstract ServiceEntitlementRequest build();
     }
