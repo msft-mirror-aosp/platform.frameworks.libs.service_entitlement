@@ -33,7 +33,6 @@ import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
-import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
@@ -63,11 +62,6 @@ public class EapAkaApi {
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
-
-    private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
-            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
-    private static final String REQUEST_CONTENT_TYPE_JSON =
-            "application/vnd.gsma.eap-relay.v1.0+json";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
@@ -119,16 +113,26 @@ public class EapAkaApi {
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
         appendParametersForServiceEntitlementRequest(urlBuilder, appIds, request);
-        HttpResponse response = httpGet(urlBuilder.toString(), carrierConfig);
-        if (!request.authenticationToken().isEmpty()) {
+        if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
-            return response.body();
+            return httpGet(
+                    urlBuilder.toString(), carrierConfig, request.acceptContentType()).body();
+        } else {
+            // Full Authentication flow
+            Log.d(TAG, "Full Authentication");
+            HttpResponse challengeResponse =
+                    httpGet(
+                        urlBuilder.toString(),
+                        carrierConfig,
+                        ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON);
+            return respondToEapAkaChallenge(
+                    carrierConfig,
+                    challengeResponse,
+                    FOLLOW_SYNC_FAILURE_MAX_COUNT,
+                    request.acceptContentType())
+                    .body();
         }
-        // Full Authentication flow
-        Log.d(TAG, "Full Authentication");
-        return respondToEapAkaChallenge(carrierConfig, response, FOLLOW_SYNC_FAILURE_MAX_COUNT)
-                .body();
     }
 
     /**
@@ -147,14 +151,15 @@ public class EapAkaApi {
      *       is greater than zero. When this method call itself {@code followSyncFailureCount} is
      *       reduced by one to prevent infinite loop (unlikely in practice, but just in case).
      * </ul>
+     *
+     * @param response Challenge response from server which its content type is JSON
      */
     private HttpResponse respondToEapAkaChallenge(
-            CarrierConfig carrierConfig, HttpResponse response, int followSyncFailureCount)
+            CarrierConfig carrierConfig,
+            HttpResponse response,
+            int followSyncFailureCount,
+            String contentType)
             throws ServiceEntitlementException {
-        if (response.contentType() != ContentType.JSON) {
-            throw new ServiceEntitlementException(
-                    ERROR_MALFORMED_HTTP_RESPONSE, "Unexpected http ContentType");
-        }
         String eapAkaChallenge;
         try {
             eapAkaChallenge = new JSONObject(response.body()).getString(EAP_CHALLENGE_RESPONSE);
@@ -167,17 +172,22 @@ public class EapAkaApi {
                 EapAkaResponse.respondToEapAkaChallenge(mContext, mSimSubscriptionId, challenge);
         // This could be a successful authentication, or synchronization failure.
         if (eapAkaResponse.response() != null) { // successful authentication
-            return challengeResponse(eapAkaResponse.response(), carrierConfig, response.cookie());
+            return challengeResponse(
+                            eapAkaResponse.response(),
+                            carrierConfig,
+                            response.cookie(),
+                            contentType);
         } else if (eapAkaResponse.synchronizationFailureResponse() != null) {
             Log.d(TAG, "synchronization failure");
             HttpResponse newChallenge =
                     challengeResponse(
                             eapAkaResponse.synchronizationFailureResponse(),
                             carrierConfig,
-                            response.cookie());
+                            response.cookie(),
+                            ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON);
             if (followSyncFailureCount > 0) {
                 return respondToEapAkaChallenge(
-                        carrierConfig, newChallenge, followSyncFailureCount - 1);
+                        carrierConfig, newChallenge, followSyncFailureCount - 1, contentType);
             } else {
                 throw new ServiceEntitlementException(
                         ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE,
@@ -189,7 +199,10 @@ public class EapAkaApi {
     }
 
     private HttpResponse challengeResponse(
-            String eapAkaChallengeResponse, CarrierConfig carrierConfig, String cookie)
+            String eapAkaChallengeResponse,
+            CarrierConfig carrierConfig,
+            String cookie,
+            String contentType)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
         JSONObject postData = new JSONObject();
@@ -204,8 +217,10 @@ public class EapAkaApi {
                         .setUrl(carrierConfig.serverUrl())
                         .setRequestMethod(RequestMethod.POST)
                         .setPostData(postData)
-                        .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
-                        .addRequestProperty(HttpHeaders.CONTENT_TYPE, REQUEST_CONTENT_TYPE_JSON)
+                        .addRequestProperty(HttpHeaders.ACCEPT, contentType)
+                        .addRequestProperty(
+                                HttpHeaders.CONTENT_TYPE,
+                                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON)
                         .addRequestProperty(HttpHeaders.COOKIE, cookie)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
@@ -226,16 +241,26 @@ public class EapAkaApi {
         appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
         appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
 
-        HttpResponse response = httpGet(urlBuilder.toString(), carrierConfig);
-        if (!request.authenticationToken().isEmpty()) {
+        if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
-            return response.body();
+            return httpGet(
+                    urlBuilder.toString(), carrierConfig, request.acceptContentType()).body();
+        } else {
+            // Full Authentication flow
+            Log.d(TAG, "Full Authentication");
+            HttpResponse challengeResponse =
+                    httpGet(
+                            urlBuilder.toString(),
+                            carrierConfig,
+                            ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON);
+            return respondToEapAkaChallenge(
+                    carrierConfig,
+                    challengeResponse,
+                    FOLLOW_SYNC_FAILURE_MAX_COUNT,
+                    request.acceptContentType())
+                    .body();
         }
-        // Full Authentication flow
-        Log.d(TAG, "Full Authentication");
-        return respondToEapAkaChallenge(carrierConfig, response, FOLLOW_SYNC_FAILURE_MAX_COUNT)
-                .body();
     }
 
     private void appendParametersForServiceEntitlementRequest(
@@ -322,13 +347,13 @@ public class EapAkaApi {
                 odsaOperation.targetTerminalEid());
     }
 
-    private HttpResponse httpGet(String url, CarrierConfig carrierConfig)
+    private HttpResponse httpGet(String url, CarrierConfig carrierConfig, String contentType)
             throws ServiceEntitlementException {
         HttpRequest httpRequest =
                 HttpRequest.builder()
                         .setUrl(url)
                         .setRequestMethod(RequestMethod.GET)
-                        .addRequestProperty(HttpHeaders.ACCEPT, ACCEPT_CONTENT_TYPE_JSON_AND_XML)
+                        .addRequestProperty(HttpHeaders.ACCEPT, contentType)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
                         .build();

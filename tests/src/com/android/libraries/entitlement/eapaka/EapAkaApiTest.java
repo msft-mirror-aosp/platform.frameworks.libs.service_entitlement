@@ -48,6 +48,7 @@ import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
 import org.junit.Before;
@@ -93,19 +94,13 @@ public class EapAkaApiTest {
     private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
 
-    @Rule
-    public final MockitoRule rule = MockitoJUnit.rule();
+    @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
-    @Mock
-    private HttpClient mMockHttpClient;
-    @Mock
-    private Network mMockNetwork;
-    @Mock
-    private TelephonyManager mMockTelephonyManager;
-    @Mock
-    private TelephonyManager mMockTelephonyManagerForSubId;
-    @Captor
-    private ArgumentCaptor<HttpRequest> mHttpRequestCaptor;
+    @Mock private HttpClient mMockHttpClient;
+    @Mock private Network mMockNetwork;
+    @Mock private TelephonyManager mMockTelephonyManager;
+    @Mock private TelephonyManager mMockTelephonyManagerForSubId;
+    @Captor private ArgumentCaptor<HttpRequest> mHttpRequestCaptor;
 
     private Context mContext;
     private EapAkaApi mEapAkaApi;
@@ -203,29 +198,6 @@ public class EapAkaApiTest {
     }
 
     @Test
-    public void queryEntitlementStatus_noAuthenticationToken_contentTypeNotJson_throwException()
-            throws Exception {
-        HttpResponse xmlResponse =
-                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
-                        .build();
-        when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
-        CarrierConfig carrierConfig =
-                CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-
-        ServiceEntitlementException exception = expectThrows(
-                ServiceEntitlementException.class,
-                () -> mEapAkaApi.queryEntitlementStatus(
-                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
-                        carrierConfig,
-                        request));
-
-        assertThat(exception.getErrorCode()).isEqualTo(
-                ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
-        assertThat(exception.getMessage()).isEqualTo("Unexpected http ContentType");
-    }
-
-    @Test
     public void queryEntitlementStatus_noAuthenticationToken_emptyResponseBody_throwException()
             throws Exception {
         HttpResponse eapChallengeResponse =
@@ -282,6 +254,47 @@ public class EapAkaApiTest {
                 .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
         assertThat(mHttpRequestCaptor.getAllValues().get(2).requestProperties())
                 .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+    }
+
+    @Test
+    public void queryEntitlementStatus_acceptContentTypeSpecified_verfityAcceptContentType()
+            throws Exception {
+        HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
+        when(mMockHttpClient.request(any())).thenReturn(response);
+        CarrierConfig carrierConfig = CarrierConfig.builder().build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest
+                        .builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getValue().requestProperties().get(HttpHeaders.ACCEPT))
+                .isEqualTo(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+    }
+
+    @Test
+    public void queryEntitlementStatus_acceptContentTypeNotSpecified_defaultAcceptContentType()
+            throws Exception {
+        HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
+        when(mMockHttpClient.request(any())).thenReturn(response);
+        CarrierConfig carrierConfig = CarrierConfig.builder().build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest
+                        .builder()
+                        .setAuthenticationToken(TOKEN)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getValue().requestProperties().get(HttpHeaders.ACCEPT))
+                .isEqualTo(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON_AND_XML);
     }
 
     @Test
