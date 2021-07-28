@@ -175,7 +175,7 @@ public class EapAkaApi {
             return challengeResponse(
                             eapAkaResponse.response(),
                             carrierConfig,
-                            response.cookie(),
+                            response.cookies(),
                             contentType);
         } else if (eapAkaResponse.synchronizationFailureResponse() != null) {
             Log.d(TAG, "synchronization failure");
@@ -183,7 +183,7 @@ public class EapAkaApi {
                     challengeResponse(
                             eapAkaResponse.synchronizationFailureResponse(),
                             carrierConfig,
-                            response.cookie(),
+                            response.cookies(),
                             ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON);
             if (followSyncFailureCount > 0) {
                 return respondToEapAkaChallenge(
@@ -201,7 +201,7 @@ public class EapAkaApi {
     private HttpResponse challengeResponse(
             String eapAkaChallengeResponse,
             CarrierConfig carrierConfig,
-            String cookie,
+            ImmutableList<String> cookies,
             String contentType)
             throws ServiceEntitlementException {
         Log.d(TAG, "challengeResponse");
@@ -221,7 +221,7 @@ public class EapAkaApi {
                         .addRequestProperty(
                                 HttpHeaders.CONTENT_TYPE,
                                 ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON)
-                        .addRequestProperty(HttpHeaders.COOKIE, cookie)
+                        .addRequestProperty(HttpHeaders.COOKIE, cookies)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
                         .build();
