@@ -19,6 +19,9 @@ package com.android.libraries.entitlement.http;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 /**
  * The response of the http request.
@@ -39,7 +42,7 @@ public abstract class HttpResponse {
     /**
      * Content of the "Set-Cookie" response header.
      */
-    public abstract String cookie();
+    public abstract ImmutableList<String> cookies();
 
     /**
      * Builder of {@link HttpResponse}.
@@ -57,9 +60,9 @@ public abstract class HttpResponse {
         public abstract Builder setResponseMessage(String responseMessage);
 
         /**
-         * Content of the "Set-Cookie" response header.
+         * Sets the content of the "Set-Cookie" response headers.
          */
-        public abstract Builder setCookie(String cookie);
+        public abstract Builder setCookies(List<String> cookies);
     }
 
     public static Builder builder() {
@@ -68,7 +71,7 @@ public abstract class HttpResponse {
                 .setBody("")
                 .setResponseCode(0)
                 .setResponseMessage("")
-                .setCookie("");
+                .setCookies(ImmutableList.of());
     }
 
     @Override
@@ -83,9 +86,9 @@ public abstract class HttpResponse {
                 .append(responseCode())
                 .append(" responseMessage=")
                 .append(responseMessage())
-                .append(" cookie=(")
-                .append(cookie().length())
-                .append(" characters)}")
+                .append(" cookies=[")
+                .append(cookies().size())
+                .append(" cookies]}")
                 .toString();
     }
 }
