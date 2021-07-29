@@ -37,6 +37,7 @@ import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.StreamUtils;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
 
 import java.io.DataOutputStream;
@@ -46,6 +47,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.List;
 import java.util.Map;
 
 /** Implement the HTTP request method according to TS.43 specification. */
@@ -94,7 +96,7 @@ public class HttpClient {
             }
 
             // add HTTP headers
-            for (Map.Entry<String, String> entry : request.requestProperties().entrySet()) {
+            for (Map.Entry<String, String> entry : request.requestProperties().entries()) {
                 mConnection.addRequestProperty(entry.getKey(), entry.getValue());
             }
 
@@ -136,7 +138,7 @@ public class HttpClient {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS, "Read response code failed!", e);
         }
-        responseBuilder.setCookie(nullToEmpty(getCookie(connection)));
+        responseBuilder.setCookies(getCookies(connection));
         try {
             String responseBody = readResponse(connection);
             logPii("HttpClient.response body: " + responseBody);
@@ -171,7 +173,8 @@ public class HttpClient {
         return ContentType.UNKNOWN;
     }
 
-    private static String getCookie(URLConnection connection) {
-        return connection.getHeaderField(HttpHeaders.SET_COOKIE);
+    private static List<String> getCookies(URLConnection connection) {
+        List<String> cookies = connection.getHeaderFields().get(HttpHeaders.SET_COOKIE);
+        return cookies == null ? ImmutableList.of() : cookies;
     }
 }
