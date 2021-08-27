@@ -17,18 +17,17 @@
 package com.android.libraries.entitlement.http;
 
 import android.net.Network;
-import android.util.ArrayMap;
 
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.CarrierConfig;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableListMultimap;
 
 import org.json.JSONObject;
 
-import java.util.Map;
+import java.util.List;
 
 /** The parameters of an http request. */
 @AutoValue
@@ -42,11 +41,8 @@ public abstract class HttpRequest {
     /** For "POST" request method, the body of the request in JSON format. */
     public abstract JSONObject postData();
 
-    /** For "GET" request method, the parameters to be encoded into the URL. */
-    public abstract ImmutableMap<String, String> requestValues();
-
     /** HTTP header fields. */
-    public abstract ImmutableMap<String, String> requestProperties();
+    public abstract ImmutableListMultimap<String, String> requestProperties();
 
     /** The client side timeout, in seconds. See {@link Builder#setTimeoutInSec}. */
     public abstract int timeoutInSec();
@@ -58,9 +54,6 @@ public abstract class HttpRequest {
     /** Builder of {@link HttpRequest}. */
     @AutoValue.Builder
     public abstract static class Builder {
-        private final Map<String, String> values = new ArrayMap<>();
-        private final Map<String, String> properties = new ArrayMap<>();
-
         public abstract HttpRequest build();
 
         /** Sets the URL. */
@@ -76,20 +69,22 @@ public abstract class HttpRequest {
         /** For "POST" request method, sets the body of the request in JSON format. */
         public abstract Builder setPostData(JSONObject postData);
 
-        abstract Builder setRequestValues(ImmutableMap<String, String> value);
-
-        abstract Builder setRequestProperties(ImmutableMap<String, String> properties);
-
-        /** For "GET" request method, adds a parameter to be encoded into the URL. */
-        public Builder addRequestValues(String key, String value) {
-            values.put(key, value);
-            return this.setRequestValues(ImmutableMap.copyOf(values));
-        }
+        abstract ImmutableListMultimap.Builder<String, String> requestPropertiesBuilder();
 
         /** Adds an HTTP header field. */
         public Builder addRequestProperty(String key, String value) {
-            properties.put(key, value);
-            return this.setRequestProperties(ImmutableMap.copyOf(properties));
+            requestPropertiesBuilder().put(key, value);
+            return this;
+        }
+
+        /**
+          * Adds an HTTP header field with multiple values. Equivalent to calling
+          * {@link #addRequestProperty(String, String)} multiple times with the same key and
+          * one value at a time.
+          */
+        public Builder addRequestProperty(String key, List<String> value) {
+            requestPropertiesBuilder().putAll(key, value);
+            return this;
         }
 
         /**
@@ -113,8 +108,6 @@ public abstract class HttpRequest {
                 .setUrl("")
                 .setRequestMethod("")
                 .setPostData(new JSONObject())
-                .setRequestValues(ImmutableMap.of())
-                .setRequestProperties(ImmutableMap.of())
                 .setTimeoutInSec(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
     }
 }
