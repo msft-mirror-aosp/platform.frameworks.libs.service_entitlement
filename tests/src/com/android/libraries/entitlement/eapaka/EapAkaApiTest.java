@@ -220,8 +220,6 @@ public class EapAkaApiTest {
                 ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
         assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
         assertThat(exception.getCause()).isInstanceOf(JSONException.class);
-        assertThat(exception.getHttpStatus()).isEqualTo(0);
-        assertThat(exception.getRetryAfter()).isEmpty();
     }
 
     @Test
@@ -265,7 +263,7 @@ public class EapAkaApiTest {
             throws Exception {
         HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        CarrierConfig carrierConfig = CarrierConfig.builder().build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest
                         .builder()
@@ -286,7 +284,7 @@ public class EapAkaApiTest {
             throws Exception {
         HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        CarrierConfig carrierConfig = CarrierConfig.builder().build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest
                         .builder()
