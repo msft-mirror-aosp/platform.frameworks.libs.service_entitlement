@@ -20,7 +20,6 @@ import static com.android.libraries.entitlement.eapaka.EapAkaResponse.respondToE
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -32,8 +31,6 @@ import com.android.libraries.entitlement.eapaka.EapAkaChallenge;
  * helpful to other apps.
  */
 public class EapAkaHelper {
-    private static final String TAG = "ServiceEntitlement";
-
     private final Context mContext;
     private final int mSimSubscriptionId;
 
@@ -106,7 +103,6 @@ public class EapAkaHelper {
             return new EapAkaResponse(
                     eapAkaResponse.response(), eapAkaResponse.synchronizationFailureResponse());
         } catch (ServiceEntitlementException e) {
-            Log.i(TAG, "Failed to generate EAP-AKA response", e);
             return null;
         }
     }
