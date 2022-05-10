@@ -69,6 +69,7 @@ public class EapAkaApiTest {
     // com.google.common.net.HttpHeaders.COOKIE
     private static final String HTTP_HEADER_COOKIE = "Cookie";
     private static final String COOKIE_VALUE = "COOKIE=abcdefg";
+    private static final String COOKIE_VALUE_1 = "COOKIE=hijklmn";
     private static final String RESPONSE_XML =
             "<wap-provisioningdoc version=\"1.1\">\n"
                     + "    <characteristic type=\"TOKEN\">\n"
@@ -149,7 +150,7 @@ public class EapAkaApiTest {
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
-                        .setCookie(COOKIE_VALUE).build();
+                        .setCookies(ImmutableList.of(COOKIE_VALUE, COOKIE_VALUE_1)).build();
         HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
@@ -163,10 +164,11 @@ public class EapAkaApiTest {
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
         assertThat(respopnse).isEqualTo(RESPONSE_XML);
-        // Verify that the 2nd request has cookie set by the 1st response
+        // Verify that the 2nd request has cookies set by the 1st response
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+                .containsAtLeast(HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                                 HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -218,6 +220,8 @@ public class EapAkaApiTest {
                 ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
         assertThat(exception.getMessage()).isEqualTo("Failed to parse json object");
         assertThat(exception.getCause()).isInstanceOf(JSONException.class);
+        assertThat(exception.getHttpStatus()).isEqualTo(0);
+        assertThat(exception.getRetryAfter()).isEmpty();
     }
 
     @Test
@@ -232,7 +236,7 @@ public class EapAkaApiTest {
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
-                        .setCookie(COOKIE_VALUE).build();
+                        .setCookies(ImmutableList.of(COOKIE_VALUE)).build();
         HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
@@ -261,7 +265,7 @@ public class EapAkaApiTest {
             throws Exception {
         HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-        CarrierConfig carrierConfig = CarrierConfig.builder().build();
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest
                         .builder()
@@ -274,7 +278,7 @@ public class EapAkaApiTest {
 
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getValue().requestProperties().get(HttpHeaders.ACCEPT))
-                .isEqualTo(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+                .containsExactly(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
     }
 
     @Test
@@ -282,7 +286,7 @@ public class EapAkaApiTest {
             throws Exception {
         HttpResponse response = HttpResponse.builder().setBody(RESPONSE_XML).build();
         when(mMockHttpClient.request(any())).thenReturn(response);
-        CarrierConfig carrierConfig = CarrierConfig.builder().build();
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest
                         .builder()
@@ -294,7 +298,7 @@ public class EapAkaApiTest {
 
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getValue().requestProperties().get(HttpHeaders.ACCEPT))
-                .isEqualTo(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON_AND_XML);
+                .containsExactly(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON_AND_XML);
     }
 
     @Test
@@ -307,7 +311,7 @@ public class EapAkaApiTest {
         HttpResponse eapChallengeResponse =
                 HttpResponse
                         .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
-                        .setCookie(COOKIE_VALUE).build();
+                        .setCookies(ImmutableList.of(COOKIE_VALUE)).build();
         HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
