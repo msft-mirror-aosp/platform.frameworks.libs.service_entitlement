@@ -16,8 +16,6 @@
 
 package com.android.libraries.entitlement.testing;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -92,9 +90,6 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
 
         @Override
         public InputStream getInputStream() throws IOException {
-            if (mResponse.hasException() && mResponse.responseBody().length == 0) {
-                throw new IOException("stub exception");
-            }
             return new ByteArrayInputStream(mResponse.responseBody());
         }
 
@@ -103,20 +98,12 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
             return mOutputStream;
         }
 
-        @Override
-        public InputStream getErrorStream() {
-            return new ByteArrayInputStream("stub error".getBytes(UTF_8));
-        }
-
         public byte[] getBytesWrittenToOutputStream() {
             return mOutputStream.toByteArray();
         }
 
         @Override
-        public int getResponseCode() throws IOException {
-            if (mResponse.hasException() && mResponse.responseCode() == 0) {
-                throw new IOException("stub exception");
-            }
+        public int getResponseCode() {
             return mResponse.responseCode();
         }
 
@@ -183,16 +170,13 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
 
         public abstract String retryAfter();
 
-        abstract boolean hasException();
-
         public static Builder builder() {
             return new AutoValue_FakeURLStreamHandler_FakeResponse.Builder()
                     .setResponseBody(new byte[]{})
                     .setContentType("")
                     .setResponseCode(0)
                     .setResponseLocation("")
-                    .setRetryAfter("")
-                    .setHasException(false);
+                    .setRetryAfter("");
         }
 
         @AutoValue.Builder
@@ -206,8 +190,6 @@ public class FakeURLStreamHandler extends URLStreamHandler implements URLStreamH
             public abstract Builder setContentType(String contentType);
 
             public abstract Builder setRetryAfter(String retryAfter);
-
-            public abstract Builder setHasException(boolean hasException);
 
             public abstract FakeResponse build();
         }
