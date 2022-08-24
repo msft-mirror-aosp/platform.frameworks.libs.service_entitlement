@@ -43,6 +43,8 @@ import com.google.common.net.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.List;
+
 public class EapAkaApi {
     private static final String TAG = "ServiceEntitlement";
 
@@ -94,8 +96,8 @@ public class EapAkaApi {
     private final int mSimSubscriptionId;
     private final HttpClient mHttpClient;
 
-    public EapAkaApi(Context context, int simSubscriptionId) {
-        this(context, simSubscriptionId, new HttpClient());
+    public EapAkaApi(Context context, int simSubscriptionId, boolean saveHistory) {
+        this(context, simSubscriptionId, new HttpClient(saveHistory));
     }
 
     @VisibleForTesting
@@ -401,5 +403,19 @@ public class EapAkaApi {
             mnc = "0" + mnc;
         }
         return "0" + imsi + "@nai.epc.mnc" + mnc + ".mcc" + mcc + ".3gppnetwork.org";
+    }
+
+    /**
+     * Retrieves the history of past HTTP request and responses.
+     */
+    public List<String> getHistory() {
+        return mHttpClient.getHistory();
+    }
+
+    /**
+     * Clears the history of past HTTP request and responses.
+     */
+    public void clearHistory() {
+        mHttpClient.clearHistory();
     }
 }
