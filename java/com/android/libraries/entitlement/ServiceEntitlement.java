@@ -50,6 +50,10 @@ public class ServiceEntitlement {
      * App ID for on device service activation (OSDA) for primary device.
      */
     public static final String APP_ODSA_PRIMARY = "ap2009";
+    /**
+     * App ID for premium network slice entitlement
+     */
+    public static final String APP_PREMIUM_NETWORK_SLICE = "ap2012";
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
