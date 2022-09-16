@@ -123,6 +123,12 @@ public abstract class ServiceEntitlementRequest {
     public abstract String acceptContentType();
 
     /**
+     * Returns the network identifier for premium network. Used for premium network slice
+     * entitlement.
+     */
+    public abstract String networkIdentifier();
+
+    /**
      * Returns a new {@link Builder} object.
      */
     public static Builder builder() {
@@ -139,7 +145,8 @@ public abstract class ServiceEntitlementRequest {
                 .setAppVersion("")
                 .setNotificationToken("")
                 .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM)
-                .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML);
+                .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML)
+                .setNetworkIdentifier("");
     }
 
     /**
@@ -255,6 +262,14 @@ public abstract class ServiceEntitlementRequest {
          * @see #ACCEPT_CONTENT_TYPE_JSON_AND_XML
          */
         public abstract Builder setAcceptContentType(String contentType);
+
+        /**
+         * Sets the network identifier for premium network. Used by HTTP parameter
+         * "network_identifier" in case of premium network slice entitlement.
+         *
+         * <p>Optional.
+         */
+        public abstract Builder setNetworkIdentifier(String value);
 
         public abstract ServiceEntitlementRequest build();
     }
