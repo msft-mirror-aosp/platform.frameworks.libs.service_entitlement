@@ -95,16 +95,26 @@ public class EapAkaApi {
     private final Context mContext;
     private final int mSimSubscriptionId;
     private final HttpClient mHttpClient;
+    private final String mBypassEapAkaResponse;
 
-    public EapAkaApi(Context context, int simSubscriptionId, boolean saveHistory) {
-        this(context, simSubscriptionId, new HttpClient(saveHistory));
+    public EapAkaApi(
+            Context context,
+            int simSubscriptionId,
+            boolean saveHistory,
+            String bypassEapAkaResponse) {
+        this(context, simSubscriptionId, new HttpClient(saveHistory), bypassEapAkaResponse);
     }
 
     @VisibleForTesting
-    EapAkaApi(Context context, int simSubscriptionId, HttpClient httpClient) {
+    EapAkaApi(
+            Context context,
+            int simSubscriptionId,
+            HttpClient httpClient,
+            String bypassEapAkaResponse) {
         this.mContext = context;
         this.mSimSubscriptionId = simSubscriptionId;
         this.mHttpClient = httpClient;
+        this.mBypassEapAkaResponse = bypassEapAkaResponse;
     }
 
     /**
@@ -173,6 +183,13 @@ public class EapAkaApi {
         } catch (JSONException jsonException) {
             throw new ServiceEntitlementException(
                     ERROR_MALFORMED_HTTP_RESPONSE, "Failed to parse json object", jsonException);
+        }
+        if (!mBypassEapAkaResponse.isEmpty()) {
+            return challengeResponse(
+                            mBypassEapAkaResponse,
+                            carrierConfig,
+                            response.cookies(),
+                            contentType);
         }
         EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(eapAkaChallenge);
         EapAkaResponse eapAkaResponse =
