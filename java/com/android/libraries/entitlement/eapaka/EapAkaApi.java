@@ -58,6 +58,7 @@ public class EapAkaApi {
     private static final String EAP_ID = "EAP_ID";
     private static final String IMSI = "IMSI";
     private static final String TOKEN = "token";
+    private static final String TEMPORARY_TOKEN = "temporary_token";
     private static final String NOTIF_ACTION = "notif_action";
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
@@ -65,6 +66,7 @@ public class EapAkaApi {
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
+    private static final String OPERATION_TARGETS = "operation_targets";
     private static final String COMPANION_TERMINAL_ID = "companion_terminal_id";
     private static final String COMPANION_TERMINAL_VENDOR = "companion_terminal_vendor";
     private static final String COMPANION_TERMINAL_MODEL = "companion_terminal_model";
@@ -81,6 +83,9 @@ public class EapAkaApi {
     private static final String TARGET_TERMINAL_ID = "target_terminal_id";
     private static final String TARGET_TERMINAL_ICCID = "target_terminal_iccid";
     private static final String TARGET_TERMINAL_EID = "target_terminal_eid";
+
+    private static final String OLD_TERMINAL_ID = "old_terminal_id";
+    private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
 
     // In case of EAP-AKA synchronization failure, we try to recover for at most two times.
     private static final int FOLLOW_SYNC_FAILURE_MAX_COUNT = 2;
@@ -241,7 +246,8 @@ public class EapAkaApi {
         appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
         appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
 
-        if (!TextUtils.isEmpty(request.authenticationToken())) {
+        if (!TextUtils.isEmpty(request.authenticationToken())
+                || !TextUtils.isEmpty(request.temporaryToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
             return httpGet(
@@ -268,17 +274,20 @@ public class EapAkaApi {
             ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager = mContext.getSystemService(
                 TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
-        if (TextUtils.isEmpty(request.authenticationToken())) {
+        if (!TextUtils.isEmpty(request.authenticationToken())) {
+            // IMSI and token required for fast AuthN.
+            urlBuilder
+                    .appendQueryParameter(IMSI, telephonyManager.getSubscriberId())
+                    .appendQueryParameter(TOKEN, request.authenticationToken());
+        } else if (!TextUtils.isEmpty(request.temporaryToken())) {
+            // temporary_token required for fast AuthN.
+            urlBuilder.appendQueryParameter(TEMPORARY_TOKEN, request.temporaryToken());
+        } else {
             // EAP_ID required for initial AuthN
             urlBuilder.appendQueryParameter(
                     EAP_ID,
                     getImsiEap(telephonyManager.getSimOperator(),
                             telephonyManager.getSubscriberId()));
-        } else {
-            // IMSI and token required for fast AuthN.
-            urlBuilder
-                    .appendQueryParameter(IMSI, telephonyManager.getSubscriberId())
-                    .appendQueryParameter(TOKEN, request.authenticationToken());
         }
 
         if (!TextUtils.isEmpty(request.notificationToken())) {
@@ -320,6 +329,8 @@ public class EapAkaApi {
             urlBuilder.appendQueryParameter(OPERATION_TYPE,
                     Integer.toString(odsaOperation.operationType()));
         }
+        appendOptionalQueryParameter(
+                urlBuilder, OPERATION_TARGETS, String.join(",", odsaOperation.operationTargets()));
         appendOptionalQueryParameter(urlBuilder, COMPANION_TERMINAL_ID,
                 odsaOperation.companionTerminalId());
         appendOptionalQueryParameter(urlBuilder, COMPANION_TERMINAL_VENDOR,
@@ -345,6 +356,10 @@ public class EapAkaApi {
                 odsaOperation.targetTerminalIccid());
         appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_EID,
                 odsaOperation.targetTerminalEid());
+        appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ICCID,
+                odsaOperation.oldTerminalIccid());
+        appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ID,
+                odsaOperation.oldTerminalId());
     }
 
     private HttpResponse httpGet(String url, CarrierConfig carrierConfig, String contentType)
