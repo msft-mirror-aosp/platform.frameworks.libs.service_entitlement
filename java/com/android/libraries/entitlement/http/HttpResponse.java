@@ -73,22 +73,4 @@ public abstract class HttpResponse {
                 .setResponseMessage("")
                 .setCookies(ImmutableList.of());
     }
-
-    @Override
-    public final String toString() {
-        return new StringBuilder("HttpResponse{")
-                .append("contentType=")
-                .append(contentType())
-                .append(" body=(")
-                .append(body().length())
-                .append(" characters)")
-                .append(" responseCode=")
-                .append(responseCode())
-                .append(" responseMessage=")
-                .append(responseMessage())
-                .append(" cookies=[")
-                .append(cookies().size())
-                .append(" cookies]}")
-                .toString();
-    }
 }

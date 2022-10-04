@@ -25,6 +25,8 @@ import com.android.libraries.entitlement.eapaka.EapAkaApi;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
+
 /**
  * Implemnets protocol for carrier service entitlement configuration query and operation, based on
  * GSMA TS.43 spec.
@@ -72,7 +74,28 @@ public class ServiceEntitlement {
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
         this.carrierConfig = carrierConfig;
-        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId);
+        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, false);
+    }
+
+    /**
+     * Creates an instance for service entitlement configuration query and operation for the
+     * carrier.
+     *
+     * @param context context of application
+     * @param carrierConfig carrier specific configs used in the queries and operations.
+     * @param simSubscriptionId the subscroption ID of the carrier's SIM on device. This indicates
+     *     which SIM to retrieve IMEI/IMSI from and perform EAP-AKA authentication with. See {@link
+     *     android.telephony.SubscriptionManager} for how to get the subscroption ID.
+     * @param saveHttpHistory set to {@code true} to save the history of request and response which
+     *     can later be retrieved by {@code getHistory()}. Intended for debugging.
+     */
+    public ServiceEntitlement(
+            Context context,
+            CarrierConfig carrierConfig,
+            int simSubscriptionId,
+            boolean saveHttpHistory) {
+        this.carrierConfig = carrierConfig;
+        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, saveHttpHistory);
     }
 
     @VisibleForTesting
@@ -154,5 +177,20 @@ public class ServiceEntitlement {
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
         return eapAkaApi.performEsimOdsaOperation(appId, carrierConfig, request, operation);
+    }
+
+    /**
+     * Retrieves the history of past HTTP request and responses if {@code saveHttpHistory} was set
+     * in constructor.
+     */
+    public List<String> getHistory() {
+        return eapAkaApi.getHistory();
+    }
+
+    /**
+     * Clears the history of past HTTP request and responses.
+     */
+    public void clearHistory() {
+        eapAkaApi.clearHistory();
     }
 }
