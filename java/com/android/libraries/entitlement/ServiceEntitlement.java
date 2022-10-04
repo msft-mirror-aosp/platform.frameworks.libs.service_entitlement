@@ -73,8 +73,37 @@ public class ServiceEntitlement {
      *                          for how to get the subscroption ID.
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
-        this.carrierConfig = carrierConfig;
-        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, false, "");
+        this(
+                context,
+                carrierConfig,
+                simSubscriptionId,
+                /* saveHttpHistory= */ false,
+                /* bypassEapAkaResponse= */ "");
+    }
+
+    /**
+     * Creates an instance for service entitlement configuration query and operation for the
+     * carrier.
+     *
+     * @param context context of application
+     * @param carrierConfig carrier specific configs used in the queries and operations.
+     * @param simSubscriptionId the subscroption ID of the carrier's SIM on device. This indicates
+     *     which SIM to retrieve IMEI/IMSI from and perform EAP-AKA authentication with. See {@link
+     *     android.telephony.SubscriptionManager} for how to get the subscroption ID.
+     * @param saveHttpHistory set to {@code true} to save the history of request and response which
+     *     can later be retrieved by {@code getHistory()}. Intended for debugging.
+     */
+    public ServiceEntitlement(
+            Context context,
+            CarrierConfig carrierConfig,
+            int simSubscriptionId,
+            boolean saveHttpHistory) {
+        this(
+                context,
+                carrierConfig,
+                simSubscriptionId,
+                saveHttpHistory,
+                /* bypassEapAkaResponse= */ "");
     }
 
     /**
