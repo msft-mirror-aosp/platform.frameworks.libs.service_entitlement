@@ -74,7 +74,7 @@ public class ServiceEntitlement {
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
         this.carrierConfig = carrierConfig;
-        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, false);
+        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, false, "");
     }
 
     /**
@@ -88,14 +88,19 @@ public class ServiceEntitlement {
      *     android.telephony.SubscriptionManager} for how to get the subscroption ID.
      * @param saveHttpHistory set to {@code true} to save the history of request and response which
      *     can later be retrieved by {@code getHistory()}. Intended for debugging.
+     * @param bypassEapAkaResponse set to non empty string to bypass EAP-AKA authentication.
+     *     The client will accept any challenge from the server and return this string as a
+     *     response. Must not be {@code null}. Intended for testing.
      */
     public ServiceEntitlement(
             Context context,
             CarrierConfig carrierConfig,
             int simSubscriptionId,
-            boolean saveHttpHistory) {
+            boolean saveHttpHistory,
+            String bypassEapAkaResponse) {
         this.carrierConfig = carrierConfig;
-        this.eapAkaApi = new EapAkaApi(context, simSubscriptionId, saveHttpHistory);
+        this.eapAkaApi =
+                new EapAkaApi(context, simSubscriptionId, saveHttpHistory, bypassEapAkaResponse);
     }
 
     @VisibleForTesting
