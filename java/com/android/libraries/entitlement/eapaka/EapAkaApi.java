@@ -330,7 +330,9 @@ public class EapAkaApi {
                     Integer.toString(odsaOperation.operationType()));
         }
         appendOptionalQueryParameter(
-                urlBuilder, OPERATION_TARGETS, String.join(",", odsaOperation.operationTargets()));
+                urlBuilder,
+                OPERATION_TARGETS,
+                TextUtils.join(",", odsaOperation.operationTargets()));
         appendOptionalQueryParameter(urlBuilder, COMPANION_TERMINAL_ID,
                 odsaOperation.companionTerminalId());
         appendOptionalQueryParameter(urlBuilder, COMPANION_TERMINAL_VENDOR,
