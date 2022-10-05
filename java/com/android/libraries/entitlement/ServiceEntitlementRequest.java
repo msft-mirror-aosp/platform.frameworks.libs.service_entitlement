@@ -62,6 +62,11 @@ public abstract class ServiceEntitlementRequest {
     public abstract String authenticationToken();
 
     /**
+     * Returns the temporary token. Used by HTTP parameter "temporary_token".
+     */
+    public abstract String temporaryToken();
+
+    /**
      * Returns the unique identifier of the device like IMEI. Used by HTTP parameter "terminal_id".
      */
     public abstract String terminalId();
@@ -131,6 +136,7 @@ public abstract class ServiceEntitlementRequest {
                 .setConfigurationVersion(DEFAULT_CONFIGURATION_VERSION)
                 .setEntitlementVersion(DEFAULT_ENTITLEMENT_VERSION)
                 .setAuthenticationToken("")
+                .setTemporaryToken("")
                 .setTerminalId("")
                 .setTerminalVendor(Build.MANUFACTURER)
                 .setTerminalModel(Build.MODEL)
@@ -172,6 +178,13 @@ public abstract class ServiceEntitlementRequest {
          * 2.6.1.
          */
         public abstract Builder setAuthenticationToken(String value);
+
+        /**
+         * Sets the temporary token. Used by HTTP parameter "temporary_token".
+         *
+         * <p>Optional.
+         */
+        public abstract Builder setTemporaryToken(String value);
 
         /**
          * Sets the unique identifier of the device like IMEI. Used by HTTP parameter
