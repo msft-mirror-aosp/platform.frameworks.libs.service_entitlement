@@ -84,7 +84,7 @@ public class HttpClient {
             }
             mConnection.connect(); // This is to trigger SocketTimeoutException early
             HttpResponse response = getHttpResponse(mConnection);
-            Log.d(TAG, "HttpClient.response : " + response);
+            Log.d(TAG, "HttpClient.response : " + response.toShortDebugString());
             if (mSaveHistory) {
                 mHistory.add(response.toString());
             }
