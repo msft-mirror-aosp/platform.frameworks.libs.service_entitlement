@@ -73,4 +73,25 @@ public abstract class HttpResponse {
                 .setResponseMessage("")
                 .setCookies(ImmutableList.of());
     }
+
+    /**
+     * Returns a short string representation for debugging purposes. Doesn't include the cookie or
+     * full body to prevent leaking sensitive data.
+     */
+    public String toShortDebugString() {
+        return new StringBuilder("HttpResponse{")
+                .append("contentType=")
+                .append(contentType())
+                .append(" body=(")
+                .append(body().length())
+                .append(" characters)")
+                .append(" responseCode=")
+                .append(responseCode())
+                .append(" responseMessage=")
+                .append(responseMessage())
+                .append(" cookies=[")
+                .append(cookies().size())
+                .append(" cookies]}")
+                .toString();
+    }
 }
