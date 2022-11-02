@@ -89,6 +89,8 @@ public class EapAkaApi {
     private static final String OLD_TERMINAL_ID = "old_terminal_id";
     private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
 
+    private static final String NETWORK_IDENTIFIER = "network_identifier";
+
     // In case of EAP-AKA synchronization failure, we try to recover for at most two times.
     private static final int FOLLOW_SYNC_FAILURE_MAX_COUNT = 2;
 
@@ -326,6 +328,7 @@ public class EapAkaApi {
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
+        appendOptionalQueryParameter(urlBuilder, NETWORK_IDENTIFIER, request.networkIdentifier());
 
         for (String appId : appIds) {
             urlBuilder.appendQueryParameter(APP, appId);
