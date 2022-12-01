@@ -92,7 +92,10 @@ public class HttpClient {
         } catch (IOException ioe) {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS,
-                    StreamUtils.inputStreamToStringSafe(mConnection.getErrorStream()),
+                    "Connection error stream: "
+                            + StreamUtils.inputStreamToStringSafe(mConnection.getErrorStream())
+                            + " IOException: "
+                            + ioe.toString(),
                     ioe);
         } finally {
             closeConnection();
