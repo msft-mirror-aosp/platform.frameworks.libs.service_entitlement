@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(AndroidJUnit4.class)
@@ -70,7 +71,7 @@ public class HttpClientTest {
         // Reset sFakeURLStreamHandler
         sFakeURLStreamHandler.stubResponse(ImmutableMap.of());
 
-        mHttpClient = new HttpClient();
+        mHttpClient = new HttpClient(true);
     }
 
     @Test
@@ -191,5 +192,93 @@ public class HttpClientTest {
 
         FakeHttpsURLConnection connection = sFakeURLStreamHandler.getConnections().get(0);
         assertThat(connection.getBytesWrittenToOutputStream()).isEqualTo(postData.getBytes(UTF_8));
+    }
+
+    @Test
+    public void request_getResponseCodeFailed_expectThrowsException() {
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.GET)
+                        .build();
+        FakeResponse responseContent =
+                FakeResponse.builder()
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .setHasException(true)
+                        .build();
+        Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
+        sFakeURLStreamHandler.stubResponse(response);
+
+        ServiceEntitlementException exception = expectThrows(
+                ServiceEntitlementException.class, () -> mHttpClient.request(request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(
+                ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS);
+        assertThat(exception.getMessage()).isEqualTo("Read response code failed!");
+        assertThat(exception.getHttpStatus()).isEqualTo(0);
+        assertThat(exception.getRetryAfter()).isEmpty();
+    }
+
+    @Test
+    public void request_getResponseBodyFailed_expectThrowsException() {
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.GET)
+                        .build();
+        FakeResponse responseContent =
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_OK)
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .setHasException(true)
+                        .build();
+        Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
+        sFakeURLStreamHandler.stubResponse(response);
+
+        ServiceEntitlementException exception = expectThrows(
+                ServiceEntitlementException.class, () -> mHttpClient.request(request));
+
+        assertThat(exception.getErrorCode()).isEqualTo(
+                ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE);
+        assertThat(exception.getMessage()).isEqualTo("Read response body/message failed!");
+        assertThat(exception.getHttpStatus()).isEqualTo(0);
+        assertThat(exception.getRetryAfter()).isEmpty();
+    }
+
+    @Test
+    public void history() throws Exception {
+        FakeResponse responseContent =
+                FakeResponse.builder()
+                        .setResponseCode(HttpURLConnection.HTTP_OK)
+                        .setResponseLocation(null)
+                        .setResponseBody(TEST_RESPONSE_BODY.getBytes(UTF_8))
+                        .setContentType(CONTENT_TYPE_STRING_JSON)
+                        .build();
+        Map<String, FakeResponse> response = ImmutableMap.of(TEST_URL, responseContent);
+        sFakeURLStreamHandler.stubResponse(response);
+        HttpRequest request =
+                HttpRequest.builder()
+                        .setUrl(TEST_URL)
+                        .setRequestMethod(RequestMethod.GET)
+                        .setTimeoutInSec(70)
+                        .build();
+
+        HttpResponse httpResponse0 = mHttpClient.request(request);
+        HttpResponse httpResponse1 = mHttpClient.request(request);
+        List<String> history = mHttpClient.getHistory();
+
+        assertThat(history)
+                .containsExactly(
+                        request.toString(),
+                        httpResponse0.toString(),
+                        request.toString(),
+                        httpResponse1.toString())
+                .inOrder();
+
+        mHttpClient.clearHistory();
+        history = mHttpClient.getHistory();
+
+        assertThat(history).isEmpty();
     }
 }
