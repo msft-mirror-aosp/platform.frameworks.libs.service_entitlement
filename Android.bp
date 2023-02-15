@@ -43,6 +43,10 @@ java_library {
         "guava",
         "service-entitlement-data",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.wifi",
+    ],
 }
 
 java_library {
@@ -51,6 +55,10 @@ java_library {
     static_libs: [
         "service-entitlement-api",
         "service-entitlement-data",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.wifi",
     ],
 }
 
@@ -70,6 +78,10 @@ java_library {
         "service-entitlement-impl",
 
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.wifi",
+    ],
 }
 
 java_library {
@@ -86,5 +98,9 @@ java_library {
     ],
     static_libs: [
         "guava",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.wifi",
     ],
 }
