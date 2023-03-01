@@ -53,9 +53,9 @@ public class ServiceEntitlement {
      */
     public static final String APP_ODSA_PRIMARY = "ap2009";
     /**
-     * App ID for premium network slice entitlement
+     * App ID for data plan information entitlement.
      */
-    public static final String APP_PREMIUM_NETWORK_SLICE = "ap2012";
+    public static final String APP_DATA_PLAN_BOOST = "ap2010";
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;

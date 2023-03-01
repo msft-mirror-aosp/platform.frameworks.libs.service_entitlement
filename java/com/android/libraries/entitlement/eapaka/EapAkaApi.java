@@ -91,7 +91,7 @@ public class EapAkaApi {
     private static final String OLD_TERMINAL_ID = "old_terminal_id";
     private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
 
-    private static final String NETWORK_IDENTIFIER = "network_identifier";
+    private static final String BOOST_TYPE = "boost_type";
 
     // In case of EAP-AKA synchronization failure or another challenge, we try to authenticate for
     // at most three times.
@@ -401,7 +401,7 @@ public class EapAkaApi {
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
-        appendOptionalQueryParameter(urlBuilder, NETWORK_IDENTIFIER, request.networkIdentifier());
+        appendOptionalQueryParameter(urlBuilder, BOOST_TYPE, request.boostType());
 
         for (String appId : appIds) {
             urlBuilder.appendQueryParameter(APP, appId);
