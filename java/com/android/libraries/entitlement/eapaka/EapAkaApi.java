@@ -134,6 +134,7 @@ public class EapAkaApi {
             CarrierConfig carrierConfig, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForAuthentication(urlBuilder, request);
         appendParametersForServiceEntitlementRequest(urlBuilder, appIds, request);
         if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
@@ -291,6 +292,7 @@ public class EapAkaApi {
             ServiceEntitlementRequest request, EsimOdsaOperation odsaOperation)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForAuthentication(urlBuilder, request);
         appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
         appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
 
@@ -324,8 +326,39 @@ public class EapAkaApi {
         }
     }
 
-    private void appendParametersForServiceEntitlementRequest(
-            Uri.Builder urlBuilder, ImmutableList<String> appIds,
+    /**
+     * Retrieves the endpoint for OpenID Connect(OIDC) authentication.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43
+     *
+     * <p>The user should call {@link #queryEntitlementStatusFromOidc(String url)} with the
+     * authentication result to retrieve the service entitlement configuration.
+     */
+    public String acquireOidcAuthenticationEndpoint(String appId, CarrierConfig carrierConfig,
+            ServiceEntitlementRequest request) throws ServiceEntitlementException {
+        Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
+        HttpResponse response = httpGet(
+                urlBuilder.toString(), carrierConfig, request.acceptContentType());
+        return response.location();
+    }
+
+    /**
+     * Retrieves the service entitlement configuration from OIDC authentication result.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43.
+     *
+     * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
+     */
+    public String queryEntitlementStatusFromOidc(
+            String url, CarrierConfig carrierConfig, String acceptContentType)
+            throws ServiceEntitlementException {
+        Uri.Builder urlBuilder = Uri.parse(url).buildUpon();
+        return httpGet(
+                urlBuilder.toString(), carrierConfig, acceptContentType).body();
+    }
+
+    private void appendParametersForAuthentication(Uri.Builder urlBuilder,
             ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager = mContext.getSystemService(
                 TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
@@ -344,7 +377,11 @@ public class EapAkaApi {
                     getImsiEap(telephonyManager.getSimOperator(),
                             telephonyManager.getSubscriberId()));
         }
+    }
 
+    private void appendParametersForServiceEntitlementRequest(
+            Uri.Builder urlBuilder, ImmutableList<String> appIds,
+            ServiceEntitlementRequest request) {
         if (!TextUtils.isEmpty(request.notificationToken())) {
             urlBuilder
                     .appendQueryParameter(NOTIF_ACTION,
@@ -352,6 +389,8 @@ public class EapAkaApi {
                     .appendQueryParameter(NOTIF_TOKEN, request.notificationToken());
         }
 
+        TelephonyManager telephonyManager = mContext.getSystemService(
+                TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
         // Assign terminal ID with device IMEI if not set.
         if (TextUtils.isEmpty(request.terminalId())) {
             urlBuilder.appendQueryParameter(TERMINAL_ID, telephonyManager.getImei());
