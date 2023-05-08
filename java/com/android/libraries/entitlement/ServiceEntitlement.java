@@ -59,7 +59,7 @@ public class ServiceEntitlement {
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
-
+    private String mOidcAcceptContentType;
     /**
      * Creates an instance for service entitlement configuration query and operation for the
      * carrier.
@@ -211,6 +211,36 @@ public class ServiceEntitlement {
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
         return eapAkaApi.performEsimOdsaOperation(appId, carrierConfig, request, operation);
+    }
+
+    /**
+     * Retrieves the endpoint for OpenID Connect(OIDC) authentication.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43
+     *
+     * <p>The user should call {@link #queryEntitlementStatusFromOidc(String url)} with the
+     * authentication result to retrieve the service entitlement configuration.
+     *
+     * @param appId an app ID string defined in TS.43 section 2.2
+     * @param request contains parameters that can be used in the HTTP request
+     */
+    public String acquireOidcAuthenticationEndpoint(String appId, ServiceEntitlementRequest request)
+            throws ServiceEntitlementException {
+        mOidcAcceptContentType = request.acceptContentType();
+        return eapAkaApi.acquireOidcAuthenticationEndpoint(appId, carrierConfig, request);
+    }
+
+    /**
+     * Retrieves the service entitlement configuration from OIDC authentication result.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43.
+     *
+     * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
+     *
+     * @param url the redirect url from OIDC authentication result.
+     */
+    public String queryEntitlementStatusFromOidc(String url) throws ServiceEntitlementException {
+        return eapAkaApi.queryEntitlementStatusFromOidc(url, carrierConfig, mOidcAcceptContentType);
     }
 
     /**
