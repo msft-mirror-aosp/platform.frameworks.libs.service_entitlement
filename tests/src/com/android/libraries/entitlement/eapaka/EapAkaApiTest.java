@@ -39,7 +39,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.CarrierConfig;
-import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
@@ -47,6 +46,7 @@ import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -626,7 +626,7 @@ public class EapAkaApiTest {
                 .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
+        OdsaOperation operation = OdsaOperation.builder().build();
 
         String response =
                 mEapAkaApi.performEsimOdsaOperation(ServiceEntitlement.APP_ODSA_COMPANION,
@@ -646,9 +646,9 @@ public class EapAkaApiTest {
                 CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder()
-                .setOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
-                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
+                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .build();
 
         String response =
@@ -682,7 +682,7 @@ public class EapAkaApiTest {
                 .thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
+        OdsaOperation operation = OdsaOperation.builder().build();
 
         ServiceEntitlementException exception =
                 expectThrows(
