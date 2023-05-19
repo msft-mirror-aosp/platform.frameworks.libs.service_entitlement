@@ -30,7 +30,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.CarrierConfig;
-import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
@@ -38,6 +37,7 @@ import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -284,12 +284,12 @@ public class EapAkaApi {
 
     /**
      * Retrieves raw doc of performing ODSA operations. For operation type, see {@link
-     * EsimOdsaOperation}.
+     * OdsaOperation}.
      *
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
     public String performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
-            ServiceEntitlementRequest request, EsimOdsaOperation odsaOperation)
+            ServiceEntitlementRequest request, OdsaOperation odsaOperation)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
         appendParametersForAuthentication(urlBuilder, request);
@@ -418,9 +418,9 @@ public class EapAkaApi {
     }
 
     private void appendParametersForEsimOdsaOperation(
-            Uri.Builder urlBuilder, EsimOdsaOperation odsaOperation) {
+            Uri.Builder urlBuilder, OdsaOperation odsaOperation) {
         urlBuilder.appendQueryParameter(OPERATION, odsaOperation.operation());
-        if (odsaOperation.operationType() != EsimOdsaOperation.OPERATION_TYPE_NOT_SET) {
+        if (odsaOperation.operationType() != OdsaOperation.OPERATION_TYPE_NOT_SET) {
             urlBuilder.appendQueryParameter(OPERATION_TYPE,
                     Integer.toString(odsaOperation.operationType()));
         }
