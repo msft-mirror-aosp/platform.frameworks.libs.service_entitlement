@@ -41,9 +41,12 @@ public final class HttpConstants {
         private ContentType() {
         }
 
-        public static final int UNKNOWN = -1;
-        public static final int JSON = 0;
-        public static final int XML = 1;
+        public static final int UNKNOWN =
+                com.android.libraries.entitlement.utils.HttpConstants.UNKNOWN;
+        public static final int JSON =
+                com.android.libraries.entitlement.utils.HttpConstants.JSON;
+        public static final int XML =
+                com.android.libraries.entitlement.utils.HttpConstants.XML;
 
         public static final String NAME = "Content-Type";
     }
