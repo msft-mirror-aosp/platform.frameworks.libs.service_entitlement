@@ -29,6 +29,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 
@@ -124,7 +125,7 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaCompanion_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
+        OdsaOperation odsaOperation = OdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_COMPANION, mCarrierConfig, request, odsaOperation))
                 .thenReturn(QUERY_APP_ODSA_COMPANION_RESULT);
@@ -138,7 +139,7 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaPrimary_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
+        OdsaOperation odsaOperation = OdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, request, odsaOperation))
                 .thenReturn(QUERY_APP_ODSA_PRIMARY_RESULT);
