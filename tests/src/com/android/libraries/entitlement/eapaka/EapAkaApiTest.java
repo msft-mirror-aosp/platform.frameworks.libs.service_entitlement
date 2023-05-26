@@ -39,7 +39,6 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.CarrierConfig;
-import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
@@ -47,6 +46,7 @@ import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -71,6 +71,7 @@ public class EapAkaApiTest {
             "{\"invalid-eap-relay-packet\":\"" + EAP_AKA_CHALLENGE_REQUEST + "\"}";
     // com.google.common.net.HttpHeaders.COOKIE
     private static final String HTTP_HEADER_COOKIE = "Cookie";
+    private static final String HTTP_HEADER_LOCATION = "Location";
     private static final String COOKIE_VALUE = "COOKIE=abcdefg";
     private static final String COOKIE_VALUE_1 = "COOKIE=hijklmn";
     private static final String RESPONSE_XML =
@@ -625,7 +626,7 @@ public class EapAkaApiTest {
                 .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
+        OdsaOperation operation = OdsaOperation.builder().build();
 
         String response =
                 mEapAkaApi.performEsimOdsaOperation(ServiceEntitlement.APP_ODSA_COMPANION,
@@ -645,9 +646,9 @@ public class EapAkaApiTest {
                 CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder()
-                .setOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
-                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
+                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .build();
 
         String response =
@@ -681,7 +682,7 @@ public class EapAkaApiTest {
                 .thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
+        OdsaOperation operation = OdsaOperation.builder().build();
 
         ServiceEntitlementException exception =
                 expectThrows(
@@ -700,5 +701,44 @@ public class EapAkaApiTest {
         assertThat(exception.getCause()).isNull();
         assertThat(exception.getHttpStatus()).isEqualTo(0);
         assertThat(exception.getRetryAfter()).isEmpty();
+    }
+
+    @Test
+    public void acquireOidcAuthenticationEndpoint() throws Exception {
+        HttpResponse response =
+                HttpResponse.builder()
+                        .setContentType(ContentType.XML)
+                        .setLocation(HTTP_HEADER_LOCATION)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(response);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        String endpoint =
+                mEapAkaApi.acquireOidcAuthenticationEndpoint(ServiceEntitlement.APP_ODSA_COMPANION,
+                        carrierConfig, request);
+
+        assertThat(endpoint).isEqualTo(HTTP_HEADER_LOCATION);
+        verify(mMockHttpClient, times(1)).request(any());
+    }
+
+    @Test
+    public void queryEntitlementStatusFromOidc() throws Exception {
+        HttpResponse response =
+                HttpResponse.builder()
+                        .setContentType(ContentType.XML)
+                        .setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(response);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+
+        String xmlResponse =
+                mEapAkaApi.queryEntitlementStatusFromOidc(
+                        TEST_URL, carrierConfig, ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+
+        assertThat(xmlResponse).isEqualTo(RESPONSE_XML);
+        verify(mMockHttpClient, times(1)).request(any());
     }
 }

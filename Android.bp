@@ -37,7 +37,6 @@ java_library {
     srcs: [
         "java/com/android/libraries/entitlement/eapaka/*.java",
         "java/com/android/libraries/entitlement/http/*.java",
-        "java/com/android/libraries/entitlement/utils/*.java",
     ],
     static_libs: [
         "guava",
@@ -71,6 +70,8 @@ java_library {
     srcs: [
         "java/com/android/libraries/entitlement/ServiceEntitlement.java",
         "java/com/android/libraries/entitlement/EapAkaHelper.java",
+        "java/com/android/libraries/entitlement/Ts43Authentication.java",
+        "java/com/android/libraries/entitlement/Ts43Operation.java",
     ],
     static_libs: [
         "guava",
@@ -92,9 +93,10 @@ java_library {
     ],
     srcs: [
         "java/com/android/libraries/entitlement/CarrierConfig.java",
-        "java/com/android/libraries/entitlement/EsimOdsaOperation.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementException.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
+        "java/com/android/libraries/entitlement/odsa/*.java",
+        "java/com/android/libraries/entitlement/utils/*.java",
     ],
     static_libs: [
         "guava",

@@ -125,7 +125,7 @@ public class HttpClient {
             } else {
                 mConnection = (HttpURLConnection) network.openConnection(url);
             }
-
+            mConnection.setInstanceFollowRedirects(false);
             // add HTTP headers
             for (Map.Entry<String, String> entry : request.requestProperties().entries()) {
                 mConnection.addRequestProperty(entry.getKey(), entry.getValue());
@@ -158,13 +158,16 @@ public class HttpClient {
         try {
             int responseCode = connection.getResponseCode();
             logPii("HttpClient.response headers: " + connection.getHeaderFields());
-            if (responseCode != HttpURLConnection.HTTP_OK) {
+            if (responseCode != HttpURLConnection.HTTP_OK
+                    && responseCode != HttpURLConnection.HTTP_MOVED_TEMP) {
                 throw new ServiceEntitlementException(ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
                         connection.getHeaderField(HttpHeaders.RETRY_AFTER),
-                        "Invalid connection response");
+                        "Invalid connection response: " + responseCode);
             }
             responseBuilder.setResponseCode(responseCode);
             responseBuilder.setResponseMessage(nullToEmpty(connection.getResponseMessage()));
+            responseBuilder.setLocation(
+                    nullToEmpty(connection.getHeaderField(HttpHeaders.LOCATION)));
         } catch (IOException e) {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS, "Read response code failed!", e);

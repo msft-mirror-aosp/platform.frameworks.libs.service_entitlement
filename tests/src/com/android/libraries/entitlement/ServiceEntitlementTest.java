@@ -29,6 +29,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 
@@ -46,6 +47,9 @@ public class ServiceEntitlementTest {
     private static final String QUERY_APP_VOWIFI_RESULT = "QUERY_APP_VOWIFI_RESULT";
     private static final String QUERY_APP_ODSA_COMPANION_RESULT = "QUERY_APP_ODSA_COMPANION_RESULT";
     private static final String QUERY_APP_ODSA_PRIMARY_RESULT = "QUERY_APP_ODSA_PRIMARY_RESULT";
+    private static final String QUERY_OIDC_RESULT = "QUERY_OIDC_RESULT";
+    private static final String QUERY_ENTITLEMENT_STATUS_FROM_OIDC =
+            "QUERY_ENTITLEMENT_STATUS_FROM_OIDC";
     private static final String TEST_URL = "https://test.url";
 
     private static final String IMSI = "234107813240779";
@@ -121,7 +125,7 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaCompanion_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
+        OdsaOperation odsaOperation = OdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_COMPANION, mCarrierConfig, request, odsaOperation))
                 .thenReturn(QUERY_APP_ODSA_COMPANION_RESULT);
@@ -135,7 +139,7 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaPrimary_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
+        OdsaOperation odsaOperation = OdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, request, odsaOperation))
                 .thenReturn(QUERY_APP_ODSA_PRIMARY_RESULT);
@@ -144,5 +148,30 @@ public class ServiceEntitlementTest {
                 mServiceEntitlement.performEsimOdsa(
                         ServiceEntitlement.APP_ODSA_PRIMARY, request, odsaOperation))
                 .isEqualTo(QUERY_APP_ODSA_PRIMARY_RESULT);
+    }
+
+    @Test
+    public void acquireOidcAuthenticationEndpoint_returnResult() throws Exception {
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+        when(mMockEapAkaApi.acquireOidcAuthenticationEndpoint(
+                ServiceEntitlement.APP_ODSA_COMPANION, mCarrierConfig, request))
+                .thenReturn(QUERY_OIDC_RESULT);
+
+        assertThat(
+                mServiceEntitlement.acquireOidcAuthenticationEndpoint(
+                        ServiceEntitlement.APP_ODSA_COMPANION, request))
+                .isEqualTo(QUERY_OIDC_RESULT);
+    }
+
+    @Test
+    public void queryEntitlementStatusFromOidc_returnResult() throws Exception {
+        when(mMockEapAkaApi.queryEntitlementStatusFromOidc(
+                ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, null))
+                .thenReturn(QUERY_ENTITLEMENT_STATUS_FROM_OIDC);
+
+        assertThat(
+                mServiceEntitlement.queryEntitlementStatusFromOidc(
+                        ServiceEntitlement.APP_ODSA_PRIMARY))
+                .isEqualTo(QUERY_ENTITLEMENT_STATUS_FROM_OIDC);
     }
 }
