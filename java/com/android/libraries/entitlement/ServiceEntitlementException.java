@@ -87,7 +87,8 @@ public class ServiceEntitlementException extends Exception {
             ERROR_EAP_AKA_FAILURE,
             ERROR_SERVER_NOT_CONNECTABLE,
             ERROR_HTTP_STATUS_NOT_SUCCESS,
-            ERROR_MALFORMED_HTTP_RESPONSE
+            ERROR_MALFORMED_HTTP_RESPONSE,
+            ERROR_TOKEN_NOT_AVAILABLE
     })
     public @interface ErrorCode {}
 
