@@ -16,6 +16,7 @@
 
 package com.android.libraries.entitlement.odsa;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -25,11 +26,18 @@ import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * Acquire configuration operation described in GSMA Service Entitlement Configuration section 6.
  */
 public class AcquireConfigurationOperation {
+    /** Indicating polling inverval not available. */
+    public static final int POLLING_INTERVAL_NOT_AVAILABLE = -1;
+
     /**
      * HTTP request parameters specific to on device service activation (ODSA) acquire configuration
      * operation. See GSMA spec TS.43 section 6.2.
@@ -47,56 +55,56 @@ public class AcquireConfigurationOperation {
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalId();
 
         /**
          * Returns the ICCID of the companion device. Used by HTTP parameter
          * {@code companion_terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalIccid();
 
         /**
          * Returns the EID of the companion device. Used by HTTP parameter
          * {@code companion_terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalEid();
 
         /**
          * Returns the ICCID of the primary device eSIM. Used by HTTP parameter
          * {@code terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String terminalIccid();
 
         /**
          * Returns the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
          * {@code terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String terminalEid();
 
         /**
          * Returns the unique identifier of the primary device eSIM, like the IMEI associated with
          * the eSIM. Used by HTTP parameter {@code target_terminal_id}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalId();
 
         /**
          * Returns the ICCID primary device eSIM. Used by HTTP parameter
          * {@code target_terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalIccid();
 
         /**
          * Returns the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
          * {@code target_terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalEid();
 
         /**
@@ -254,140 +262,241 @@ public class AcquireConfigurationOperation {
      * section 6.5.5 table 40.
      */
     @AutoValue
-    public abstract static class AcquireConfigurationResponse {
+    public abstract static class AcquireConfigurationResponse extends OdsaResponse {
         /**
-         * Integrated Circuit Card Identification - Identifier of the eSIM profile on the device’s
-         * eSIM. {@code null} if an eSIM profile does not exist for the device.
+         * Configuration
          */
-        @Nullable
-        public abstract String iccid();
+        @AutoValue
+        public abstract static class Configuration {
+            /**
+             * The configuration type is unknown.
+             */
+            public static final int CONFIGURATION_TYPE_UNKNOWN = -1;
+
+            /**
+             * The configuration is for ODSA primary device.
+             */
+            public static final int CONFIGURATION_TYPE_PRIMARY = 1;
+
+            /**
+             * The configuration is for companion device.
+             */
+            public static final int CONFIGURATION_TYPE_COMPANION = 2;
+
+            /**
+             * The configuration is for server-initiated ODSA.
+             */
+            public static final int CONFIGURATION_TYPE_ENTERPRISE = 3;
+
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({
+                    CONFIGURATION_TYPE_UNKNOWN,
+                    CONFIGURATION_TYPE_PRIMARY,
+                    CONFIGURATION_TYPE_COMPANION,
+                    CONFIGURATION_TYPE_ENTERPRISE
+            })
+            public @interface ConfigurationType {}
+
+            /**
+             * Indicates the configuration type.
+             */
+            @ConfigurationType
+            public abstract int type();
+
+            /**
+             * Integrated Circuit Card Identification - Identifier of the eSIM profile on the
+             * device’s eSIM. {@code null} if an eSIM profile does not exist for the device.
+             */
+            @Nullable
+            public abstract String iccid();
+
+            /**
+             * Indicates the applicable companion device service. {@code null} if not for companion
+             * configuration.
+             */
+            @Nullable
+            @CompanionService
+            public abstract String companionDeviceService();
+
+            /**
+             * Service status.
+             *
+             * @see OdsaOperation#SERVICE_STATUS_UNKNOWN
+             * @see OdsaOperation#SERVICE_STATUS_ACTIVATED
+             * @see OdsaOperation#SERVICE_STATUS_ACTIVATING
+             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED
+             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
+             */
+            @ServiceStatus
+            public abstract int serviceStatus();
+
+            /**
+             * Specifies the minimum interval (in minutes) with which the device application may
+             * poll the ECS to refresh the current {@link #serviceStatus()} using
+             * {@link AcquireConfigurationRequest}. This parameter will be present only when
+             * {@link #serviceStatus()} is {@link OdsaOperation#SERVICE_STATUS_ACTIVATING}. If
+             * parameter is not present or value is 0, this polling procedure is not triggered and
+             * ODSA app will keep waiting for any external action to continue the flow.
+             *
+             * The maximum number of {@link AcquireConfigurationRequest} before sending a
+             * {@link #serviceStatus()} with
+             * {@link OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE} will be defined as an ECS
+             * configuration variable (MaxRefreshRequest).
+             *
+             * {@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling inverval is not available.
+             */
+            public abstract int pollingInterval();
+
+            /**
+             * Specifies how and where to download the eSIM profile associated with the device.
+             * Present in case the profile is to be downloaded at this stage.
+             */
+            @Nullable
+            public abstract DownloadInfo downloadInfo();
+
+            /**
+             * Includes all information collected by the ES of the companion device.
+             */
+            @Nullable
+            public abstract CompanionDeviceInfo companionDeviceInfo();
+
+            /**
+             * @return The builder.
+             */
+            @NonNull
+            public static Builder builder() {
+                return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationResponse_Configuration
+                        .Builder()
+                        .setType(CONFIGURATION_TYPE_UNKNOWN)
+                        .setIccid("")
+                        .setServiceStatus(OdsaOperation.SERVICE_STATUS_UNKNOWN)
+                        .setPollingInterval(POLLING_INTERVAL_NOT_AVAILABLE);
+            }
+
+            /**
+             * The builder of {@link Configuration}
+             */
+            @AutoValue.Builder
+            public abstract static class Builder {
+                /**
+                 * Set the configuration type
+                 *
+                 * @param configType The configuration type.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setType(@ConfigurationType int configType);
+                /**
+                 * Set the iccid.
+                 *
+                 * @param iccid Integrated Circuit Card Identification - Identifier of the eSIM
+                 * profile on the device’s eSIM.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setIccid(@NonNull String iccid);
+
+                /**
+                 * Set the applicable companion device service.
+                 *
+                 * @param companionDeviceService Indicates the applicable companion device service.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setCompanionDeviceService(
+                        @NonNull @CompanionService String companionDeviceService);
+
+                /**
+                 * Set the service status.
+                 *
+                 * @param serviceStatus Service status.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
+
+                /**
+                 * Set the polling interval.
+                 *
+                 * @param pollingInterval The minimum interval (in minutes) with which the device
+                 * application may poll the ECS to refresh the current {@link #serviceStatus()}
+                 * using {@link AcquireConfigurationRequest}.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setPollingInterval(int pollingInterval);
+
+                /**
+                 * Set the download information.
+                 *
+                 * @param downloadInfo Specifies how and where to download the eSIM profile
+                 * associated with the device.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setDownloadInfo(@NonNull DownloadInfo downloadInfo);
+
+                /**
+                 * Set the companion device info.
+                 *
+                 * @param companionDeviceInfo Includes all information collected by the ES of the
+                 * companion device.
+                 *
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setCompanionDeviceInfo(
+                        @NonNull CompanionDeviceInfo companionDeviceInfo);
+
+                /**
+                 * @return Build the {@link Configuration} object.
+                 */
+                @NonNull
+                public abstract Configuration build();
+            }
+        }
 
         /**
-         * Indicates the applicable companion device service. {@code null} if not for companion
-         * configuration.
+         * Configurations defined in GSMA Service Entitlement Configuration section 6.5.5. Could be
+         * more than one if multiple companion device(s) associated with the requesting device that
+         * carry a configuration for ODSA.
          */
-        @Nullable
-        @CompanionService
-        public abstract String companionDeviceService();
-
-        /**
-         * Service status.
-         *
-         * @see OdsaOperation#SERVICE_STATUS_UNKNOWN
-         * @see OdsaOperation#SERVICE_STATUS_ACTIVATED
-         * @see OdsaOperation#SERVICE_STATUS_ACTIVATING
-         * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED
-         * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
-         */
-        @ServiceStatus
-        public abstract int serviceStatus();
-
-        /**
-         * Specifies the minimum interval (in minutes) with which the device application may poll
-         * the ECS to refresh the current {@link #serviceStatus()} using
-         * {@link AcquireConfigurationRequest}. This parameter will be present only when
-         * {@link #serviceStatus()} is {@link OdsaOperation#SERVICE_STATUS_ACTIVATING}. If parameter
-         * is not present or value is 0, this polling procedure is not triggered and ODSA
-         * app will keep waiting for any external action to continue the flow.
-         *
-         * The maximum number of {@link AcquireConfigurationRequest} before sending a
-         * {@link #serviceStatus()} with {@link OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE}
-         * will be defined as an ECS configuration variable (MaxRefreshRequest).
-         */
-        public abstract int pollingInterval();
-
-        /**
-         * Specifies how and where to download the eSIM profile associated with the device.
-         * Present in case the profile is to be downloaded at this stage.
-         */
-        @Nullable
-        public abstract DownloadInfo downloadInfo();
-
-        /**
-         * Includes all information collected by the ES of the companion device.
-         */
-        @Nullable
-        public abstract CompanionDeviceInfo companionDeviceInfo();
+        @NonNull
+        public abstract ImmutableList<Configuration> configurations();
 
         /**
          * @return The builder.
          */
+        @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationResponse
-                    .Builder();
+                    .Builder()
+                    .setConfigurations(ImmutableList.of());
         }
 
         /**
          * The builder of {@link AcquireConfigurationResponse}
          */
         @AutoValue.Builder
-        public abstract static class Builder {
+        public abstract static class Builder extends OdsaResponse.Builder {
             /**
-             * Set the iccid.
+             * Set the configurations
              *
-             * @param iccid Integrated Circuit Card Identification - Identifier of the eSIM
-             * profile on the device’s eSIM.
+             * @param configs Configurations defined in GSMA Service Entitlement Configuration
+             * section 6.5.5. Could be more than one if multiple companion device(s) associated with
+             * the requesting device that carry a configuration for ODSA.
              *
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setIccid(@NonNull String iccid);
-
-            /**
-             * Set the applicable companion device service.
-             *
-             * @param companionDeviceService Indicates the applicable companion device service.
-             *
-             * @return The builder.
-             */
-            @NonNull
-            public abstract Builder setCompanionDeviceService(
-                    @NonNull @CompanionService String companionDeviceService);
-
-            /**
-             * Set the service status.
-             *
-             * @param serviceStatus Service status.
-             *
-             * @return The builder.
-             */
-            @NonNull
-            public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
-
-            /**
-             * Set the polling interval.
-             *
-             * @param pollingInterval The minimum interval (in minutes) with which the device
-             * application may poll the ECS to refresh the current {@link #serviceStatus()} using
-             * {@link AcquireConfigurationRequest}.
-             *
-             * @return The builder.
-             */
-            @NonNull
-            public abstract Builder setPollingInterval(int pollingInterval);
-
-            /**
-             * Set the download information.
-             *
-             * @param downloadInfo Specifies how and where to download the eSIM profile associated
-             * with the device.
-             *
-             * @return The builder.
-             */
-            @NonNull
-            public abstract Builder setDownloadInfo(@NonNull DownloadInfo downloadInfo);
-
-            /**
-             * Set the companion device info.
-             *
-             * @param companionDeviceInfo Includes all information collected by the ES of the
-             * companion device.
-             *
-             * @return The builder.
-             */
-            @NonNull
-            public abstract Builder setCompanionDeviceInfo(
-                    @NonNull CompanionDeviceInfo companionDeviceInfo);
+            public abstract Builder setConfigurations(
+                    @NonNull ImmutableList<Configuration> configs);
 
             /**
              * @return Build the {@link AcquireConfigurationResponse} object.
