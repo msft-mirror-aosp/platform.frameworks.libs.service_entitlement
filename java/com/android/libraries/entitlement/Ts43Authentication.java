@@ -16,27 +16,48 @@
 
 package com.android.libraries.entitlement;
 
+import static com.google.common.base.Strings.nullToEmpty;
+
+import android.content.Context;
 import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
+import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43XmlDoc;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 
 import java.net.URL;
+import java.util.Objects;
 
 /**
  * The class responsible for TS.43 authentication process.
  */
 public class Ts43Authentication {
+    private static final String TAG = "Ts43Auth";
+
+    /** Default entitlement version. */
+    private static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
+
     /**
      * The authentication token for TS.43 operation.
      */
     @AutoValue
     public abstract static class Ts43AuthToken {
+        /**
+         * Indicating the validity of token is not available.
+         */
+        public static long VALIDITY_NOT_AVAILABLE = -1;
+
         /**
          * The authentication token for TS.43 operations.
          */
@@ -47,16 +68,14 @@ public class Ts43Authentication {
          * Indicates the validity of the token. Note this value is server dependent. The client is
          * expected to interpret this value itself.
          */
-        @NonNull
         public abstract long validity();
 
         /**
          * Create the {@link Ts43AuthToken} object.
          *
          * @param token The authentication token for TS.43 operations.
-         * @param validity Indicates the validity of the token in seconds defined in GSMA Service
-         * Provider Device Configuration section 4.2. The validity is counted from the time it is
-         * received by the client in the configuration XML/JSON document.
+         * @param validity Indicates the validity of the token. Note this value is server
+         * dependent. If not available, set to {@link #VALIDITY_NOT_AVAILABLE}.
          *
          * @return The {@link Ts43AuthToken} object.
          */
@@ -66,29 +85,144 @@ public class Ts43Authentication {
     }
 
     /**
+     * The application context.
+     */
+    @NonNull
+    private final Context mContext;
+
+    /**
+     * The entitlement server address.
+     */
+    @NonNull
+    private final URL mEntitlementServerAddress;
+
+    /**
+     * The TS.43 entitlement version to use. For example, {@code "9.0"}.
+     */
+    @NonNull
+    private final String mEntitlementVersion;
+
+    /**
+     * For test mocking only.
+     */
+    @VisibleForTesting
+    private ServiceEntitlement mServiceEntitlement;
+
+    /**
+     * Ts43Authentication constructor.
+     *
+     * @param context The application context.
+     * @param entitlementServerAddress The entitlement server address.
+     * @param entitlementVersion The TS.43 entitlement version to use. For example, {@code "9.0"}.
+     * If {@code null}, version {@code "2.0"} will be used by default.
+     *
+     * @throws NullPointerException wWhen {@code context} or {@code entitlementServerAddress} is
+     * {@code null}.
+     */
+    public Ts43Authentication(@NonNull Context context, @NonNull URL entitlementServerAddress,
+            @Nullable String entitlementVersion) {
+        Objects.requireNonNull(context, "context is null");
+        Objects.requireNonNull(entitlementServerAddress, "entitlementServerAddress is null.");
+
+        mContext = context;
+        mEntitlementServerAddress = entitlementServerAddress;
+
+        if (entitlementVersion != null) {
+            mEntitlementVersion = entitlementVersion;
+        } else {
+            mEntitlementVersion = DEFAULT_ENTITLEMENT_VERSION;
+        }
+    }
+
+    /**
      * Get the authentication token for TS.43 operations with EAP-AKA described in TS.43
      * Service Entitlement Configuration section 2.8.1.
      *
      * @param slotIndex The logical SIM slot index involved in ODSA operation.
      * See {@link SubscriptionInfo#getSubscriptionId()}.
-     * @param entitlementServerAddress The entitlement server address.
-     * @param entitlementVersion The TS.43 entitlement version to use. For example, {@code "9.0"}.
-     * If {@code null}, version {@code "2.0"} will be used by default.
+
      * @param appId Application id. For example, {@link Ts43Constants#APP_VOWIFI} for VoWifi,
-     * {@link Ts43Constants#APP_ODSA_PRIMARY } for ODSA primary device. Refer GSMA to Service
+     * {@link Ts43Constants#APP_ODSA_PRIMARY} for ODSA primary device. Refer GSMA to Service
      * Entitlement Configuration section 2.3.
+     * @param appName The calling client's package name. Used for {@code app_name} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
      *
      * @return The authentication token.
      *
      * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
      * error from the server, the error code can be retrieved by
-     * {@link ServiceEntitlementException#getHttpStatus()}
+     * {@link ServiceEntitlementException#getHttpStatus()}.
+     * @throws IllegalArgumentException when {@code slotIndex} or {@code appId} is invalid.
+     * @throws NullPointerException when {@code context}, {@code entitlementServerAddress}, or
+     * {@code appId} is {@code null}.
      */
     @NonNull
-    public static Ts43AuthToken getAuthToken(int slotIndex,
-            @NonNull URL entitlementServerAddress, @Nullable String entitlementVersion,
-            @NonNull @AppId String appId) throws ServiceEntitlementException {
-        return null;
+    public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
+            @Nullable String appName, @Nullable String appVersion)
+            throws ServiceEntitlementException {
+        Objects.requireNonNull(appId, "appId is null");
+
+        if (!Ts43Constants.isValidAppId(appId)) {
+            throw new IllegalArgumentException("getAuthToken: invalid app id " + appId);
+        }
+
+        String imei = null;
+        TelephonyManager telephonyManager = mContext.getSystemService(TelephonyManager.class);
+        if (telephonyManager != null) {
+            if (slotIndex < 0 || slotIndex >= telephonyManager.getActiveModemCount()) {
+                throw new IllegalArgumentException("getAuthToken: invalid slot index " + slotIndex);
+            }
+            imei = telephonyManager.getImei(slotIndex);
+        }
+
+        // Build the HTTP request. The default params are specified in
+        // ServiceEntitlementRequest.builder() already.
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setEntitlementVersion(mEntitlementVersion)
+                        .setTerminalId(imei)
+                        .setAppName(appName)
+                        .setAppVersion(appVersion)
+                        .build();
+        CarrierConfig carrierConfig = CarrierConfig.builder()
+                .setServerUrl(mEntitlementServerAddress.toString())
+                .build();
+
+        if (mServiceEntitlement == null) {
+            mServiceEntitlement = new ServiceEntitlement(mContext, carrierConfig,
+                    SubscriptionManager.getSubscriptionId(slotIndex));
+        }
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.queryEntitlementStatus(ImmutableList.of(appId), request);
+            Log.d(TAG, "getAuthToken: rawXml=" + rawXml);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "Failed to get authentication token. e=" + e);
+            throw e;
+        }
+
+        Ts43XmlDoc ts43xmlDoc = new Ts43XmlDoc(rawXml);
+        String authToken = ts43xmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.TOKEN);
+        if (TextUtils.isEmpty(authToken)) {
+            Log.w(TAG, "Failed to parse authentication token");
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_TOKEN_NOT_AVAILABLE,
+                    "Failed to parse authentication token");
+        }
+
+        String validityString = nullToEmpty(ts43xmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
+        long validity;
+        try {
+            validity = Long.parseLong(validityString);
+        } catch (NumberFormatException e) {
+            validity = Ts43AuthToken.VALIDITY_NOT_AVAILABLE;
+        }
+        return Ts43AuthToken.create(authToken, validity);
     }
 
     /**
@@ -103,8 +237,12 @@ public class Ts43Authentication {
      * @param entitlementServerAddress The entitlement server address.
      * @param entitlementVersion The TS.43 entitlement version to use. For example, {@code "9.0"}.
      * @param appId Application id. For example, {@link Ts43Constants#APP_VOWIFI} for VoWifi,
-     * {@link Ts43Constants#APP_ODSA_PRIMARY } for ODSA primary device. Refer GSMA to Service
+     * {@link Ts43Constants#APP_ODSA_PRIMARY} for ODSA primary device. Refer GSMA to Service
      * Entitlement Configuration section 2.3.
+     * @param appName The calling client's package name. Used for {@code app_name} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
      *
      * @return The URL of OIDC server with all the required parameters for client to launch a
      * user interface for users to interact with the authentication process. The parameters in URL
@@ -115,8 +253,9 @@ public class Ts43Authentication {
      * {@link ServiceEntitlementException#getHttpStatus()}
      */
     @NonNull
-    public static URL getOidcAuthServer(int slotIndex, @NonNull URL entitlementServerAddress,
-            @Nullable String entitlementVersion, @NonNull @AppId String appId)
+    public URL getOidcAuthServer(@NonNull Context context, int slotIndex,
+            @NonNull URL entitlementServerAddress, @Nullable String entitlementVersion,
+            @NonNull @AppId String appId, @Nullable String appName, @Nullable String appVersion)
             throws ServiceEntitlementException {
         return null;
     }
@@ -135,7 +274,7 @@ public class Ts43Authentication {
      * {@link ServiceEntitlementException#getHttpStatus()}
      */
     @NonNull
-    public static Ts43AuthToken getAuthToken(@NonNull URL aesUrl)
+    public Ts43AuthToken getAuthToken(@NonNull URL aesUrl)
             throws ServiceEntitlementException {
         return null;
     }

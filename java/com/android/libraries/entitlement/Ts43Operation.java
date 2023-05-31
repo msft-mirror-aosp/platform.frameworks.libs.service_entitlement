@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement;
 
+import android.content.Context;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,8 +47,8 @@ import java.util.List;
 public class Ts43Operation {
     /**
      * The normal token retrieved via
-     * {@link Ts43Authentication#getAuthToken(int, String, String, String)} or
-     * {@link Ts43Authentication#getAuthToken(URL)}.
+     * {@link Ts43Authentication#getAuthToken(Context, int, URL, String, String, String, String)}
+     * or {@link Ts43Authentication#getAuthToken(URL)}.
      */
     public static final int TOKEN_TYPE_NORMAL = 1;
 
@@ -64,6 +66,14 @@ public class Ts43Operation {
     public @interface TokenType {}
 
     /**
+     * The authentication token used for TS.43 operation. This token could be automatically updated
+     * after each TS.43 operation if the server provides the new token in the operation's HTTP
+     * response.
+     */
+    @NonNull
+    private String mAuthToken;
+
+    /**
      * Constructor of Ts43Operation.
      *
      * @param slotIndex The logical SIM slot index involved in ODSA operation.
@@ -77,6 +87,7 @@ public class Ts43Operation {
     public Ts43Operation(int slotIndex, @NonNull URL entitlementServerAddress,
             @Nullable String entitlementVersion, @NonNull String authToken,
             @TokenType int tokenType) {
+        mAuthToken = authToken;
     }
 
     /**
