@@ -36,18 +36,22 @@ public abstract class OdsaOperation {
      * ODSA operation: CheckEligibility.
      */
     public static final String OPERATION_CHECK_ELIGIBILITY = "CheckEligibility";
+
     /**
      * ODSA operation: ManageSubscription.
      */
     public static final String OPERATION_MANAGE_SUBSCRIPTION = "ManageSubscription";
+
     /**
      * ODSA operation: ManageService.
      */
     public static final String OPERATION_MANAGE_SERVICE = "ManageService";
+
     /**
      * ODSA operation: AcquireConfiguration.
      */
     public static final String OPERATION_ACQUIRE_CONFIGURATION = "AcquireConfiguration";
+
     /**
      * ODSA operation: AcquireTemporaryToken.
      */
@@ -104,32 +108,39 @@ public abstract class OdsaOperation {
      * Indicates that operation_type is not set.
      */
     public static final int OPERATION_TYPE_NOT_SET = -1;
+
     /**
      * To activate a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_SUBSCRIBE = 0;
+
     /**
      * To cancel a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_UNSUBSCRIBE = 1;
+
     /**
      * To manage an existing subscription, for {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_CHANGE_SUBSCRIPTION = 2;
+
     /**
      * To transfer a subscription from an existing device, used by
      * {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_TRANSFER_SUBSCRIPTION = 3;
+
     /**
      * To inform the network of a subscription update, used by
      * {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_UPDATE_SUBSCRIPTION = 4;
+
     /**
      * To activate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
      */
     public static final int OPERATION_TYPE_ACTIVATE_SERVICE = 10;
+
     /**
      * To deactivate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
      */
@@ -152,6 +163,7 @@ public abstract class OdsaOperation {
      * Indicates the companion device carries the same MSISDN as the primary device.
      */
     public static final String COMPANION_SERVICE_SHARED_NUMBER = "SharedNumber";
+
     /**
      * Indicates the companion device carries a different MSISDN as the primary device.
      */
