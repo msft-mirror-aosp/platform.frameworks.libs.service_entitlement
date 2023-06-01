@@ -83,37 +83,44 @@ public class CheckEligibilityOperation {
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
          */
+        @NonNull
         public abstract String companionTerminalId();
 
         /**
          * Returns the OEM of the companion device. Used by HTTP parameter
          * {@code companion_terminal_vendor}.
          */
+        @NonNull
         public abstract String companionTerminalVendor();
 
         /**
          * Returns the model of the companion device. Used by HTTP parameter
          * {@code companion_terminal_model}.
          */
+        @NonNull
         public abstract String companionTerminalModel();
 
         /**
          * Returns the software version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_sw_version}.
          */
+        @NonNull
         public abstract String companionTerminalSoftwareVersion();
 
         /**
          * Returns the user-friendly version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_friendly_name}.
          */
+        @NonNull
         public abstract String companionTerminalFriendlyName();
 
         /**
          * Returns a new {@link Builder} object.
          */
+        @NonNull
         public static Builder builder() {
             return new AutoValue_CheckEligibilityOperation_CheckEligibilityRequest.Builder()
+                    .setAppId("")
                     .setCompanionTerminalId("")
                     .setCompanionTerminalVendor("")
                     .setCompanionTerminalModel("")
@@ -222,7 +229,7 @@ public class CheckEligibilityOperation {
      * Check eligibility response described in GSMA Service Entitlement Configuration section 6.5.2.
      */
     @AutoValue
-    public abstract static class CheckEligibilityResponse {
+    public abstract static class CheckEligibilityResponse extends OdsaResponse {
         /**
          * @return The result of check eligibility request.
          */
@@ -250,7 +257,7 @@ public class CheckEligibilityOperation {
          * {@code JSON} and {@code XML}, it is possible to provide the base64 encoding of the
          * value by preceding it with {@code encodedValue=}.
          */
-        @Nullable
+        @NonNull
         public abstract String notEnabledUserData();
 
         /**
@@ -264,14 +271,18 @@ public class CheckEligibilityOperation {
          * @return The builder.
          */
         public static Builder builder() {
-            return new AutoValue_CheckEligibilityOperation_CheckEligibilityResponse.Builder();
+            return new AutoValue_CheckEligibilityOperation_CheckEligibilityResponse.Builder()
+                    .setAppEligibility(ELIGIBILITY_RESULT_UNKNOWN)
+                    .setCompanionDeviceServices(ImmutableList.of())
+                    .setNotEnabledUserData("")
+                    .setNotEnabledContentsType(HttpConstants.UNKNOWN);
         }
 
         /**
          * The builder.
          */
         @AutoValue.Builder
-        public abstract static class Builder {
+        public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Set the eligibility.
              *

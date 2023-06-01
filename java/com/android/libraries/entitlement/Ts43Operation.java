@@ -31,6 +31,7 @@ import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.Acqu
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenResponse;
+import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
 import com.android.libraries.entitlement.odsa.DownloadInfo;
@@ -192,7 +193,133 @@ public class Ts43Operation {
     public CheckEligibilityResponse checkEligibility(
             @NonNull CheckEligibilityRequest checkEligibilityRequest)
             throws ServiceEntitlementException {
-        return null;
+        Objects.requireNonNull(checkEligibilityRequest);
+
+        ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
+                .setEntitlementVersion(mEntitlementVersion)
+                .setTerminalId(mImei);
+
+        if (mTokenType == TOKEN_TYPE_NORMAL) {
+            builder.setAuthenticationToken(mAuthToken);
+        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
+            builder.setTemporaryToken(mTemporaryToken);
+        }
+
+        ServiceEntitlementRequest request = builder.build();
+
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_CHECK_ELIGIBILITY)
+                .setCompanionTerminalId(checkEligibilityRequest.companionTerminalId())
+                .setCompanionTerminalVendor(checkEligibilityRequest.companionTerminalVendor())
+                .setCompanionTerminalModel(checkEligibilityRequest.companionTerminalModel())
+                .setCompanionTerminalSoftwareVersion(checkEligibilityRequest
+                        .companionTerminalSoftwareVersion())
+                .setCompanionTerminalFriendlyName(checkEligibilityRequest
+                        .companionTerminalFriendlyName())
+                .build();
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.performEsimOdsa(checkEligibilityRequest.appId(),
+                    request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        // Build the response of check eligibility operation. Refer to GSMA Service Entitlement
+        // Configuration section 6.5.2.
+        CheckEligibilityResponse.Builder responseBuilder = CheckEligibilityResponse.builder();
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+
+        try {
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "checkEligibility: Malformed URL " + rawXml);
+        }
+
+        // Parse the eligibility
+        String eligibilityString = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.PRIMARY_APP_ELIGIBILITY);
+        if (TextUtils.isEmpty(eligibilityString)) {
+            eligibilityString = ts43XmlDoc.get(
+                    ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                    Ts43XmlDoc.Parm.COMPANION_APP_ELIGIBILITY);
+        }
+
+        int eligibility = CheckEligibilityOperation.ELIGIBILITY_RESULT_UNKNOWN;
+        if (!TextUtils.isEmpty(eligibilityString)) {
+            switch (eligibilityString) {
+                case Ts43XmlDoc.ParmValues.DISABLED:
+                    eligibility = CheckEligibilityOperation.ELIGIBILITY_RESULT_DISABLED;
+                    break;
+                case Ts43XmlDoc.ParmValues.ENABLED:
+                    eligibility = CheckEligibilityOperation.ELIGIBILITY_RESULT_ENABLED;
+                    break;
+                case Ts43XmlDoc.ParmValues.INCOMPATIBLE:
+                    eligibility = CheckEligibilityOperation.ELIGIBILITY_RESULT_INCOMPATIBLE;
+                    break;
+            }
+        }
+        responseBuilder.setAppEligibility(eligibility);
+
+        // Parse companion device services
+        String companionDeviceServices = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.COMPANION_DEVICE_SERVICES);
+
+        if (!TextUtils.isEmpty(companionDeviceServices)) {
+            List<String> companionDeviceServicesList = Arrays.asList(
+                    companionDeviceServices.split("\\s*,\\s*"));
+            responseBuilder.setCompanionDeviceServices(
+                    ImmutableList.copyOf(companionDeviceServicesList));
+        }
+
+        // Parse notEnabledURL
+        URL notEnabledURL = null;
+        String notEnabledURLString = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.NOT_ENABLED_URL);
+
+        try {
+            notEnabledURL = new URL(notEnabledURLString);
+            responseBuilder.setNotEnabledURL(notEnabledURL);
+        } catch (MalformedURLException e) {
+            Log.w(TAG, "checkEligibility: malformed URL " + notEnabledURLString);
+        }
+
+        // Parse notEnabledUserData
+        String notEnabledUserData = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.NOT_ENABLED_USER_DATA);
+
+        if (!TextUtils.isEmpty(notEnabledUserData)) {
+            responseBuilder.setNotEnabledUserData(notEnabledUserData);
+        }
+
+        // Parse notEnabledContentsType
+        String notEnabledContentsTypeString = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.NOT_ENABLED_CONTENTS_TYPE);
+
+        int notEnabledContentsType = HttpConstants.ContentType.UNKNOWN;
+        if (!TextUtils.isEmpty(notEnabledContentsTypeString)) {
+            switch (notEnabledContentsTypeString) {
+                case Ts43XmlDoc.ParmValues.CONTENTS_TYPE_XML:
+                    notEnabledContentsType = HttpConstants.ContentType.XML;
+                    break;
+                case Ts43XmlDoc.ParmValues.CONTENTS_TYPE_JSON:
+                    notEnabledContentsType = HttpConstants.ContentType.JSON;
+                    break;
+            }
+        }
+        responseBuilder.setNotEnabledContentsType(notEnabledContentsType);
+
+        return responseBuilder.build();
     }
 
     /**
