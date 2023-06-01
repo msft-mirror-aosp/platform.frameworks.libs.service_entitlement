@@ -28,6 +28,8 @@ import android.telephony.TelephonyManager;
 import android.testing.AndroidTestingRunner;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
+import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
 import com.android.libraries.entitlement.odsa.OdsaOperation;
@@ -58,8 +60,12 @@ public class Ts43OperationTest {
     private static final String ICCID = "123456789";
     private static final String PROFILE_SMDP_ADDRESS = "SMDP+ ADDR";
 
+    private static final String TEMPORARY_TOKEN = "A8daAd8ads7fau34789947kjhsfad;kjfh";
+
+    private static final String TEMPORARY_TOKEN_EXPIRY = "2019-01-29T13:15:31Z";
+
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
-                      "<?xml version=\"1.0\"?>"
+            "<?xml version=\"1.0\"?>"
                     + "<wap-provisioningdoc version=\"1.1\">"
                     + "<characteristic type=\"VERS\">"
                     + "    <parm name=\"version\" value=\"1\"/>"
@@ -80,7 +86,7 @@ public class Ts43OperationTest {
                     + "</wap-provisioningdoc>";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_DOWNLOAD_PROFILE =
-                      "<?xml version=\"1.0\"?>\n"
+            "<?xml version=\"1.0\"?>\n"
                     + "<wap-provisioningdoc version=\"1.1\">\n"
                     + "    <characteristic type=\"VERS\">\n"
                     + "        <parm name=\"version\" value=\"1\"/>\n"
@@ -94,11 +100,32 @@ public class Ts43OperationTest {
                     + "        <characteristic type=\"DownloadInfo\">\n"
                     + "            <parm name=\"ProfileIccid\" value=\"" + ICCID + "\"/>\n"
                     + "            <parm name=\"ProfileSmdpAddress\" value=\""
-                              + PROFILE_SMDP_ADDRESS + "\"/>\n"
+                    + PROFILE_SMDP_ADDRESS + "\"/>\n"
                     + "        </characteristic>\n"
                     + "        <parm name=\"SubscriptionResult\" value=\"2\"/>\n"
                     + "        <parm name=\"OperationResult\" value=\"1\"/>\n"
                     + "    </characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
+    private static final String ACQUIRE_TEMPORARY_TOKEN_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2009\"/>\n"
+                    + "    <parm name=\"TemporaryToken\" value=\"" + TEMPORARY_TOKEN + "\"/>\n"
+                    + "    <parm name=\"TemporaryTokenExpiry\" "
+                    + "        value=\"" + TEMPORARY_TOKEN_EXPIRY + "\"/>\n"
+                    + "    <parm name=\"OperationTargets\"\n"
+                    + "        value=\"ManageSubscription,AcquireConfiguration\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
     private CarrierConfig mCarrierConfig;
@@ -179,5 +206,25 @@ public class Ts43OperationTest {
         assertThat(response.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(response.downloadInfo().profileSmdpAddresses())
                 .isEqualTo(ImmutableList.of(PROFILE_SMDP_ADDRESS));
+    }
+
+    @Test
+    public void testAcquireTemporaryToken() throws Exception {
+        doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE)
+                .when(mMockEapAkaApi).performEsimOdsaOperation(
+                anyString(), any(CarrierConfig.class),
+                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+
+        AcquireTemporaryTokenRequest request = AcquireTemporaryTokenRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .setOperationTargets(ImmutableList.of(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                        OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
+                .build();
+        AcquireTemporaryTokenResponse response = mTs43Operation.acquireTemporaryToken(request);
+        assertThat(response.temporaryToken()).isEqualTo(TEMPORARY_TOKEN);
+        assertThat(response.temporaryTokenExpiry().toString()).isEqualTo(TEMPORARY_TOKEN_EXPIRY);
+        assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
+                OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
     }
 }
