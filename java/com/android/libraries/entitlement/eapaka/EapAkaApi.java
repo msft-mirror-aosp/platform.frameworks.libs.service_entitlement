@@ -30,7 +30,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.CarrierConfig;
-import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
@@ -38,6 +37,7 @@ import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -91,7 +91,7 @@ public class EapAkaApi {
     private static final String OLD_TERMINAL_ID = "old_terminal_id";
     private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
 
-    private static final String NETWORK_IDENTIFIER = "network_identifier";
+    private static final String BOOST_TYPE = "boost_type";
 
     // In case of EAP-AKA synchronization failure or another challenge, we try to authenticate for
     // at most three times.
@@ -134,6 +134,7 @@ public class EapAkaApi {
             CarrierConfig carrierConfig, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForAuthentication(urlBuilder, request);
         appendParametersForServiceEntitlementRequest(urlBuilder, appIds, request);
         if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
@@ -283,14 +284,15 @@ public class EapAkaApi {
 
     /**
      * Retrieves raw doc of performing ODSA operations. For operation type, see {@link
-     * EsimOdsaOperation}.
+     * OdsaOperation}.
      *
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
     public String performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
-            ServiceEntitlementRequest request, EsimOdsaOperation odsaOperation)
+            ServiceEntitlementRequest request, OdsaOperation odsaOperation)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForAuthentication(urlBuilder, request);
         appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
         appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
 
@@ -324,8 +326,39 @@ public class EapAkaApi {
         }
     }
 
-    private void appendParametersForServiceEntitlementRequest(
-            Uri.Builder urlBuilder, ImmutableList<String> appIds,
+    /**
+     * Retrieves the endpoint for OpenID Connect(OIDC) authentication.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43
+     *
+     * <p>The user should call {@link #queryEntitlementStatusFromOidc(String url)} with the
+     * authentication result to retrieve the service entitlement configuration.
+     */
+    public String acquireOidcAuthenticationEndpoint(String appId, CarrierConfig carrierConfig,
+            ServiceEntitlementRequest request) throws ServiceEntitlementException {
+        Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
+        appendParametersForServiceEntitlementRequest(urlBuilder, ImmutableList.of(appId), request);
+        HttpResponse response = httpGet(
+                urlBuilder.toString(), carrierConfig, request.acceptContentType());
+        return response.location();
+    }
+
+    /**
+     * Retrieves the service entitlement configuration from OIDC authentication result.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43.
+     *
+     * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
+     */
+    public String queryEntitlementStatusFromOidc(
+            String url, CarrierConfig carrierConfig, String acceptContentType)
+            throws ServiceEntitlementException {
+        Uri.Builder urlBuilder = Uri.parse(url).buildUpon();
+        return httpGet(
+                urlBuilder.toString(), carrierConfig, acceptContentType).body();
+    }
+
+    private void appendParametersForAuthentication(Uri.Builder urlBuilder,
             ServiceEntitlementRequest request) {
         TelephonyManager telephonyManager = mContext.getSystemService(
                 TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
@@ -344,7 +377,11 @@ public class EapAkaApi {
                     getImsiEap(telephonyManager.getSimOperator(),
                             telephonyManager.getSubscriberId()));
         }
+    }
 
+    private void appendParametersForServiceEntitlementRequest(
+            Uri.Builder urlBuilder, ImmutableList<String> appIds,
+            ServiceEntitlementRequest request) {
         if (!TextUtils.isEmpty(request.notificationToken())) {
             urlBuilder
                     .appendQueryParameter(NOTIF_ACTION,
@@ -352,6 +389,8 @@ public class EapAkaApi {
                     .appendQueryParameter(NOTIF_TOKEN, request.notificationToken());
         }
 
+        TelephonyManager telephonyManager = mContext.getSystemService(
+                TelephonyManager.class).createForSubscriptionId(mSimSubscriptionId);
         // Assign terminal ID with device IMEI if not set.
         if (TextUtils.isEmpty(request.terminalId())) {
             urlBuilder.appendQueryParameter(TERMINAL_ID, telephonyManager.getImei());
@@ -362,7 +401,7 @@ public class EapAkaApi {
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
-        appendOptionalQueryParameter(urlBuilder, NETWORK_IDENTIFIER, request.networkIdentifier());
+        appendOptionalQueryParameter(urlBuilder, BOOST_TYPE, request.boostType());
 
         for (String appId : appIds) {
             urlBuilder.appendQueryParameter(APP, appId);
@@ -379,9 +418,9 @@ public class EapAkaApi {
     }
 
     private void appendParametersForEsimOdsaOperation(
-            Uri.Builder urlBuilder, EsimOdsaOperation odsaOperation) {
+            Uri.Builder urlBuilder, OdsaOperation odsaOperation) {
         urlBuilder.appendQueryParameter(OPERATION, odsaOperation.operation());
-        if (odsaOperation.operationType() != EsimOdsaOperation.OPERATION_TYPE_NOT_SET) {
+        if (odsaOperation.operationType() != OdsaOperation.OPERATION_TYPE_NOT_SET) {
             urlBuilder.appendQueryParameter(OPERATION_TYPE,
                     Integer.toString(odsaOperation.operationType()));
         }
