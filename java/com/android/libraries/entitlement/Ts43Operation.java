@@ -17,37 +17,55 @@
 package com.android.libraries.entitlement;
 
 import android.content.Context;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
+import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.http.HttpConstants;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationRequest;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenResponse;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
+import com.android.libraries.entitlement.odsa.DownloadInfo;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
 import com.android.libraries.entitlement.odsa.OdsaOperation;
 import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
+import com.android.libraries.entitlement.odsa.OdsaResponse;
 import com.android.libraries.entitlement.odsa.PlanOffer;
+import com.android.libraries.entitlement.utils.Ts43Constants;
+import com.android.libraries.entitlement.utils.Ts43XmlDoc;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * TS43 operations described in GSMA Service Entitlement Configuration section.
  */
 public class Ts43Operation {
+    private static final String TAG = "Ts43";
+
     /**
      * The normal token retrieved via
-     * {@link Ts43Authentication#getAuthToken(Context, int, URL, String, String, String, String)}
+     * {@link Ts43Authentication#getAuthToken(int, String, String, String)}
      * or {@link Ts43Authentication#getAuthToken(URL)}.
      */
     public static final int TOKEN_TYPE_NORMAL = 1;
@@ -65,13 +83,49 @@ public class Ts43Operation {
     })
     public @interface TokenType {}
 
+    /** The application context. */
+    @NonNull
+    private final Context mContext;
+
+    /**
+     * The TS.43 entitlement version to use. For example, {@code "9.0"}. If {@code null}, version
+     * {@code "2.0"} will be used by default.
+     */
+    @NonNull
+    private final String mEntitlementVersion;
+
+    /**
+     * The entitlement server address.
+     */
+    @NonNull
+    private final URL mEntitlementServerAddress;
+
     /**
      * The authentication token used for TS.43 operation. This token could be automatically updated
      * after each TS.43 operation if the server provides the new token in the operation's HTTP
      * response.
      */
-    @NonNull
+    @Nullable
     private String mAuthToken;
+
+    /**
+     * The temporary token retrieved from
+     * {@link #acquireTemporaryToken(AcquireTemporaryTokenRequest)}.
+     */
+    @Nullable
+    private String mTemporaryToken;
+
+    /**
+     * Token type. When token type is {@link #TOKEN_TYPE_NORMAL}, {@link #mAuthToken} is used. When
+     * toke type is {@link #TOKEN_TYPE_TEMPORARY}, {@link #mTemporaryToken} is used.
+     */
+    @TokenType
+    private int mTokenType;
+
+    private final ServiceEntitlement mServiceEntitlement;
+
+    /** IMEI of the device. */
+    private final String mImei;
 
     /**
      * Constructor of Ts43Operation.
@@ -84,10 +138,41 @@ public class Ts43Operation {
      * @param tokenType The token type. Can be {@link #TOKEN_TYPE_NORMAL} or
      * {@link #TOKEN_TYPE_TEMPORARY}.
      */
-    public Ts43Operation(int slotIndex, @NonNull URL entitlementServerAddress,
-            @Nullable String entitlementVersion, @NonNull String authToken,
-            @TokenType int tokenType) {
-        mAuthToken = authToken;
+    public Ts43Operation(@NonNull Context context, int slotIndex,
+            @NonNull URL entitlementServerAddress, @Nullable String entitlementVersion,
+            @NonNull String authToken, @TokenType int tokenType) {
+        mContext = context;
+        mEntitlementServerAddress = entitlementServerAddress;
+        if (entitlementVersion != null) {
+            mEntitlementVersion = entitlementVersion;
+        } else {
+            mEntitlementVersion = Ts43Constants.DEFAULT_ENTITLEMENT_VERSION;
+        }
+
+        if (tokenType == TOKEN_TYPE_NORMAL) {
+            mAuthToken = authToken;
+        } else if (tokenType == TOKEN_TYPE_TEMPORARY) {
+            mTemporaryToken = authToken;
+        } else {
+            throw new IllegalArgumentException("Invalid token type " + tokenType);
+        }
+
+        CarrierConfig carrierConfig = CarrierConfig.builder()
+                .setServerUrl(mEntitlementServerAddress.toString())
+                .build();
+
+        mServiceEntitlement = new ServiceEntitlement(mContext, carrierConfig,
+                SubscriptionManager.getSubscriptionId(slotIndex));
+
+        String imei = null;
+        TelephonyManager telephonyManager = mContext.getSystemService(TelephonyManager.class);
+        if (telephonyManager != null) {
+            if (slotIndex < 0 || slotIndex >= telephonyManager.getActiveModemCount()) {
+                throw new IllegalArgumentException("getAuthToken: invalid slot index " + slotIndex);
+            }
+            imei = telephonyManager.getImei(slotIndex);
+        }
+        mImei = Strings.nullToEmpty(imei);
     }
 
     /**
@@ -111,7 +196,7 @@ public class Ts43Operation {
      * To request for subscription-related action on a primary or companion device as described
      * in GSMA Service Entitlement Configuration section 6.2 and 6.5.3.
      *
-     * @param manageSubscriptionOperation The manage subscription request.
+     * @param manageSubscriptionRequest The manage subscription request.
      * @return The response of manage subscription request.
      *
      * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
@@ -120,9 +205,157 @@ public class Ts43Operation {
      */
     @NonNull
     public ManageSubscriptionResponse manageSubscription(
-            @NonNull ManageSubscriptionRequest manageSubscriptionOperation)
+            @NonNull ManageSubscriptionRequest manageSubscriptionRequest)
             throws ServiceEntitlementException {
-        return null;
+        Objects.requireNonNull(manageSubscriptionRequest);
+
+        ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
+                        .setEntitlementVersion(mEntitlementVersion)
+                        .setTerminalId(mImei)
+                        .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+        if (mTokenType == TOKEN_TYPE_NORMAL) {
+            builder.setAuthenticationToken(mAuthToken);
+        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
+            builder.setTemporaryToken(mTemporaryToken);
+        }
+
+        ServiceEntitlementRequest request = builder.build();
+
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
+                .setOperationType(manageSubscriptionRequest.operationType())
+                .setCompanionTerminalId(manageSubscriptionRequest.companionTerminalId())
+                .setCompanionTerminalVendor(manageSubscriptionRequest.companionTerminalVendor())
+                .setCompanionTerminalModel(manageSubscriptionRequest.companionTerminalModel())
+                .setCompanionTerminalSoftwareVersion(
+                        manageSubscriptionRequest.companionTerminalSoftwareVersion())
+                .setCompanionTerminalFriendlyName(
+                        manageSubscriptionRequest.companionTerminalFriendlyName())
+                .setCompanionTerminalService(manageSubscriptionRequest.companionTerminalService())
+                .setCompanionTerminalIccid(manageSubscriptionRequest.companionTerminalIccid())
+                .setCompanionTerminalEid(manageSubscriptionRequest.companionTerminalEid())
+                .setTerminalIccid(manageSubscriptionRequest.terminalIccid())
+                .setTerminalEid(manageSubscriptionRequest.terminalEid())
+                .setTargetTerminalId(manageSubscriptionRequest.targetTerminalId())
+                // non TS.43 standard support
+                .setTargetTerminalIds(manageSubscriptionRequest.targetTerminalIds())
+                .setTargetTerminalIccid(manageSubscriptionRequest.targetTerminalIccid())
+                .setTargetTerminalEid(manageSubscriptionRequest.targetTerminalEid())
+                // non TS.43 standard support
+                .setTargetTerminalSerialNumber(manageSubscriptionRequest
+                         .targetTerminalSerialNumber())
+                // non TS.43 standard support
+                .setTargetTerminalModel(manageSubscriptionRequest.targetTerminalModel())
+                .setOldTerminalId(manageSubscriptionRequest.oldTerminalId())
+                .setOldTerminalIccid(manageSubscriptionRequest.oldTerminalIccid())
+                .build();
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.performEsimOdsa(manageSubscriptionRequest.appId(),
+                    request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        // Build the response of manage subscription operation. Refer to GSMA Service Entitlement
+        // Configuration section 6.5.3.
+        ManageSubscriptionResponse.Builder responseBuilder = ManageSubscriptionResponse.builder();
+
+        Ts43XmlDoc ts43XmlDoc;
+        try {
+            ts43XmlDoc = new Ts43XmlDoc(rawXml);
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "manageSubscription: Malformed URL " + rawXml);
+        }
+
+        int subscriptionResult = ManageSubscriptionResponse.SUBSCRIPTION_RESULT_UNKNOWN;
+
+        // Parse subscription result.
+        String subscriptionResultString = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.SUBSCRIPTION_RESULT);
+
+        if (!TextUtils.isEmpty(subscriptionResultString)) {
+            switch (subscriptionResultString) {
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET:
+                    subscriptionResult = ManageSubscriptionResponse
+                            .SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET;
+
+                    String subscriptionServiceURLString = ts43XmlDoc.get(
+                            ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                            Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_URL);
+
+                    if (!TextUtils.isEmpty(subscriptionServiceURLString)) {
+                        try {
+                            responseBuilder.setSubscriptionServiceURL(
+                                    new URL(subscriptionServiceURLString));
+
+                            String subscriptionServiceUserDataString = ts43XmlDoc.get(
+                                    ImmutableList.of(
+                                            Ts43XmlDoc.CharacteristicType.APPLICATION),
+                                    Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_USER_DATA);
+                            if (!TextUtils.isEmpty(subscriptionServiceUserDataString)) {
+                                responseBuilder.setSubscriptionServiceUserData(
+                                        subscriptionServiceUserDataString);
+                            }
+
+                            String subscriptionServiceContentsTypeString = ts43XmlDoc.get(
+                                    ImmutableList.of(
+                                            Ts43XmlDoc.CharacteristicType.APPLICATION),
+                                    Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_CONTENTS_TYPE);
+                            if (!TextUtils.isEmpty(subscriptionServiceContentsTypeString)) {
+                                int contentsType = HttpConstants.ContentType.UNKNOWN;
+                                switch (subscriptionServiceContentsTypeString) {
+                                    case Ts43XmlDoc.ParmValues.CONTENTS_TYPE_XML:
+                                        contentsType = HttpConstants.ContentType.XML;
+                                        break;
+                                    case Ts43XmlDoc.ParmValues.CONTENTS_TYPE_JSON:
+                                        contentsType = HttpConstants.ContentType.JSON;
+                                        break;
+                                }
+                                responseBuilder.setSubscriptionServiceContentsType(contentsType);
+                            }
+                        } catch (MalformedURLException e) {
+                            Log.w(TAG, "Malformed URL received. " + subscriptionServiceURLString);
+                        }
+                    }
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE:
+                    subscriptionResult = ManageSubscriptionResponse
+                            .SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE;
+                    DownloadInfo downloadInfo = parseDownloadInfo(
+                            ImmutableList.of(
+                                    Ts43XmlDoc.CharacteristicType.APPLICATION,
+                                    Ts43XmlDoc.CharacteristicType.DOWNLOAD_INFO),
+                            ts43XmlDoc);
+                    if (downloadInfo != null) {
+                        responseBuilder.setDownloadInfo(downloadInfo);
+                    }
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DONE:
+                    subscriptionResult = ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DONE;
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD:
+                    subscriptionResult = ManageSubscriptionResponse
+                            .SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD;
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DISMISS:
+                    subscriptionResult = ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DISMISS;
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE:
+                    subscriptionResult = ManageSubscriptionResponse
+                            .SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE;
+                    break;
+            }
+        }
+
+        responseBuilder.setSubscriptionResult(subscriptionResult);
+        return responseBuilder.build();
     }
 
     /**
@@ -207,5 +440,117 @@ public class Ts43Operation {
     @NonNull
     public String getPhoneNumber() throws ServiceEntitlementException {
         return "";
+    }
+
+    /**
+     * Parse the download info from {@link ManageSubscriptionResponse}.
+     *
+     * @param characteristics The XML nodes to search activation code.
+     * @param ts43XmlDoc The XML format http response.
+     *
+     * @return The download info.
+     */
+    @Nullable
+    private DownloadInfo parseDownloadInfo(@NonNull ImmutableList<String> characteristics,
+            @NonNull Ts43XmlDoc ts43XmlDoc) {
+        String activationCode = Strings.nullToEmpty(ts43XmlDoc.get(characteristics,
+                Ts43XmlDoc.Parm.PROFILE_ACTIVATION_CODE));
+        String smdpAddress = Strings.nullToEmpty(ts43XmlDoc.get(characteristics,
+                Ts43XmlDoc.Parm.PROFILE_SMDP_ADDRESS));
+        String iccid = Strings.nullToEmpty(ts43XmlDoc.get(characteristics,
+                Ts43XmlDoc.Parm.PROFILE_ICCID));
+
+        // DownloadInfo should contain either activationCode or smdpAddress + iccid
+        if (!activationCode.isEmpty()) {
+            // decode the activation code, which is in base64 format
+            try {
+                activationCode = new String(Base64.getDecoder().decode(activationCode));
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Failed to decode the activation code " + activationCode);
+                return null;
+            }
+            return DownloadInfo.builder()
+                    .setProfileActivationCode(activationCode)
+                    .setProfileIccid(iccid)
+                    .build();
+        } else if (!smdpAddress.isEmpty() && !iccid.isEmpty()) {
+            return DownloadInfo.builder()
+                    .setProfileIccid(iccid)
+                    .setProfileSmdpAddresses(ImmutableList.copyOf(
+                            Arrays.asList(smdpAddress.split("\\s*,\\s*"))))
+                    .build();
+        } else {
+            Log.w(TAG, "Failed to parse download info. activationCode=" + activationCode
+                    + ", smdpAddress=" + smdpAddress + ", iccid=" + iccid);
+            return null;
+        }
+    }
+
+    /**
+     * Process the common ODSA result from HTTP response.
+     *
+     * @param ts43XmlDoc The TS.43 ODSA operation response in XLM format.
+     * @param builder The response builder.
+     *
+     * @throws MalformedURLException when HTTP response is not well formatted.
+     */
+    private void processGeneralResult(@NonNull Ts43XmlDoc ts43XmlDoc,
+            @NonNull OdsaResponse.Builder builder) throws MalformedURLException {
+        // Now start to parse the result from HTTP response.
+        // Parse the operation result.
+        String operationResult = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.OPERATION_RESULT);
+
+        builder.setOperationResult(OdsaOperation.OPERATION_RESULT_UNKNOWN);
+        if (!TextUtils.isEmpty(operationResult)) {
+            switch (operationResult) {
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_SUCCESS:
+                    builder.setOperationResult(OdsaOperation.OPERATION_RESULT_SUCCESS);
+                    break;
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_GENERAL:
+                    builder.setOperationResult(OdsaOperation.OPERATION_RESULT_ERROR_GENERAL);
+                    break;
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_INVALID_OPERATION:
+                    builder.setOperationResult(
+                            OdsaOperation.OPERATION_RESULT_ERROR_INVALID_OPERATION);
+                    break;
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_INVALID_PARAMETER:
+                    builder.setOperationResult(
+                            OdsaOperation.OPERATION_RESULT_ERROR_INVALID_PARAMETER);
+                    break;
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION:
+                    builder.setOperationResult(
+                            OdsaOperation.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION);
+                    break;
+            }
+        }
+
+        // Parse the general error URL
+        String generalErrorUrl = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.GENERAL_ERROR_URL);
+        if (!TextUtils.isEmpty(generalErrorUrl)) {
+            builder.setGeneralErrorUrl(new URL(generalErrorUrl));
+        }
+
+        // Parse the general error URL user data
+        String generalErrorUserData = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.GENERAL_ERROR_USER_DATA);
+        if (!TextUtils.isEmpty(generalErrorUserData)) {
+            builder.setGeneralErrorUserData(generalErrorUserData);
+        }
+
+        // Parse the token for next operation.
+        String token = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN),
+                Ts43XmlDoc.Parm.TOKEN);
+        if (!TextUtils.isEmpty(token)) {
+            // Some servers issue the new token in operation result for next operation to use.
+            // We need to save it.
+            mAuthToken = token;
+            Log.d(TAG, "processGeneralResult: Token replaced.");
+        }
     }
 }
