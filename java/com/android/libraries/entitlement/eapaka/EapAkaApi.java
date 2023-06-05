@@ -85,8 +85,14 @@ public class EapAkaApi {
     private static final String TERMINAL_EID = "terminal_eid";
 
     private static final String TARGET_TERMINAL_ID = "target_terminal_id";
+    // Non-standard params for Korean carriers
+    private static final String TARGET_TERMINAL_IDS = "target_terminal_imeis";
     private static final String TARGET_TERMINAL_ICCID = "target_terminal_iccid";
     private static final String TARGET_TERMINAL_EID = "target_terminal_eid";
+    // Non-standard params for Korean carriers
+    private static final String TARGET_TERMINAL_SERIAL_NUMBER = "target_terminal_sn";
+    // Non-standard params for Korean carriers
+    private static final String TARGET_TERMINAL_MODEL = "target_terminal_model";
 
     private static final String OLD_TERMINAL_ID = "old_terminal_id";
     private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
@@ -449,10 +455,16 @@ public class EapAkaApi {
         appendOptionalQueryParameter(urlBuilder, TERMINAL_EID, odsaOperation.terminalEid());
         appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_ID,
                 odsaOperation.targetTerminalId());
+        appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_IDS,
+                odsaOperation.targetTerminalIds());
         appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_ICCID,
                 odsaOperation.targetTerminalIccid());
         appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_EID,
                 odsaOperation.targetTerminalEid());
+        appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_SERIAL_NUMBER,
+                odsaOperation.targetTerminalSerialNumber());
+        appendOptionalQueryParameter(urlBuilder, TARGET_TERMINAL_MODEL,
+                odsaOperation.targetTerminalModel());
         appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ICCID,
                 odsaOperation.oldTerminalIccid());
         appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ID,
@@ -475,6 +487,17 @@ public class EapAkaApi {
     private void appendOptionalQueryParameter(Uri.Builder urlBuilder, String key, String value) {
         if (!TextUtils.isEmpty(value)) {
             urlBuilder.appendQueryParameter(key, value);
+        }
+    }
+
+    private void appendOptionalQueryParameter(Uri.Builder urlBuilder, String key,
+            ImmutableList<String> values) {
+        if (values != null) {
+            for (String value : values) {
+                if (!TextUtils.isEmpty(value)) {
+                    urlBuilder.appendQueryParameter(key, value);
+                }
+            }
         }
     }
 
