@@ -36,6 +36,7 @@ import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEli
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
 import com.android.libraries.entitlement.odsa.DownloadInfo;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
+import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
 import com.android.libraries.entitlement.odsa.OdsaOperation;
@@ -499,10 +500,70 @@ public class Ts43Operation {
      * error from the server, the error code can be retrieved by
      * {@link ServiceEntitlementException#getHttpStatus()}
      */
-    @ServiceStatus
-    public int manageService(@NonNull ManageServiceRequest manageServiceRequest)
+    @NonNull
+    public ManageServiceResponse manageService(@NonNull ManageServiceRequest manageServiceRequest)
             throws ServiceEntitlementException {
-        return OdsaOperation.SERVICE_STATUS_UNKNOWN;
+        Objects.requireNonNull(manageServiceRequest);
+
+        ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
+                .setEntitlementVersion(mEntitlementVersion)
+                .setTerminalId(mImei);
+
+        if (mTokenType == TOKEN_TYPE_NORMAL) {
+            builder.setAuthenticationToken(mAuthToken);
+        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
+            builder.setTemporaryToken(mTemporaryToken);
+        }
+
+        ServiceEntitlementRequest request = builder.build();
+
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_MANAGE_SERVICE)
+                .setOperationType(manageServiceRequest.operationType())
+                .setCompanionTerminalId(manageServiceRequest.companionTerminalId())
+                .setCompanionTerminalVendor(manageServiceRequest.companionTerminalVendor())
+                .setCompanionTerminalModel(manageServiceRequest.companionTerminalModel())
+                .setCompanionTerminalSoftwareVersion(
+                        manageServiceRequest.companionTerminalSoftwareVersion())
+                .setCompanionTerminalFriendlyName(
+                        manageServiceRequest.companionTerminalFriendlyName())
+                .setCompanionTerminalService(manageServiceRequest.companionTerminalService())
+                .setCompanionTerminalIccid(manageServiceRequest.companionTerminalIccid())
+                .build();
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.performEsimOdsa(manageServiceRequest.appId(),
+                    request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "manageService: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        // Build the response of manage service operation. Refer to GSMA Service Entitlement
+        // Configuration section 6.5.4.
+        ManageServiceResponse.Builder responseBuilder = ManageServiceResponse.builder();
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+
+        try {
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "manageService: Malformed URL " + rawXml);
+        }
+
+        // Parse service status.
+        String serviceStatusString = ts43XmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.SERVICE_STATUS);
+
+        if (!TextUtils.isEmpty(serviceStatusString)) {
+            responseBuilder.setServiceStatus(getServiceStatusFromString(serviceStatusString));
+        }
+
+        return responseBuilder.build();
     }
 
     /**

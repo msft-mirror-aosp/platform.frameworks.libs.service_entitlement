@@ -35,7 +35,7 @@ import java.lang.annotation.RetentionPolicy;
  * Acquire configuration operation described in GSMA Service Entitlement Configuration section 6.
  */
 public class AcquireConfigurationOperation {
-    /** Indicating polling inverval not available. */
+    /** Indicating polling interval not available. */
     public static final int POLLING_INTERVAL_NOT_AVAILABLE = -1;
 
     /**
