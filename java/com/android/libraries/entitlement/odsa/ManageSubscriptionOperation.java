@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
 import com.android.libraries.entitlement.odsa.OdsaOperation.OperationType;
+import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
@@ -48,6 +49,7 @@ public class ManageSubscriptionOperation {
          * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
+        @NonNull
         @AppId
         public abstract String appId();
 
@@ -55,7 +57,6 @@ public class ManageSubscriptionOperation {
          * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter
          * {@code operation_type}.
          */
-        @NonNull
         @OperationType
         public abstract int operationType();
 
@@ -63,77 +64,78 @@ public class ManageSubscriptionOperation {
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalId();
 
         /**
          * Returns the OEM of the companion device. Used by HTTP parameter
          * {@code companion_terminal_vendor}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalVendor();
 
         /**
          * Returns the model of the companion device. Used by HTTP parameter
          * {@code companion_terminal_model}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalModel();
 
         /**
          * Returns the software version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_sw_version}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalSoftwareVersion();
 
         /**
          * Returns the user-friendly version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_friendly_name}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalFriendlyName();
 
         /**
          * Returns the service type of the companion device, e.g. if the MSISDN is same as the
          * primary device. Used by HTTP parameter {@code companion_terminal_service}.
          */
-        @Nullable
+        @NonNull
+        @CompanionService
         public abstract String companionTerminalService();
 
         /**
          * Returns the ICCID of the companion device. Used by HTTP parameter
          * {@code companion_terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalIccid();
 
         /**
          * Returns the EID of the companion device. Used by HTTP parameter
          * {@code companion_terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalEid();
 
         /**
          * Returns the ICCID of the primary device eSIM. Used by HTTP parameter
          * {@code terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String terminalIccid();
 
         /**
          * Returns the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
          * {@code terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String terminalEid();
 
         /**
          * Returns the unique identifier of the primary device eSIM, like the IMEI associated with
          * the eSIM. Used by HTTP parameter {@code target_terminal_id}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalId();
 
         /**
@@ -149,14 +151,14 @@ public class ManageSubscriptionOperation {
          * Returns the ICCID primary device eSIM. Used by HTTP parameter
          * {@code target_terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalIccid();
 
         /**
          * Returns the eUICC identifier (EID) of the primary device eSIM. Used by HTTP parameter
          * {@code target_terminal_eid}.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalEid();
 
         /**
@@ -165,7 +167,7 @@ public class ManageSubscriptionOperation {
          *
          * This is a non-standard params required by some carriers.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalSerialNumber();
 
         /**
@@ -174,7 +176,7 @@ public class ManageSubscriptionOperation {
          *
          * This is a non-standard params required by some carriers.
          */
-        @Nullable
+        @NonNull
         public abstract String targetTerminalModel();
 
 
@@ -182,17 +184,20 @@ public class ManageSubscriptionOperation {
          * Returns the unique identifier of the old device eSIM, like the IMEI associated with the
          * eSIM. Used by HTTP parameter {@code old_terminal_id}.
          */
+        @NonNull
         public abstract String oldTerminalId();
 
         /**
          * Returns the ICCID of old device eSIM. Used by HTTP parameter {@code old_terminal_iccid}.
          */
+        @NonNull
         public abstract String oldTerminalIccid();
 
         /**
          * Returns the identifier of the specific plan offered by an MNO. Used by HTTP parameter
          * {@code plan_id}.
          */
+        @NonNull
         public abstract String planId();
 
         /**
@@ -200,7 +205,28 @@ public class ManageSubscriptionOperation {
          */
         @NonNull
         public static Builder builder() {
-            return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionRequest.Builder();
+            return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionRequest.Builder()
+                    .setAppId("")
+                    .setOperationType(OdsaOperation.OPERATION_TYPE_NOT_SET)
+                    .setCompanionTerminalId("")
+                    .setCompanionTerminalVendor("")
+                    .setCompanionTerminalModel("")
+                    .setCompanionTerminalSoftwareVersion("")
+                    .setCompanionTerminalFriendlyName("")
+                    .setCompanionTerminalService("")
+                    .setCompanionTerminalIccid("")
+                    .setCompanionTerminalEid("")
+                    .setTerminalIccid("")
+                    .setTerminalEid("")
+                    .setTargetTerminalId("")
+                    .setTargetTerminalIds(ImmutableList.of())
+                    .setTargetTerminalIccid("")
+                    .setTargetTerminalEid("")
+                    .setTargetTerminalSerialNumber("")
+                    .setTargetTerminalModel("")
+                    .setOldTerminalId("")
+                    .setOldTerminalIccid("")
+                    .setPlanId("");
         }
 
         /**
@@ -498,12 +524,16 @@ public class ManageSubscriptionOperation {
      * 6.5.3 table 37.
      */
     @AutoValue
-    public abstract static class ManageSubscriptionResponse {
+    public abstract static class ManageSubscriptionResponse extends OdsaResponse {
+        /**
+         * Subscription result unknown.
+         */
+        public static final int SUBSCRIPTION_RESULT_UNKNOWN = -1;
         /**
          * Indicates that end-user must go through the subscription web view procedure, using
          * information included below.
          */
-        public static final int SUBSCRIPTION_RESULT_CONTINUE_TO_WEB_SHEET = 1;
+        public static final int SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET = 1;
 
         /**
          * Indicates that a eSIM profile must be downloaded by the device, with further information
@@ -538,7 +568,8 @@ public class ManageSubscriptionOperation {
 
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({
-                SUBSCRIPTION_RESULT_CONTINUE_TO_WEB_SHEET,
+                SUBSCRIPTION_RESULT_UNKNOWN,
+                SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET,
                 SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE,
                 SUBSCRIPTION_RESULT_DONE,
                 SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD,
@@ -561,7 +592,7 @@ public class ManageSubscriptionOperation {
          * {@link OdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
          *
          * {@code null} if {@link #subscriptionResult()} is not
-         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEB_SHEET}.
+         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
          */
         @Nullable
         public abstract URL subscriptionServiceURL();
@@ -572,7 +603,7 @@ public class ManageSubscriptionOperation {
          * improve user experience.
          *
          * {@code null} if {@link #subscriptionResult()} is not
-         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEB_SHEET}.
+         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
          */
         @Nullable
         public abstract String subscriptionServiceUserData();
@@ -599,14 +630,16 @@ public class ManageSubscriptionOperation {
          */
         @NonNull
         public static Builder builder() {
-            return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionResponse.Builder();
+            return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionResponse.Builder()
+                    .setSubscriptionResult(SUBSCRIPTION_RESULT_UNKNOWN)
+                    .setSubscriptionServiceContentsType(HttpConstants.UNKNOWN);
         }
 
         /**
          * Builder
          */
         @AutoValue.Builder
-        public abstract static class Builder {
+        public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Set subscription result.
              *

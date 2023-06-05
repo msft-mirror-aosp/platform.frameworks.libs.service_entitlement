@@ -17,13 +17,9 @@
 package com.android.libraries.entitlement.odsa;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-
-import java.net.URL;
-import java.util.List;
 
 /**
  * Download information described in GSMA Service Entitlement Configuration section 6.5.3 table
@@ -32,24 +28,24 @@ import java.util.List;
 @AutoValue
 public abstract class DownloadInfo {
     /**
-     * The ICCID of the eSIM profile to download from SM-DP+. This is not {@code null} when
+     * The ICCID of the eSIM profile to download from SM-DP+. This is not an empty string when
      * {@link #profileSmdpAddresses()} is used to trigger the profile download.
      */
-    @Nullable
+    @NonNull
     public abstract String profileIccid();
 
     /**
      * Address(es) of SM-DP+ to obtain eSIM profile. It is an empty list if
-     * {@link #profileActivationCode()} is not {@code null}.
+     * {@link #profileActivationCode()} is not empty.
      */
     @NonNull
-    public abstract ImmutableList<URL> profileSmdpAddresses();
+    public abstract ImmutableList<String> profileSmdpAddresses();
 
     /**
      * Activation code as defined in SGP.22 to permit the download of an eSIM profile from an
-     * SM-DP+. It is {@code null} if {@link #profileSmdpAddresses()} is not empty.
+     * SM-DP+. It is an empty string if {@link #profileSmdpAddresses()} is not empty.
      */
-    @Nullable
+    @NonNull
     public abstract String profileActivationCode();
 
 
@@ -58,7 +54,10 @@ public abstract class DownloadInfo {
      */
     @NonNull
     public static Builder builder() {
-        return new AutoValue_DownloadInfo.Builder();
+        return new AutoValue_DownloadInfo.Builder()
+                .setProfileActivationCode("")
+                .setProfileSmdpAddresses(ImmutableList.of())
+                .setProfileIccid("");
     }
 
     /**
@@ -95,7 +94,7 @@ public abstract class DownloadInfo {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setProfileSmdpAddresses(@NonNull List<URL> smdpAddress);
+        public abstract Builder setProfileSmdpAddresses(@NonNull ImmutableList<String> smdpAddress);
 
         /**
          * Build the DownloadInfo object.
