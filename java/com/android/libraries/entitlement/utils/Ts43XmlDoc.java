@@ -56,6 +56,9 @@ public final class Ts43XmlDoc {
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
+        public static final String COMPANION_CONFIGURATIONS = "CompanionConfigurations";
+        public static final String COMPANION_CONFIGURATION = "CompanionConfiguration";
+        public static final String ENTERPRISE_CONFIGURATION = "EnterpriseConfiguration";
         public static final String USER = "USER";
         public static final String TOKEN = "TOKEN";
         public static final String DOWNLOAD_INFO = "DownloadInfo";
