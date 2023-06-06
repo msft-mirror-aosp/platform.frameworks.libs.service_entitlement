@@ -76,6 +76,12 @@ public final class Ts43XmlDoc {
         public static final String GENERAL_ERROR_URL = "GeneralErrorURL";
         public static final String GENERAL_ERROR_USER_DATA = "GeneralErrorUserData";
         public static final String PRIMARY_APP_ELIGIBILITY = "PrimaryAppEligibility";
+        public static final String COMPANION_APP_ELIGIBILITY = "CompanionAppEligibility";
+        public static final String ENTERPRISE_APP_ELIGIBILITY = "EnterpriseAppEligibility";
+        public static final String NOT_ENABLED_URL = "NotEnabledURL";
+        public static final String NOT_ENABLED_USER_DATA = "NotEnabledUserData";
+        public static final String NOT_ENABLED_CONTENTS_TYPE = "NotEnabledContentsType";
+        public static final String COMPANION_DEVICE_SERVICES = "CompanionDeviceServices";
         public static final String TEMPORARY_TOKEN = "TemporaryToken";
         public static final String TEMPORARY_TOKEN_EXPIRY = "TemporaryTokenExpiry";
         public static final String MSISDN = "msisdn";
@@ -116,6 +122,10 @@ public final class Ts43XmlDoc {
 
         public static final String CONTENTS_TYPE_XML = "xml";
         public static final String CONTENTS_TYPE_JSON = "json";
+
+        public static final String DISABLED = "0";
+        public static final String ENABLED = "1";
+        public static final String INCOMPATIBLE = "2";
     }
     /**
      * Maps characteristics to a map of parameters. Key is the characteristic type. Value is
