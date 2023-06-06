@@ -28,6 +28,8 @@ import android.telephony.TelephonyManager;
 import android.testing.AndroidTestingRunner;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationRequest;
+import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
@@ -128,6 +130,31 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
+    private static final String ACQUIRE_CONFIGURATION_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2006\"/>\n"
+                    + "        <characteristic type=\"PrimaryConfiguration\">\n"
+                    + "            <parm name=\"ICCID\" value=\"" + ICCID + "\"/>\n"
+                    + "            <characteristic type=\"DownloadInfo\">\n"
+                    + "                <parm name=\"ProfileIccid\" value=\"" + ICCID + "\"/>\n"
+                    + "                <parm name=\"ProfileSmdpAddress\" value=\""
+                    + PROFILE_SMDP_ADDRESS + "\"/>\n"
+                    + "            </characteristic>\n"
+                    + "            <parm name=\"ServiceStatus\" value=\"1\"/>\n"
+                    + "        </characteristic>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>\n";
+
     private CarrierConfig mCarrierConfig;
 
     private ServiceEntitlement mServiceEntitlement;
@@ -226,5 +253,23 @@ public class Ts43OperationTest {
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
                 OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
                 OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
+    }
+
+    @Test
+    public void testAcquireConfiguration() throws Exception {
+        doReturn(ACQUIRE_CONFIGURATION_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
+                anyString(), any(CarrierConfig.class),
+                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        AcquireConfigurationRequest request = AcquireConfigurationRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .build();
+
+        AcquireConfigurationResponse response = mTs43Operation.acquireConfiguration(request);
+        assertThat(response.configurations()).hasSize(1);
+        AcquireConfigurationResponse.Configuration config = response.configurations().get(0);
+        assertThat(config.iccid()).isEqualTo(ICCID);
+        assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
+        assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
+                ImmutableList.of(PROFILE_SMDP_ADDRESS));
     }
 }
