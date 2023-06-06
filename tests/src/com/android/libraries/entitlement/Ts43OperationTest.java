@@ -35,6 +35,8 @@ import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.Acq
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
+import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
+import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
 import com.android.libraries.entitlement.odsa.OdsaOperation;
@@ -183,6 +185,22 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
+    public String MANAGE_SERVICE_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2006\"/>\n"
+                    + "    <parm name=\"ServiceStatus\" value=\"3\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
 
     private CarrierConfig mCarrierConfig;
 
@@ -304,6 +322,7 @@ public class Ts43OperationTest {
         assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
+        assertThat(config.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_ACTIVATED);
     }
 
     @Test
@@ -323,5 +342,19 @@ public class Ts43OperationTest {
                 OdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
         assertThat(response.notEnabledURL()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
+    }
+
+    @Test
+    public void testManageService() throws Exception {
+        doReturn(MANAGE_SERVICE_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
+                anyString(), any(CarrierConfig.class),
+                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        ManageServiceRequest request = ManageServiceRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .build();
+
+        ManageServiceResponse response = mTs43Operation.manageService(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_DEACTIVATED);
     }
 }
