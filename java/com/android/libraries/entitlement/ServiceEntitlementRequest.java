@@ -19,6 +19,8 @@ package com.android.libraries.entitlement;
 import android.os.Build;
 import android.os.Build.VERSION;
 
+import com.android.libraries.entitlement.utils.Ts43Constants;
+
 import com.google.auto.value.AutoValue;
 
 /**
@@ -40,8 +42,6 @@ public abstract class ServiceEntitlementRequest {
             "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
     /** Default value of configuration version. */
     public static final int DEFAULT_CONFIGURATION_VERSION = 0;
-    /** Default value of entitlement version. */
-    public static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
 
 
     /**
@@ -133,7 +133,7 @@ public abstract class ServiceEntitlementRequest {
     public static Builder builder() {
         return new AutoValue_ServiceEntitlementRequest.Builder()
                 .setConfigurationVersion(DEFAULT_CONFIGURATION_VERSION)
-                .setEntitlementVersion(DEFAULT_ENTITLEMENT_VERSION)
+                .setEntitlementVersion(Ts43Constants.DEFAULT_ENTITLEMENT_VERSION)
                 .setAuthenticationToken("")
                 .setTemporaryToken("")
                 .setTerminalId("")
@@ -166,7 +166,8 @@ public abstract class ServiceEntitlementRequest {
          * Sets the current version of the entitlement specification. Used by HTTP parameter
          * "entitlement_version".
          *
-         * <p>If not set, default to {@link #DEFAULT_ENTITLEMENT_VERSION} base on TS.43-v5.0.
+         * <p>If not set, default to {@link Ts43Constants#DEFAULT_ENTITLEMENT_VERSION} base on
+         * TS.43-v5.0.
          */
         public abstract Builder setEntitlementVersion(String value);
 

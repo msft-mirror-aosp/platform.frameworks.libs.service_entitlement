@@ -45,9 +45,6 @@ import java.util.Objects;
 public class Ts43Authentication {
     private static final String TAG = "Ts43Auth";
 
-    /** Default entitlement version. */
-    private static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
-
     /**
      * The authentication token for TS.43 operation.
      */
@@ -130,7 +127,7 @@ public class Ts43Authentication {
         if (entitlementVersion != null) {
             mEntitlementVersion = entitlementVersion;
         } else {
-            mEntitlementVersion = DEFAULT_ENTITLEMENT_VERSION;
+            mEntitlementVersion = Ts43Constants.DEFAULT_ENTITLEMENT_VERSION;
         }
     }
 
@@ -214,8 +211,8 @@ public class Ts43Authentication {
                     "Failed to parse authentication token");
         }
 
-        String validityString = nullToEmpty(ts43xmlDoc.get(
-                ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
+        String validityString = nullToEmpty(ts43xmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
         long validity;
         try {
             validity = Long.parseLong(validityString);
