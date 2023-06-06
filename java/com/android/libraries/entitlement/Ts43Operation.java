@@ -51,6 +51,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -424,7 +427,78 @@ public class Ts43Operation {
     public AcquireTemporaryTokenResponse acquireTemporaryToken(
             @NonNull AcquireTemporaryTokenRequest acquireTemporaryTokenRequest)
             throws ServiceEntitlementException {
-        return null;
+        Objects.requireNonNull(acquireTemporaryTokenRequest);
+
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder()
+                .setEntitlementVersion(mEntitlementVersion)
+                .setTerminalId(mImei)
+                .setAuthenticationToken(mAuthToken)
+                .build();
+
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN)
+                .setOperationTargets(acquireTemporaryTokenRequest.operationTargets())
+                .setCompanionTerminalId(acquireTemporaryTokenRequest.companionTerminalId())
+                .build();
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.performEsimOdsa(acquireTemporaryTokenRequest.appId(),
+                    request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "acquireTemporaryToken: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+        AcquireTemporaryTokenResponse.Builder responseBuilder =
+                AcquireTemporaryTokenResponse.builder();
+
+        try {
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "AcquireTemporaryTokenResponse: Malformed URL " + rawXml);
+        }
+
+        // Parse the operation targets.
+        String operationTargets = Strings.nullToEmpty(ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.OPERATION_TARGETS));
+
+        if (operationTargets != null) {
+            List<String> operationTargetsList = Arrays.asList(operationTargets.split("\\s*,\\s*"));
+            responseBuilder.setOperationTargets(ImmutableList.copyOf(operationTargetsList));
+        }
+
+        // Parse the temporary token
+        String temporaryToken = ts43XmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.TEMPORARY_TOKEN);
+
+        if (temporaryToken == null) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_TOKEN_NOT_AVAILABLE,
+                    "temporary token is not available.");
+        }
+
+        responseBuilder.setTemporaryToken(temporaryToken);
+
+        String temporaryTokenExpiry = ts43XmlDoc.get(
+                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                Ts43XmlDoc.Parm.TEMPORARY_TOKEN_EXPIRY);
+
+        // Parse the token expiration time.
+        Instant expiry;
+        try {
+            expiry = OffsetDateTime.parse(temporaryTokenExpiry).toInstant();
+            responseBuilder.setTemporaryTokenExpiry(expiry);
+        } catch (DateTimeParseException e) {
+            Log.w(TAG, "Failed to parse temporaryTokenExpiry: " + temporaryTokenExpiry);
+        }
+
+        return responseBuilder.build();
     }
 
     /**
