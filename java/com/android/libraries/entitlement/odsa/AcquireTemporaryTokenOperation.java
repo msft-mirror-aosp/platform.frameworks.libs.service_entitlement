@@ -17,6 +17,7 @@
 package com.android.libraries.entitlement.odsa;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.odsa.OdsaOperation.Operation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -42,6 +43,7 @@ public class AcquireTemporaryTokenOperation {
          * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
+        @NonNull
         @AppId
         public abstract String appId();
 
@@ -50,6 +52,7 @@ public class AcquireTemporaryTokenOperation {
          * {@code AcquireTemporaryToken} operation. Used by HTTP parameter
          * {@code operation_targets}.
          */
+        @NonNull
         @Operation
         public abstract ImmutableList<String> operationTargets();
 
@@ -57,14 +60,19 @@ public class AcquireTemporaryTokenOperation {
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
          */
+        @NonNull
         public abstract String companionTerminalId();
 
         /**
          * Returns a new {@link Builder} object.
          */
+        @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenRequest
-                    .Builder();
+                    .Builder()
+                    .setAppId("")
+                    .setOperationTargets(ImmutableList.of())
+                    .setCompanionTerminalId("");
         }
 
         /**
@@ -124,7 +132,7 @@ public class AcquireTemporaryTokenOperation {
      * 6.5.7.
      */
     @AutoValue
-    public abstract static class AcquireTemporaryTokenResponse {
+    public abstract static class AcquireTemporaryTokenResponse extends OdsaResponse {
         /**
          * The temporary token used to establish trust between ECS and the client.
          */
@@ -132,9 +140,9 @@ public class AcquireTemporaryTokenOperation {
         public abstract String temporaryToken();
 
         /**
-         * The expiration time (UTC time) of the token.
+         * The expiration time (UTC time) of the token. {@code null} if not available.
          */
-        @NonNull
+        @Nullable
         public abstract Instant temporaryTokenExpiry();
 
         /**
@@ -147,16 +155,20 @@ public class AcquireTemporaryTokenOperation {
         /**
          * Returns a new {@link AcquireTemporaryTokenRequest.Builder} object.
          */
+        @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenResponse
-                    .Builder();
+                    .Builder()
+                    .setTemporaryToken("")
+                    .setTemporaryTokenExpiry(null)
+                    .setOperationTargets(ImmutableList.of());
         }
 
         /**
          * Builder.
          */
         @AutoValue.Builder
-        public abstract static class Builder {
+        public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Sets the temporary token.
              *
