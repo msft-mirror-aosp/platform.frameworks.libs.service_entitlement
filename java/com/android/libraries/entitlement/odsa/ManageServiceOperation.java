@@ -17,10 +17,10 @@
 package com.android.libraries.entitlement.odsa;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
 import com.android.libraries.entitlement.odsa.OdsaOperation.OperationType;
+import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 
@@ -55,42 +55,42 @@ public class ManageServiceOperation {
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalId();
 
         /**
          * Returns the OEM of the companion device. Used by HTTP parameter
          * {@code companion_terminal_vendor}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalVendor();
 
         /**
          * Returns the model of the companion device. Used by HTTP parameter
          * {@code companion_terminal_model}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalModel();
 
         /**
          * Returns the software version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_sw_version}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalSoftwareVersion();
 
         /**
          * Returns the user-friendly version of the companion device. Used by HTTP parameter
          * {@code companion_terminal_friendly_name}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalFriendlyName();
 
         /**
          * Returns the service type of the companion device, e.g. if the MSISDN is same as the
          * primary device. Used by HTTP parameter {@code companion_terminal_service}.
          */
-        @Nullable
+        @NonNull
         @CompanionService
         public abstract String companionTerminalService();
 
@@ -98,14 +98,24 @@ public class ManageServiceOperation {
          * Returns the ICCID of the companion device. Used by HTTP parameter
          * {@code companion_terminal_iccid}.
          */
-        @Nullable
+        @NonNull
         public abstract String companionTerminalIccid();
 
         /**
          * Returns a new {@link Builder} object.
          */
+        @NonNull
         public static Builder builder() {
-            return new AutoValue_ManageServiceOperation_ManageServiceRequest.Builder();
+            return new AutoValue_ManageServiceOperation_ManageServiceRequest.Builder()
+                    .setAppId("")
+                    .setOperationType(OdsaOperation.OPERATION_TYPE_NOT_SET)
+                    .setCompanionTerminalId("")
+                    .setCompanionTerminalVendor("")
+                    .setCompanionTerminalModel("")
+                    .setCompanionTerminalSoftwareVersion("")
+                    .setCompanionTerminalFriendlyName("")
+                    .setCompanionTerminalService("")
+                    .setCompanionTerminalIccid("");
         }
 
         /**
@@ -231,6 +241,50 @@ public class ManageServiceOperation {
              */
             @NonNull
             public abstract ManageServiceRequest build();
+        }
+    }
+
+    /**
+     * Manage service response described in GSMA Service Entitlement Configuration section
+     * 6.5.4 table 39.
+     */
+    @AutoValue
+    public abstract static class ManageServiceResponse extends OdsaResponse {
+        /**
+         * Service status.
+         */
+        @ServiceStatus
+        public abstract int serviceStatus();
+
+        /**
+         * Returns a new {@link ManageServiceResponse.Builder} object.
+         */
+        @NonNull
+        public static Builder builder() {
+            return new AutoValue_ManageServiceOperation_ManageServiceResponse.Builder()
+                    .setServiceStatus(OdsaOperation.SERVICE_STATUS_UNKNOWN);
+        }
+
+        /**
+         * Builder
+         */
+        @AutoValue.Builder
+        public abstract static class Builder extends OdsaResponse.Builder {
+            /**
+             * Set the service status.
+             *
+             * @param serviceStatus Service status
+             *
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
+
+            /**
+             * Build the {@link ManageServiceResponse} object.
+             */
+            @NonNull
+            public abstract ManageServiceResponse build();
         }
     }
 }
