@@ -32,6 +32,9 @@ import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.Acqu
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenResponse;
+import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
+import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
+import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
 import com.android.libraries.entitlement.odsa.OdsaOperation;
@@ -65,6 +68,10 @@ public class Ts43OperationTest {
     private static final String TEMPORARY_TOKEN = "A8daAd8ads7fau34789947kjhsfad;kjfh";
 
     private static final String TEMPORARY_TOKEN_EXPIRY = "2019-01-29T13:15:31Z";
+
+    private static final String NOT_ENABLED_URL = "http://www.MNO.org/AppNotAllowed";
+
+    private static final String NOT_ENABLED_USER_DATA = "msisdn=XX";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -155,6 +162,28 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>\n";
 
+    private static final String CHECK_ELIGIBILITY_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2006\"/>\n"
+                    + "    <parm name=\"CompanionAppEligibility\" value=\"1\"/>\n"
+                    + "    <parm name=\"CompanionDeviceServices\" value=\"SharedNumber\"/>\n"
+                    + "    <parm name=\"NotEnabledURL\" value=\"" + NOT_ENABLED_URL + "\"/>\n"
+                    + "    <parm name=\"NotEnabledUserData\" value=\"" + NOT_ENABLED_USER_DATA
+                    + "\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
+
     private CarrierConfig mCarrierConfig;
 
     private ServiceEntitlement mServiceEntitlement;
@@ -206,6 +235,7 @@ public class Ts43OperationTest {
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET);
         assertThat(response.subscriptionServiceURL()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
@@ -228,6 +258,7 @@ public class Ts43OperationTest {
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE);
         assertThat(response.downloadInfo().profileIccid()).isEqualTo(ICCID);
@@ -248,6 +279,7 @@ public class Ts43OperationTest {
                         OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
                 .build();
         AcquireTemporaryTokenResponse response = mTs43Operation.acquireTemporaryToken(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.temporaryToken()).isEqualTo(TEMPORARY_TOKEN);
         assertThat(response.temporaryTokenExpiry().toString()).isEqualTo(TEMPORARY_TOKEN_EXPIRY);
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
@@ -265,11 +297,31 @@ public class Ts43OperationTest {
                 .build();
 
         AcquireConfigurationResponse response = mTs43Operation.acquireConfiguration(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.configurations()).hasSize(1);
         AcquireConfigurationResponse.Configuration config = response.configurations().get(0);
         assertThat(config.iccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
+    }
+
+    @Test
+    public void testCheckEligibility() throws Exception {
+        doReturn(CHECK_ELIGIBILITY_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
+                anyString(), any(CarrierConfig.class),
+                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        CheckEligibilityRequest request = CheckEligibilityRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .build();
+
+        CheckEligibilityResponse response = mTs43Operation.checkEligibility(request);
+        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.appEligibility()).isEqualTo(
+                CheckEligibilityOperation.ELIGIBILITY_RESULT_ENABLED);
+        assertThat(response.companionDeviceServices()).containsExactly(
+                OdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
+        assertThat(response.notEnabledURL()).isEqualTo(new URL(NOT_ENABLED_URL));
+        assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
     }
 }
