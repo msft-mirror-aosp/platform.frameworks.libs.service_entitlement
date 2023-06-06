@@ -61,7 +61,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * TS43 operations described in GSMA Service Entitlement Configuration section.
+ * TS43 operations described in GSMA Service Entitlement Configuration spec.
  */
 public class Ts43Operation {
     private static final String TAG = "Ts43";
@@ -393,7 +393,102 @@ public class Ts43Operation {
     public AcquireConfigurationResponse acquireConfiguration(
             @NonNull AcquireConfigurationRequest acquireConfigurationRequest)
             throws ServiceEntitlementException {
-        return null;
+        Objects.requireNonNull(acquireConfigurationRequest);
+
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder()
+                .setEntitlementVersion(mEntitlementVersion)
+                .setTerminalId(mImei)
+                .setAuthenticationToken(mAuthToken)
+                .build();
+
+        OdsaOperation operation = OdsaOperation.builder()
+                .setOperation(OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION)
+                .setCompanionTerminalId(acquireConfigurationRequest.companionTerminalId())
+                .setCompanionTerminalIccid(acquireConfigurationRequest.companionTerminalIccid())
+                .setCompanionTerminalEid(acquireConfigurationRequest.companionTerminalEid())
+                .setTerminalIccid(acquireConfigurationRequest.terminalIccid())
+                .setTerminalEid(acquireConfigurationRequest.terminalEid())
+                .setTargetTerminalId(acquireConfigurationRequest.targetTerminalId())
+                .setTargetTerminalIccid(acquireConfigurationRequest.targetTerminalIccid())
+                .setTargetTerminalEid(acquireConfigurationRequest.targetTerminalEid())
+                .build();
+
+        String rawXml;
+        try {
+            rawXml = mServiceEntitlement.performEsimOdsa(acquireConfigurationRequest.appId(),
+                    request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "acquireConfiguration: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        AcquireConfigurationResponse.Builder responseBuilder =
+                AcquireConfigurationResponse.builder();
+        AcquireConfigurationResponse.Configuration.Builder configBuilder =
+                AcquireConfigurationResponse.Configuration.builder();
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+
+        try {
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "manageSubscription: Malformed URL " + rawXml);
+        }
+
+        // Parse service status.
+        String serviceStatusString = ts43XmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.APPLICATION,
+                        Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
+                Ts43XmlDoc.Parm.SERVICE_STATUS);
+
+        if (!TextUtils.isEmpty(serviceStatusString)) {
+            configBuilder.setServiceStatus(getServiceStatusFromString(serviceStatusString));
+        }
+
+        // Parse ICCID
+        String iccIdString = ts43XmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.APPLICATION,
+                        Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
+                Ts43XmlDoc.Parm.ICCID);
+
+        if (!TextUtils.isEmpty(iccIdString)) {
+            configBuilder.setIccid(iccIdString);
+        }
+
+        // Parse polling interval
+        String pollingIntervalString = ts43XmlDoc.get(ImmutableList.of(
+                Ts43XmlDoc.CharacteristicType.APPLICATION,
+                        Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
+                Ts43XmlDoc.Parm.POLLING_INTERVAL);
+
+        if (!TextUtils.isEmpty(pollingIntervalString)) {
+            try {
+                configBuilder.setPollingInterval(Integer.parseInt(pollingIntervalString));
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "acquireConfiguration: Failed to parse polling interval "
+                        + pollingIntervalString);
+            }
+        }
+
+        // Parse download info
+        DownloadInfo downloadInfo = parseDownloadInfo(
+                ImmutableList.of(
+                        Ts43XmlDoc.CharacteristicType.APPLICATION,
+                        Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION,
+                        Ts43XmlDoc.CharacteristicType.DOWNLOAD_INFO),
+                    ts43XmlDoc);
+        if (downloadInfo != null) {
+            configBuilder.setDownloadInfo(downloadInfo);
+        }
+
+        // TODO: Support different type of configuration.
+        configBuilder.setType(
+                AcquireConfigurationResponse.Configuration.CONFIGURATION_TYPE_PRIMARY);
+
+        // TODO: Support multiple configurations.
+        return responseBuilder.setConfigurations(ImmutableList.of(configBuilder.build())).build();
     }
 
     /**
@@ -626,5 +721,30 @@ public class Ts43Operation {
             mAuthToken = token;
             Log.d(TAG, "processGeneralResult: Token replaced.");
         }
+    }
+
+    /**
+     * Get the service status from string as described in GSMA Service Entitlement Configuration
+     * section 6.5.4.
+     *
+     * @param serviceStatusString Service status in string format defined in GSMA Service
+     * Entitlement Configuration section 6.5.4.
+     *
+     * @return The converted service status. {@link OdsaOperation#SERVICE_STATUS_UNKNOWN} if not
+     * able to convert.
+     */
+    @ServiceStatus
+    private int getServiceStatusFromString(@NonNull String serviceStatusString) {
+        switch (serviceStatusString) {
+            case Ts43XmlDoc.ParmValues.SERVICE_STATUS_ACTIVATED:
+                return OdsaOperation.SERVICE_STATUS_ACTIVATED;
+            case Ts43XmlDoc.ParmValues.SERVICE_STATUS_ACTIVATING:
+                return OdsaOperation.SERVICE_STATUS_ACTIVATING;
+            case Ts43XmlDoc.ParmValues.SERVICE_STATUS_DEACTIVATED:
+                return OdsaOperation.SERVICE_STATUS_DEACTIVATED;
+            case Ts43XmlDoc.ParmValues.SERVICE_STATUS_DEACTIVATED_NO_REUSE:
+                return OdsaOperation.SERVICE_STATUS_DEACTIVATED_NO_REUSE;
+        }
+        return OdsaOperation.SERVICE_STATUS_UNKNOWN;
     }
 }
