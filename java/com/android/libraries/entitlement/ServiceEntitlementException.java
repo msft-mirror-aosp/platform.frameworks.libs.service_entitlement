@@ -16,6 +16,11 @@
 
 package com.android.libraries.entitlement;
 
+import androidx.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
  * Indicates errors happened in retrieving service entitlement configuration.
  */
@@ -31,15 +36,15 @@ public class ServiceEntitlementException extends Exception {
      */
     public static final int ERROR_PHONE_NOT_AVAILABLE = 10;
 
-    // EAP-AKA authentication related falures
+    // EAP-AKA authentication related failures
     /**
      * SIM not returning a response to the EAP-AKA challenge, e.g. when the challenge is invalid.
-     * This can happen only when an embedded EAP-AKA challange is conducted, as per GMSA spec TS.43
+     * This can happen only when an embedded EAP-AKA challenge is conducted, as per GSMA spec TS.43
      * section 2.6.1.
      */
     public static final int ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE = 20;
     /**
-     * EAP-AKA synchronization failure that cannot be recoverd even after the "Sequence number
+     * EAP-AKA synchronization failure that cannot be recovered even after the "Sequence number
      * synchronization" procedure as defined in RFC 4187.
      */
     public static final int ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE = 21;
@@ -47,11 +52,11 @@ public class ServiceEntitlementException extends Exception {
      * EAP-AKA failure that happens when the client fails to authenticate within the maximum number
      * of attempts
      */
-    public static final int ERROR_EAP_AKA_FAILURE = 21;
+    public static final int ERROR_EAP_AKA_FAILURE = 22;
 
     // HTTP related failures
     /**
-     * Cannot connect to the entitlment server, e.g. due to weak mobile network and Wi-Fi
+     * Cannot connect to the entitlement server, e.g. due to weak mobile network and Wi-Fi
      * connection.
      */
     public static final int ERROR_SERVER_NOT_CONNECTABLE = 30;
@@ -67,19 +72,40 @@ public class ServiceEntitlementException extends Exception {
      */
     public static final int ERROR_MALFORMED_HTTP_RESPONSE = 32;
 
+    // ODSA errors
+    /**
+     * HTTP response does not contain the authentication token.
+     */
+    public static final int ERROR_TOKEN_NOT_AVAILABLE = 60;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            ERROR_UNKNOWN,
+            ERROR_PHONE_NOT_AVAILABLE,
+            ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
+            ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE,
+            ERROR_EAP_AKA_FAILURE,
+            ERROR_SERVER_NOT_CONNECTABLE,
+            ERROR_HTTP_STATUS_NOT_SUCCESS,
+            ERROR_MALFORMED_HTTP_RESPONSE,
+            ERROR_TOKEN_NOT_AVAILABLE
+    })
+    public @interface ErrorCode {}
+
     /**
      * Default HTTP status if not been specified.
      */
-    private static final int HTTP_STATUS_UNSPECIFIED = 0;
+    public static final int HTTP_STATUS_UNSPECIFIED = 0;
 
     /**
      * An empty string if Retry-After header in HTTP response not been specified.
      */
-    private static final String RETRY_AFTER_UNSPECIFIED = "";
+    public static final String RETRY_AFTER_UNSPECIFIED = "";
 
-    private int mError;
-    private int mHttpStatus;
-    private String mRetryAfter;
+    @ErrorCode
+    private final int mError;
+    private final int mHttpStatus;
+    private final String mRetryAfter;
 
     public ServiceEntitlementException(int error, String message) {
         this(error, HTTP_STATUS_UNSPECIFIED, RETRY_AFTER_UNSPECIFIED, message);
@@ -114,8 +140,9 @@ public class ServiceEntitlementException extends Exception {
     }
 
     /**
-     * Returns the error code, see {@link #ERROR_*}. {@link #ERROR_UNKNOWN} if not been specified.
+     * Returns the error code. {@link #ERROR_UNKNOWN} if not been specified.
      */
+    @ErrorCode
     public int getErrorCode() {
         return mError;
     }
@@ -132,8 +159,8 @@ public class ServiceEntitlementException extends Exception {
      * Returns the "Retry-After" header in HTTP response, often set with HTTP status code 503; an
      * empty string if unavailable.
      *
-     * @return the HTTP-date or a number of seconds to delay, as defiend in RFC 7231:
-     * https://tools.ietf.org/html/rfc7231#section-7.1.3
+     * @return the HTTP-date or a number of seconds to delay, as defined in RFC 7231:
+     * <a href="https://tools.ietf.org/html/rfc7231#section-7.1.3">...</a>
      */
     public String getRetryAfter() {
         return mRetryAfter;

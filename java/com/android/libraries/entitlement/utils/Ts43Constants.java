@@ -16,6 +16,7 @@
 
 package com.android.libraries.entitlement.utils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.StringDef;
 
 import java.lang.annotation.Retention;
@@ -89,4 +90,31 @@ public final class Ts43Constants {
         APP_PHONE_NUMBER_INFORMATION
     })
     public @interface AppId {}
+
+    /**
+     * Check if the application id is valid.
+     *
+     * @param appId The application id.
+     *
+     * @return {@code true} if valid, otherwise {@code false}.
+     */
+    public static boolean isValidAppId(@NonNull @AppId String appId) {
+        switch (appId) {
+            case APP_VOLTE:
+            case APP_VOWIFI:
+            case APP_SMSOIP:
+            case APP_ODSA_COMPANION:
+            case APP_ODSA_PRIMARY:
+            case APP_DATA_PLAN_BOOST:
+            case APP_ODSA_SERVER_INITIATED_REQUESTS:
+            case APP_DIRECT_CARRIER_BILLING:
+            case APP_PRIVATE_USER_IDENTITY:
+            case APP_PHONE_NUMBER_INFORMATION:
+                return true;
+        }
+        return false;
+    }
+
+    /** Default entitlement version. */
+    public static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
 }

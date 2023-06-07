@@ -36,18 +36,22 @@ public abstract class OdsaOperation {
      * ODSA operation: CheckEligibility.
      */
     public static final String OPERATION_CHECK_ELIGIBILITY = "CheckEligibility";
+
     /**
      * ODSA operation: ManageSubscription.
      */
     public static final String OPERATION_MANAGE_SUBSCRIPTION = "ManageSubscription";
+
     /**
      * ODSA operation: ManageService.
      */
     public static final String OPERATION_MANAGE_SERVICE = "ManageService";
+
     /**
      * ODSA operation: AcquireConfiguration.
      */
     public static final String OPERATION_ACQUIRE_CONFIGURATION = "AcquireConfiguration";
+
     /**
      * ODSA operation: AcquireTemporaryToken.
      */
@@ -104,32 +108,39 @@ public abstract class OdsaOperation {
      * Indicates that operation_type is not set.
      */
     public static final int OPERATION_TYPE_NOT_SET = -1;
+
     /**
      * To activate a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_SUBSCRIBE = 0;
+
     /**
      * To cancel a subscription, used by {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_UNSUBSCRIBE = 1;
+
     /**
      * To manage an existing subscription, for {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_CHANGE_SUBSCRIPTION = 2;
+
     /**
      * To transfer a subscription from an existing device, used by
      * {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_TRANSFER_SUBSCRIPTION = 3;
+
     /**
      * To inform the network of a subscription update, used by
      * {@link #OPERATION_MANAGE_SUBSCRIPTION}.
      */
     public static final int OPERATION_TYPE_UPDATE_SUBSCRIPTION = 4;
+
     /**
      * To activate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
      */
     public static final int OPERATION_TYPE_ACTIVATE_SERVICE = 10;
+
     /**
      * To deactivate a service, used by {@link #OPERATION_MANAGE_SERVICE}.
      */
@@ -149,9 +160,52 @@ public abstract class OdsaOperation {
     public @interface OperationType {}
 
     /**
+     * Operation result unknown.
+     */
+    public static final int OPERATION_RESULT_UNKNOWN = -1;
+
+    /**
+     * Operation was a success.
+     */
+    public static final int OPERATION_RESULT_SUCCESS = 1;
+
+    /**
+     * There was a general error during processing.
+     */
+    public static final int OPERATION_RESULT_ERROR_GENERAL = 100;
+
+    /**
+     * An invalid operation value was provided in request.
+     */
+    public static final int OPERATION_RESULT_ERROR_INVALID_OPERATION = 101;
+
+    /**
+     * An invalid parameter name or value was provided in request.
+     */
+    public static final int OPERATION_RESULT_ERROR_INVALID_PARAMETER = 102;
+
+    /**
+     * The optional operation is not supported by the carrier. Device should continue with the flow.
+     * This error only applies to optional operations (for example ManageService).
+     */
+    public static final int OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION = 103;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            OPERATION_RESULT_UNKNOWN,
+            OPERATION_RESULT_SUCCESS,
+            OPERATION_RESULT_ERROR_GENERAL,
+            OPERATION_RESULT_ERROR_INVALID_OPERATION,
+            OPERATION_RESULT_ERROR_INVALID_PARAMETER,
+            OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION
+    })
+    public @interface OperationResult {}
+
+    /**
      * Indicates the companion device carries the same MSISDN as the primary device.
      */
     public static final String COMPANION_SERVICE_SHARED_NUMBER = "SharedNumber";
+
     /**
      * Indicates the companion device carries a different MSISDN as the primary device.
      */
@@ -247,6 +301,15 @@ public abstract class OdsaOperation {
     public abstract String targetTerminalId();
 
     /**
+     * Returns the unique identifiers of the primary device eSIM if more than one, like the
+     * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}.
+     *
+     * This is a non-standard params required by some carriers.
+     */
+    @NonNull
+    public abstract ImmutableList<String> targetTerminalIds();
+
+    /**
      * Returns the ICCID primary device eSIM. Used by HTTP parameter {@code target_terminal_iccid}.
      */
     public abstract String targetTerminalIccid();
@@ -257,6 +320,23 @@ public abstract class OdsaOperation {
      */
     public abstract String targetTerminalEid();
 
+    /**
+     * Returns the serial number of primary device. Used by HTTP parameter
+     * {@code target_terminal_sn}.
+     *
+     * This is a non-standard params required by some carriers.
+     */
+    @NonNull
+    public abstract String targetTerminalSerialNumber();
+
+    /**
+     * Returns the model of primary device. Used by HTTP parameter
+     * {@code target_terminal_model}.
+     *
+     * This is a non-standard params required by some carriers.
+     */
+    @NonNull
+    public abstract String targetTerminalModel();
 
     /**
      * Returns the unique identifier of the old device eSIM, like the IMEI associated with the
@@ -274,24 +354,27 @@ public abstract class OdsaOperation {
      */
     public static Builder builder() {
         return new AutoValue_OdsaOperation.Builder()
-            .setOperation("")
-            .setOperationType(OPERATION_TYPE_NOT_SET)
-            .setOperationTargets(ImmutableList.of())
-            .setCompanionTerminalId("")
-            .setCompanionTerminalVendor("")
-            .setCompanionTerminalModel("")
-            .setCompanionTerminalSoftwareVersion("")
-            .setCompanionTerminalFriendlyName("")
-            .setCompanionTerminalService("")
-            .setCompanionTerminalIccid("")
-            .setCompanionTerminalEid("")
-            .setTerminalIccid("")
-            .setTerminalEid("")
-            .setTargetTerminalId("")
-            .setTargetTerminalIccid("")
-            .setTargetTerminalEid("")
-            .setOldTerminalId("")
-            .setOldTerminalIccid("");
+                .setOperation("")
+                .setOperationType(OPERATION_TYPE_NOT_SET)
+                .setOperationTargets(ImmutableList.of())
+                .setCompanionTerminalId("")
+                .setCompanionTerminalVendor("")
+                .setCompanionTerminalModel("")
+                .setCompanionTerminalSoftwareVersion("")
+                .setCompanionTerminalFriendlyName("")
+                .setCompanionTerminalService("")
+                .setCompanionTerminalIccid("")
+                .setCompanionTerminalEid("")
+                .setTerminalIccid("")
+                .setTerminalEid("")
+                .setTargetTerminalId("")
+                .setTargetTerminalIds(ImmutableList.of())
+                .setTargetTerminalIccid("")
+                .setTargetTerminalEid("")
+                .setTargetTerminalSerialNumber("")
+                .setTargetTerminalModel("")
+                .setOldTerminalId("")
+                .setOldTerminalIccid("");
     }
 
     /**
@@ -499,6 +582,20 @@ public abstract class OdsaOperation {
         public abstract Builder setTargetTerminalId(@NonNull String targetTerminalId);
 
         /**
+         * Sets the unique identifiers of the primary device eSIM if more than one, like the
+         * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}.
+         *
+         * This is a non-standard params required by some carriers.
+         *
+         * @param targetTerminalIds The unique identifiers of the primary device eSIM if more
+         * than one.
+         *
+         * @return The builder.
+         */
+        public abstract Builder setTargetTerminalIds(
+                @NonNull ImmutableList<String> targetTerminalIds);
+
+        /**
          * Sets the ICCID primary device eSIM in case of multiple SIM. Used by HTTP parameter
          * {@code target_terminal_iccid} if set.
          *
@@ -524,6 +621,33 @@ public abstract class OdsaOperation {
          */
         @NonNull
         public abstract Builder setTargetTerminalEid(@NonNull String terminalEid);
+
+        /**
+         * Sets the serial number of primary device. Used by HTTP parameter
+         * {@code target_terminal_sn}.
+         *
+         * @param targetTerminalSerialNumber The serial number of primary device.
+         *
+         * This is a non-standard params required by some carriers.
+         *
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setTargetTerminalSerialNumber(
+                @NonNull String targetTerminalSerialNumber);
+
+        /**
+         * Sets the model of primary device. Used by HTTP parameter
+         * {@code target_terminal_model}.
+         *
+         * @param targetTerminalModel The model of primary device.
+         *
+         * This is a non-standard params required by some carriers.
+         *
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setTargetTerminalModel(@NonNull String targetTerminalModel);
 
         /**
          * Sets the unique identifier of the old device eSIM, like the IMEI associated with the
