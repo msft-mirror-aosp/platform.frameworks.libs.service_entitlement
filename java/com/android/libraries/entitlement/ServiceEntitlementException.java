@@ -52,7 +52,7 @@ public class ServiceEntitlementException extends Exception {
      * EAP-AKA failure that happens when the client fails to authenticate within the maximum number
      * of attempts
      */
-    public static final int ERROR_EAP_AKA_FAILURE = 21;
+    public static final int ERROR_EAP_AKA_FAILURE = 22;
 
     // HTTP related failures
     /**
@@ -87,19 +87,20 @@ public class ServiceEntitlementException extends Exception {
             ERROR_EAP_AKA_FAILURE,
             ERROR_SERVER_NOT_CONNECTABLE,
             ERROR_HTTP_STATUS_NOT_SUCCESS,
-            ERROR_MALFORMED_HTTP_RESPONSE
+            ERROR_MALFORMED_HTTP_RESPONSE,
+            ERROR_TOKEN_NOT_AVAILABLE
     })
     public @interface ErrorCode {}
 
     /**
      * Default HTTP status if not been specified.
      */
-    private static final int HTTP_STATUS_UNSPECIFIED = 0;
+    public static final int HTTP_STATUS_UNSPECIFIED = 0;
 
     /**
      * An empty string if Retry-After header in HTTP response not been specified.
      */
-    private static final String RETRY_AFTER_UNSPECIFIED = "";
+    public static final String RETRY_AFTER_UNSPECIFIED = "";
 
     @ErrorCode
     private final int mError;

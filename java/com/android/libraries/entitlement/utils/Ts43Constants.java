@@ -114,4 +114,7 @@ public final class Ts43Constants {
         }
         return false;
     }
+
+    /** Default entitlement version. */
+    public static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
 }

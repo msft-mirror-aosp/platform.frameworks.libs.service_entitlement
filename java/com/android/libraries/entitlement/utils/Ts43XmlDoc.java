@@ -18,7 +18,9 @@ package com.android.libraries.entitlement.utils;
 
 import android.text.TextUtils;
 import android.util.ArrayMap;
+import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
@@ -42,6 +44,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 /** Wraps the TS.43 XML raw string and parses it into nodes. */
 public final class Ts43XmlDoc {
+    private static final String TAG = "Ts43XmlDoc";
     private static final String NODE_CHARACTERISTIC = "characteristic";
     private static final String NODE_PARM = "parm";
     private static final String PARM_NAME = "name";
@@ -53,6 +56,9 @@ public final class Ts43XmlDoc {
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
+        public static final String COMPANION_CONFIGURATIONS = "CompanionConfigurations";
+        public static final String COMPANION_CONFIGURATION = "CompanionConfiguration";
+        public static final String ENTERPRISE_CONFIGURATION = "EnterpriseConfiguration";
         public static final String USER = "USER";
         public static final String TOKEN = "TOKEN";
         public static final String DOWNLOAD_INFO = "DownloadInfo";
@@ -67,7 +73,15 @@ public final class Ts43XmlDoc {
         public static final String VERSION = "version";
         public static final String VALIDITY = "validity";
         public static final String OPERATION_RESULT = "OperationResult";
+        public static final String GENERAL_ERROR_URL = "GeneralErrorURL";
+        public static final String GENERAL_ERROR_USER_DATA = "GeneralErrorUserData";
         public static final String PRIMARY_APP_ELIGIBILITY = "PrimaryAppEligibility";
+        public static final String COMPANION_APP_ELIGIBILITY = "CompanionAppEligibility";
+        public static final String ENTERPRISE_APP_ELIGIBILITY = "EnterpriseAppEligibility";
+        public static final String NOT_ENABLED_URL = "NotEnabledURL";
+        public static final String NOT_ENABLED_USER_DATA = "NotEnabledUserData";
+        public static final String NOT_ENABLED_CONTENTS_TYPE = "NotEnabledContentsType";
+        public static final String COMPANION_DEVICE_SERVICES = "CompanionDeviceServices";
         public static final String TEMPORARY_TOKEN = "TemporaryToken";
         public static final String TEMPORARY_TOKEN_EXPIRY = "TemporaryTokenExpiry";
         public static final String MSISDN = "msisdn";
@@ -75,6 +89,10 @@ public final class Ts43XmlDoc {
         public static final String SERVICE_STATUS = "ServiceStatus";
         public static final String POLLING_INTERVAL = "PollingInterval";
         public static final String SUBSCRIPTION_RESULT = "SubscriptionResult";
+        public static final String SUBSCRIPTION_SERVICE_URL = "SubscriptionServiceURL";
+        public static final String SUBSCRIPTION_SERVICE_USER_DATA = "SubscriptionServiceUserData";
+        public static final String SUBSCRIPTION_SERVICE_CONTENTS_TYPE =
+                "SubscriptionServiceContentsType";
         public static final String PROFILE_ACTIVATION_CODE = "ProfileActivationCode";
         public static final String PROFILE_ICCID = "ProfileIccid";
         public static final String PROFILE_SMDP_ADDRESS = "ProfileSmdpAddress";
@@ -87,17 +105,28 @@ public final class Ts43XmlDoc {
 
         public static final String OPERATION_RESULT_SUCCESS = "1";
         public static final String OPERATION_RESULT_ERROR_GENERAL = "100";
+        public static final String OPERATION_RESULT_ERROR_INVALID_OPERATION = "101";
+        public static final String OPERATION_RESULT_ERROR_INVALID_PARAMETER = "102";
+        public static final String OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION = "103";
         public static final String PRIMARY_APP_ELIGIBILITY_ENABLED = "1";
         public static final String SERVICE_STATUS_ACTIVATED = "1";
         public static final String SERVICE_STATUS_ACTIVATING = "2";
         public static final String SERVICE_STATUS_DEACTIVATED = "3";
         public static final String SERVICE_STATUS_DEACTIVATED_NO_REUSE = "4";
+        public static final String SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET = "1";
         public static final String SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE = "2";
         public static final String SUBSCRIPTION_RESULT_DONE = "3";
         public static final String SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD = "4";
         public static final String SUBSCRIPTION_RESULT_DISMISS = "5";
-    }
+        public static final String SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = "6";
 
+        public static final String CONTENTS_TYPE_XML = "xml";
+        public static final String CONTENTS_TYPE_JSON = "json";
+
+        public static final String DISABLED = "0";
+        public static final String ENABLED = "1";
+        public static final String INCOMPATIBLE = "2";
+    }
     /**
      * Maps characteristics to a map of parameters. Key is the characteristic type. Value is
      * parameter name and value. Example: {"APPLICATION" -> {"AppId" -> "ap2009",
@@ -153,6 +182,7 @@ public final class Ts43XmlDoc {
             }
         } catch (ParserConfigurationException | IOException | SAXException e) {
             // Nodes that failed to parse won't be stored in nodesMap
+            Log.w(TAG, "e=" + e);
         }
     }
 
@@ -190,5 +220,11 @@ public final class Ts43XmlDoc {
                     Objects.requireNonNull(parmValueNode.getNodeValue()));
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "Ts43XmlDoc: " + mCharacteristicsMap;
     }
 }
