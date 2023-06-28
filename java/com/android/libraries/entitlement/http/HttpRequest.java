@@ -16,6 +16,7 @@
 
 package com.android.libraries.entitlement.http;
 
+import android.content.res.Resources;
 import android.net.Network;
 
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import com.android.libraries.entitlement.CarrierConfig;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.net.HttpHeaders;
 
 import org.json.JSONObject;
 
@@ -108,6 +110,13 @@ public abstract class HttpRequest {
                 .setUrl("")
                 .setRequestMethod("")
                 .setPostData(new JSONObject())
-                .setTimeoutInSec(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+                .setTimeoutInSec(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC)
+                .addRequestProperty(
+                        HttpHeaders.ACCEPT_LANGUAGE,
+                        Resources.getSystem()
+                                .getConfiguration()
+                                .getLocales()
+                                .get(0)
+                                .toLanguageTag());
     }
 }
