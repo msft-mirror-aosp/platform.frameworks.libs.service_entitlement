@@ -161,6 +161,7 @@ public class Ts43Operation {
         } else {
             throw new IllegalArgumentException("Invalid token type " + tokenType);
         }
+        mTokenType = tokenType;
 
         CarrierConfig carrierConfig = CarrierConfig.builder()
                 .setServerUrl(mEntitlementServerAddress.toString())
