@@ -123,10 +123,9 @@ public abstract class ServiceEntitlementRequest {
     public abstract String acceptContentType();
 
     /**
-     * Returns the network identifier for premium network. Used for premium network slice
-     * entitlement.
+     * Returns the boost type for premium network. Used for premium network slice entitlement.
      */
-    public abstract String networkIdentifier();
+    public abstract String boostType();
 
     /**
      * Returns a new {@link Builder} object.
@@ -146,7 +145,7 @@ public abstract class ServiceEntitlementRequest {
                 .setNotificationToken("")
                 .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM)
                 .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML)
-                .setNetworkIdentifier("");
+                .setBoostType("");
     }
 
     /**
@@ -264,12 +263,12 @@ public abstract class ServiceEntitlementRequest {
         public abstract Builder setAcceptContentType(String contentType);
 
         /**
-         * Sets the network identifier for premium network. Used by HTTP parameter
-         * "network_identifier" in case of premium network slice entitlement.
+         * Sets the boost type for premium network. Used by HTTP parameter
+         * "boost_type" in case of premium network slice entitlement.
          *
          * <p>Optional.
          */
-        public abstract Builder setNetworkIdentifier(String value);
+        public abstract Builder setBoostType(String value);
 
         public abstract ServiceEntitlementRequest build();
     }
