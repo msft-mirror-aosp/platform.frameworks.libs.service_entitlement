@@ -96,6 +96,9 @@ java_library {
         "java/com/android/libraries/entitlement/ServiceEntitlementException.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
     ],
+    static_libs: [
+        "guava",
+    ],
     apex_available: [
         "//apex_available:platform",
         "com.android.wifi",
