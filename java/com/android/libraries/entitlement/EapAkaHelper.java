@@ -87,7 +87,7 @@ public class EapAkaHelper {
         EapAkaResponse eapAkaResponse = getEapAkaResponse(challenge);
         return (eapAkaResponse == null)
                 ? null
-                : eapAkaResponse.response(); // Would be null on synchrinization failure
+                : eapAkaResponse.response(); // Would be null on synchronization failure
     }
 
     /**
