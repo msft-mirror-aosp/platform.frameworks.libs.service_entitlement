@@ -25,6 +25,7 @@ import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -58,14 +59,14 @@ public final class CheckEligibilityOperation {
     }
 
     /**
-     * HTTP request parameters specific to on device service activation (ODSA). See GSMA spec TS.43
-     * section 6.2.
+     * HTTP request parameters specific to on device service activation (ODSA).
+     * See GSMA spec TS.43 section 6.2.
      */
     @AutoValue
     public abstract static class CheckEligibilityRequest {
         /**
-         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION}, {@link
-         * Ts43Constants#APP_ODSA_PRIMARY}, or
+         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION},
+         * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
         @AppId
@@ -79,32 +80,46 @@ public final class CheckEligibilityOperation {
         public abstract String companionTerminalId();
 
         /**
-         * Returns the OEM of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_vendor}.
+         * Returns the OEM of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_vendor}.
          */
         @NonNull
         public abstract String companionTerminalVendor();
 
         /**
-         * Returns the model of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_model}.
+         * Returns the model of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_model}.
          */
         @NonNull
         public abstract String companionTerminalModel();
 
         /**
-         * Returns the software version of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_sw_version}.
+         * Returns the software version of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_sw_version}.
          */
         @NonNull
         public abstract String companionTerminalSoftwareVersion();
 
         /**
-         * Returns the user-friendly version of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_friendly_name}.
+         * Returns the user-friendly version of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_friendly_name}.
          */
         @NonNull
         public abstract String companionTerminalFriendlyName();
+
+        /**
+         * Returns the notification token used to register for entitlement configuration request
+         * from network. Used by HTTP parameter {@code notif_token}.
+         */
+        @NonNull
+        public abstract String notificationToken();
+
+        /**
+         * Returns the action associated with the notification token. Used by HTTP parameter
+         * {@code notif_action}.
+         */
+        @NotificationAction
+        public abstract int notificationAction();
 
         /** Returns a new {@link Builder} object. */
         @NonNull
@@ -115,7 +130,9 @@ public final class CheckEligibilityOperation {
                     .setCompanionTerminalVendor("")
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
-                    .setCompanionTerminalFriendlyName("");
+                    .setCompanionTerminalFriendlyName("")
+                    .setNotificationToken("")
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
 
         /** Builder */
@@ -146,8 +163,8 @@ public final class CheckEligibilityOperation {
             public abstract Builder setCompanionTerminalId(@NonNull String companionTerminalId);
 
             /**
-             * Sets the OEM of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_vendor}. if set.
+             * Sets the OEM of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_vendor} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -159,8 +176,8 @@ public final class CheckEligibilityOperation {
                     @NonNull String companionTerminalVendor);
 
             /**
-             * Sets the model of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_model}. if set.
+             * Sets the model of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_model} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -172,8 +189,8 @@ public final class CheckEligibilityOperation {
                     @NonNull String companionTerminalModel);
 
             /**
-             * Sets the software version of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_sw_version} if set.
+             * Sets the software version of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_sw_version} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -185,8 +202,8 @@ public final class CheckEligibilityOperation {
                     @NonNull String companionTerminalSoftwareVersion);
 
             /**
-             * Sets the user-friendly version of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_friendly_name} if set.
+             * Sets the user-friendly version of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_friendly_name} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -197,6 +214,32 @@ public final class CheckEligibilityOperation {
             @NonNull
             public abstract Builder setCompanionTerminalFriendlyName(
                     @NonNull String companionTerminalFriendlyName);
+
+            /**
+             * Sets the notification token used to register for entitlement configuration request
+             * from network. Used by HTTP parameter {@code notif_token} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationToken The notification token used to register for entitlement
+             *                          configuration request from network.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationToken(@NonNull String notificationToken);
+
+            /**
+             * Sets the action associated with the notification token. Used by HTTP parameter
+             * {@code notif_action} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationAction The action associated with the notification token.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationAction(
+                    @NotificationAction int notificationAction);
 
             /** Returns the {@link CheckEligibilityRequest} object. */
             @NonNull
@@ -220,8 +263,7 @@ public final class CheckEligibilityOperation {
 
         /**
          * The provided URL shall present a web view to user on the reason(s) why the ODSA app
-         * cannot be
-         * used/invoked.
+         * cannot be used/invoked.
          */
         @Nullable
         public abstract URL notEnabledUrl();
