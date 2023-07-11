@@ -31,7 +31,10 @@ import android.testing.AndroidTestingRunner;
 
 import com.android.libraries.entitlement.Ts43Authentication.Ts43AuthToken;
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.utils.Ts43Constants;
+
+import com.google.common.collect.ImmutableList;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -51,6 +54,8 @@ public class Ts43AuthenticationTest {
     private static final String TOKEN = "ASH127AHHA88SF";
     private static final long VALIDITY = 86400;
     private static final String IMEI = "861536030196001";
+    private static final ImmutableList<String> COOKIES =
+            ImmutableList.of("key1=value1", "key2=value2");
 
     private static final String HTTP_RESPONSE_WITH_TOKEN =
             "<?xml version=\"1.0\"?>"
@@ -85,14 +90,13 @@ public class Ts43AuthenticationTest {
                     + "    </characteristic>"
                     + "</wap-provisioningdoc>";
 
-    private CarrierConfig mCarrierConfig;
-
-    private ServiceEntitlement mServiceEntitlement;
-
     private Ts43Authentication mTs43Authentication;
 
     @Mock
     private EapAkaApi mMockEapAkaApi;
+
+    @Mock
+    private HttpResponse mMockHttpResponse;
 
     @Mock
     private Context mContext;
@@ -103,14 +107,15 @@ public class Ts43AuthenticationTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mCarrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        mServiceEntitlement = new ServiceEntitlement(mCarrierConfig, mMockEapAkaApi);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlement serviceEntitlement = new ServiceEntitlement(carrierConfig,
+                mMockEapAkaApi);
         mTs43Authentication = new Ts43Authentication(mContext, new URL(TEST_URL),
                 ENTITLEMENT_VERSION);
 
         Field field = Ts43Authentication.class.getDeclaredField("mServiceEntitlement");
         field.setAccessible(true);
-        field.set(mTs43Authentication, mServiceEntitlement);
+        field.set(mTs43Authentication, serviceEntitlement);
 
         doReturn(2).when(mTelephonyManager).getActiveModemCount();
         doReturn(IMEI).when(mTelephonyManager).getImei(0);
@@ -118,12 +123,14 @@ public class Ts43AuthenticationTest {
         doReturn(Context.TELEPHONY_SERVICE).when(mContext)
                 .getSystemServiceName(TelephonyManager.class);
         doReturn(mTelephonyManager).when(mContext).getSystemService(Context.TELEPHONY_SERVICE);
+        doReturn(mMockHttpResponse).when(mMockEapAkaApi)
+                .queryEntitlementStatus(any(), any(), any());
+        doReturn(COOKIES).when(mMockHttpResponse).cookies();
     }
 
     @Test
     public void testGetAuthToken_receivedValidToken() throws Exception {
-        doReturn(HTTP_RESPONSE_WITH_TOKEN).when(mMockEapAkaApi).queryEntitlementStatus(
-                any(), any(), any());
+        doReturn(HTTP_RESPONSE_WITH_TOKEN).when(mMockHttpResponse).body();
         Ts43AuthToken mToken = mTs43Authentication.getAuthToken(
                 0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
         assertThat(mToken.token()).isEqualTo(TOKEN);
@@ -154,9 +161,8 @@ public class Ts43AuthenticationTest {
     }
 
     @Test
-    public void testGetAuthToken_tokenNotAvailable_throwException() throws Exception {
-        doReturn(HTTP_RESPONSE_WITHOUT_TOKEN).when(mMockEapAkaApi).queryEntitlementStatus(
-                any(), any(), any());
+    public void testGetAuthToken_tokenNotAvailable_throwException() {
+        doReturn(HTTP_RESPONSE_WITHOUT_TOKEN).when(mMockHttpResponse).body();
 
         try {
             mTs43Authentication.getAuthToken(
@@ -170,8 +176,7 @@ public class Ts43AuthenticationTest {
 
     @Test
     public void testGetAuthToken_validityNotAvailable() throws Exception {
-        doReturn(HTTP_RESPONSE_WITHOUT_VALIDITY).when(mMockEapAkaApi).queryEntitlementStatus(
-                any(), any(), any());
+        doReturn(HTTP_RESPONSE_WITHOUT_VALIDITY).when(mMockHttpResponse).body();
         Ts43AuthToken mToken = mTs43Authentication.getAuthToken(
                 0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
         assertThat(mToken.token()).isEqualTo(TOKEN);
