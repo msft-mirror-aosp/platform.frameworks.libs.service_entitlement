@@ -129,14 +129,14 @@ public class EapAkaApi {
     }
 
     /**
-     * Retrieves raw entitlement configuration doc though EAP-AKA authentication.
+     * Retrieves HTTP response with the entitlement configuration doc though EAP-AKA authentication.
      *
      * <p>Implementation based on GSMA TS.43-v5.0 2.6.1.
      *
      * @throws ServiceEntitlementException when getting an unexpected http response.
      */
     @Nullable
-    public String queryEntitlementStatus(ImmutableList<String> appIds,
+    public HttpResponse queryEntitlementStatus(ImmutableList<String> appIds,
             CarrierConfig carrierConfig, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
@@ -145,8 +145,7 @@ public class EapAkaApi {
         if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
-            return httpGet(
-                    urlBuilder.toString(), carrierConfig, request.acceptContentType()).body();
+            return httpGet(urlBuilder.toString(), carrierConfig, request.acceptContentType());
         } else {
             // Full Authentication flow
             Log.d(TAG, "Full Authentication");
@@ -166,8 +165,7 @@ public class EapAkaApi {
                     eapAkaChallenge,
                     challengeResponse.cookies(),
                     MAX_EAP_AKA_ATTEMPTS,
-                    request.acceptContentType())
-                    .body();
+                    request.acceptContentType());
         }
     }
 
@@ -188,7 +186,7 @@ public class EapAkaApi {
      *       and return a new response, as long as {@code remainingAttempts} is greater than zero.
      * </ul>
      *
-     * @param response Challenge response from server which its content type is JSON
+     * @return Challenge response from server whose content type is JSON
      */
     private HttpResponse respondToEapAkaChallenge(
             CarrierConfig carrierConfig,
@@ -289,12 +287,12 @@ public class EapAkaApi {
     }
 
     /**
-     * Retrieves raw doc of performing ODSA operations. For operation type, see {@link
-     * OdsaOperation}.
+     * Retrieves HTTP response from performing ODSA operations.
+     * For operation type, see {@link OdsaOperation}.
      *
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
-    public String performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
+    public HttpResponse performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
             ServiceEntitlementRequest request, OdsaOperation odsaOperation)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
@@ -306,8 +304,7 @@ public class EapAkaApi {
                 || !TextUtils.isEmpty(request.temporaryToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
-            return httpGet(
-                    urlBuilder.toString(), carrierConfig, request.acceptContentType()).body();
+            return httpGet(urlBuilder.toString(), carrierConfig, request.acceptContentType());
         } else {
             // Full Authentication flow
             Log.d(TAG, "Full Authentication");
@@ -327,8 +324,7 @@ public class EapAkaApi {
                     eapAkaChallenge,
                     challengeResponse.cookies(),
                     MAX_EAP_AKA_ATTEMPTS,
-                    request.acceptContentType())
-                    .body();
+                    request.acceptContentType());
         }
     }
 
@@ -337,7 +333,8 @@ public class EapAkaApi {
      *
      * <p>Implementation based on section 2.8.2 of TS.43
      *
-     * <p>The user should call {@link #queryEntitlementStatusFromOidc(String url)} with the
+     * <p>The user should call
+     * {@link #queryEntitlementStatusFromOidc(String, CarrierConfig, String)} with the
      * authentication result to retrieve the service entitlement configuration.
      */
     public String acquireOidcAuthenticationEndpoint(String appId, CarrierConfig carrierConfig,
@@ -350,18 +347,18 @@ public class EapAkaApi {
     }
 
     /**
-     * Retrieves the service entitlement configuration from OIDC authentication result.
+     * Retrieves the HTTP response with the service entitlement configuration from
+     * OIDC authentication result.
      *
      * <p>Implementation based on section 2.8.2 of TS.43.
      *
      * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
      */
-    public String queryEntitlementStatusFromOidc(
+    public HttpResponse queryEntitlementStatusFromOidc(
             String url, CarrierConfig carrierConfig, String acceptContentType)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(url).buildUpon();
-        return httpGet(
-                urlBuilder.toString(), carrierConfig, acceptContentType).body();
+        return httpGet(urlBuilder.toString(), carrierConfig, acceptContentType);
     }
 
     private void appendParametersForAuthentication(Uri.Builder urlBuilder,

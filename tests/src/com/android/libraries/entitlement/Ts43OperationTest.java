@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import android.content.Context;
@@ -28,6 +27,7 @@ import android.telephony.TelephonyManager;
 import android.testing.AndroidTestingRunner;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationRequest;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
@@ -202,12 +202,11 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
-    private CarrierConfig mCarrierConfig;
-
-    private ServiceEntitlement mServiceEntitlement;
-
     @Mock
     private EapAkaApi mMockEapAkaApi;
+
+    @Mock
+    private HttpResponse mMockHttpResponse;
 
     @Mock
     private Context mContext;
@@ -220,8 +219,11 @@ public class Ts43OperationTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mCarrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        mServiceEntitlement = new ServiceEntitlement(mCarrierConfig, mMockEapAkaApi);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlement serviceEntitlement =
+                new ServiceEntitlement(carrierConfig, mMockEapAkaApi);
+        doReturn(mMockHttpResponse).when(mMockEapAkaApi)
+                .performEsimOdsaOperation(any(), any(), any(), any());
 
         doReturn(2).when(mTelephonyManager).getActiveModemCount();
         doReturn(IMEI).when(mTelephonyManager).getImei(0);
@@ -235,15 +237,12 @@ public class Ts43OperationTest {
 
         Field field = Ts43Operation.class.getDeclaredField("mServiceEntitlement");
         field.setAccessible(true);
-        field.set(mTs43Operation, mServiceEntitlement);
+        field.set(mTs43Operation, serviceEntitlement);
     }
 
     @Test
     public void testManageSubscription_continueToWebsheet() throws Exception {
-        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                        anyString(), any(CarrierConfig.class),
-                        any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET).when(mMockHttpResponse).body();
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
@@ -263,10 +262,7 @@ public class Ts43OperationTest {
 
     @Test
     public void testManageSubscription_downloadProfile() throws Exception {
-        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_DOWNLOAD_PROFILE)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                        anyString(), any(CarrierConfig.class),
-                        any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_DOWNLOAD_PROFILE).when(mMockHttpResponse).body();
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
@@ -286,10 +282,7 @@ public class Ts43OperationTest {
 
     @Test
     public void testAcquireTemporaryToken() throws Exception {
-        doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE).when(mMockHttpResponse).body();
 
         AcquireTemporaryTokenRequest request = AcquireTemporaryTokenRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
@@ -307,9 +300,7 @@ public class Ts43OperationTest {
 
     @Test
     public void testAcquireConfiguration() throws Exception {
-        doReturn(ACQUIRE_CONFIGURATION_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(ACQUIRE_CONFIGURATION_RESPONSE).when(mMockHttpResponse).body();
         AcquireConfigurationRequest request = AcquireConfigurationRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
@@ -327,9 +318,7 @@ public class Ts43OperationTest {
 
     @Test
     public void testCheckEligibility() throws Exception {
-        doReturn(CHECK_ELIGIBILITY_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(CHECK_ELIGIBILITY_RESPONSE).when(mMockHttpResponse).body();
         CheckEligibilityRequest request = CheckEligibilityRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
@@ -346,9 +335,7 @@ public class Ts43OperationTest {
 
     @Test
     public void testManageService() throws Exception {
-        doReturn(MANAGE_SERVICE_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SERVICE_RESPONSE).when(mMockHttpResponse).body();
         ManageServiceRequest request = ManageServiceRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
