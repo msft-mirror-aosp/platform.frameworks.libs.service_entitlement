@@ -39,7 +39,6 @@ import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServi
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.common.collect.ImmutableList;
@@ -246,13 +245,14 @@ public class Ts43OperationTest {
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .setCompanionTerminalId(COMPANION_TERMINAL_ID)
                 .setCompanionTerminalEid(COMPANION_TERMINAL_EID)
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET);
         assertThat(response.subscriptionServiceUrl()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
@@ -266,13 +266,14 @@ public class Ts43OperationTest {
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .setCompanionTerminalId(COMPANION_TERMINAL_ID)
                 .setCompanionTerminalEid(COMPANION_TERMINAL_EID)
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE);
         assertThat(response.downloadInfo().profileIccid()).isEqualTo(ICCID);
@@ -286,16 +287,18 @@ public class Ts43OperationTest {
 
         AcquireTemporaryTokenRequest request = AcquireTemporaryTokenRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationTargets(ImmutableList.of(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
-                        OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
+                .setOperationTargets(ImmutableList.of(
+                        EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                        EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
                 .build();
         AcquireTemporaryTokenResponse response = mTs43Operation.acquireTemporaryToken(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.temporaryToken()).isEqualTo(TEMPORARY_TOKEN);
         assertThat(response.temporaryTokenExpiry().toString()).isEqualTo(TEMPORARY_TOKEN_EXPIRY);
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
-                OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
-                OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
+                EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
     }
 
     @Test
@@ -306,14 +309,15 @@ public class Ts43OperationTest {
                 .build();
 
         AcquireConfigurationResponse response = mTs43Operation.acquireConfiguration(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.configurations()).hasSize(1);
         AcquireConfigurationResponse.Configuration config = response.configurations().get(0);
         assertThat(config.iccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
-        assertThat(config.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_ACTIVATED);
+        assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
     }
 
     @Test
@@ -324,11 +328,12 @@ public class Ts43OperationTest {
                 .build();
 
         CheckEligibilityResponse response = mTs43Operation.checkEligibility(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.appEligibility()).isEqualTo(
                 CheckEligibilityOperation.ELIGIBILITY_RESULT_ENABLED);
         assertThat(response.companionDeviceServices()).containsExactly(
-                OdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
+                EsimOdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
         assertThat(response.notEnabledUrl()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
     }
@@ -341,7 +346,9 @@ public class Ts43OperationTest {
                 .build();
 
         ManageServiceResponse response = mTs43Operation.manageService(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
-        assertThat(response.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_DEACTIVATED);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.serviceStatus()).isEqualTo(
+                EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED);
     }
 }
