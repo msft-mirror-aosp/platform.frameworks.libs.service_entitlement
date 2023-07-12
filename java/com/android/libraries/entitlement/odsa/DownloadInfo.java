@@ -22,8 +22,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Download information described in GSMA Service Entitlement Configuration section 6.5.3 table
- * 38.
+ * Download information described in GSMA Service Entitlement Configuration section 6.5.3 table 38.
  */
 @AutoValue
 public abstract class DownloadInfo {
@@ -35,8 +34,8 @@ public abstract class DownloadInfo {
     public abstract String profileIccid();
 
     /**
-     * Address(es) of SM-DP+ to obtain eSIM profile. It is an empty list if
-     * {@link #profileActivationCode()} is not empty.
+     * Address(es) of SM-DP+ to obtain eSIM profile. It is an empty list if {@link
+     * #profileActivationCode()} is not empty.
      */
     @NonNull
     public abstract ImmutableList<String> profileSmdpAddresses();
@@ -48,10 +47,7 @@ public abstract class DownloadInfo {
     @NonNull
     public abstract String profileActivationCode();
 
-
-    /**
-     * @return Builder of {@link DownloadInfo}.
-     */
+    /** Returns builder of {@link DownloadInfo}. */
     @NonNull
     public static Builder builder() {
         return new AutoValue_DownloadInfo.Builder()
@@ -60,16 +56,13 @@ public abstract class DownloadInfo {
                 .setProfileIccid("");
     }
 
-    /**
-     * Builder of DownloadInfo.
-     */
+    /** Builder of DownloadInfo. */
     @AutoValue.Builder
     public abstract static class Builder {
         /**
          * Set the ICCID of the download profile.
          *
          * @param iccid The ICCID of the eSIM profile to download from SM-DP+.
-         *
          * @return The builder.
          */
         @NonNull
@@ -78,9 +71,8 @@ public abstract class DownloadInfo {
         /**
          * Set the activation code.
          *
-         * @param activationCode Activation code as defined in SGP.22 to permit the download of
-         * an eSIM profile from an SM-DP+.
-         *
+         * @param activationCode Activation code as defined in SGP.22 to permit the download of an
+         *                       eSIM profile from an SM-DP+.
          * @return The builder.
          */
         @NonNull
@@ -90,15 +82,12 @@ public abstract class DownloadInfo {
          * Set address(es) of SM-DP+ to obtain eSIM profile.
          *
          * @param smdpAddress Address(es) of SM-DP+ to obtain eSIM profile.
-         *
          * @return The builder.
          */
         @NonNull
         public abstract Builder setProfileSmdpAddresses(@NonNull ImmutableList<String> smdpAddress);
 
-        /**
-         * Build the DownloadInfo object.
-         */
+        /** Build the DownloadInfo object. */
         @NonNull
         public abstract DownloadInfo build();
     }

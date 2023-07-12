@@ -22,8 +22,7 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
- * Companion device info described in GSMA Service Entitlement Configuration section 6.5.5 table
- * 41.
+ * Companion device info described in GSMA Service Entitlement Configuration section 6.5.5 table 41.
  */
 @AutoValue
 public abstract class CompanionDeviceInfo {
@@ -34,43 +33,33 @@ public abstract class CompanionDeviceInfo {
     @NonNull
     public abstract String companionTerminalFriendlyName();
 
-    /**
-     * Manufacturer of the companion device.
-     */
+    /** Manufacturer of the companion device. */
     @NonNull
     public abstract String companionTerminalVendor();
 
-    /**
-     * Model of the companion device.
-     */
+    /** Model of the companion device. */
     @Nullable
     public abstract String companionTerminalModel();
 
-    /**
-     * eUICC identifier (EID) of the companion device being managed.
-     */
+    /** eUICC identifier (EID) of the companion device being managed. */
     @Nullable
     public abstract String companionTerminalEid();
 
-    /**
-     * @return The builder of {@link CompanionDeviceInfo}.
-     */
+    /** Returns the builder of {@link CompanionDeviceInfo}. */
     @NonNull
     public static Builder builder() {
         return new AutoValue_CompanionDeviceInfo.Builder();
     }
 
-    /**
-     * The builder.
-     */
+    /** The builder. */
     @AutoValue.Builder
     public abstract static class Builder {
         /**
          * Set user friendly identification for the companion device.
          *
          * @param companionTerminalFriendlyName User friendly identification for the companion
-         * device which can be used by the Service Provider in Web Views.
-         *
+         *                                      device which can be used by the Service Provider in
+         *                                      Web Views.
          * @return The builder.
          */
         @NonNull
@@ -81,7 +70,6 @@ public abstract class CompanionDeviceInfo {
          * Set manufacturer of the companion device.
          *
          * @param companionTerminalVendor manufacturer of the companion device.
-         *
          * @return The builder.
          */
         @NonNull
@@ -91,7 +79,6 @@ public abstract class CompanionDeviceInfo {
          * Set model of the companion device.
          *
          * @param companionTerminalModel Model of the companion device.
-         *
          * @return The builder.
          */
         @NonNull
@@ -101,15 +88,12 @@ public abstract class CompanionDeviceInfo {
          * Set EID of the companion device.
          *
          * @param companionTerminalEid eUICC identifier (EID) of the companion device being managed.
-         *
          * @return The builder.
          */
         @NonNull
         public abstract Builder setCompanionTerminalEid(@NonNull String companionTerminalEid);
 
-        /**
-         * Build the CompanionDeviceInfo object.
-         */
+        /** Build the CompanionDeviceInfo object. */
         @NonNull
         public abstract CompanionDeviceInfo build();
     }

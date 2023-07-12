@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.libraries.entitlement.utils;
 
 import android.text.TextUtils;
@@ -35,6 +34,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -52,7 +52,8 @@ public final class Ts43XmlDoc {
 
     /** Type names of characteristics. */
     public static final class CharacteristicType {
-        private CharacteristicType() {}
+        private CharacteristicType() {
+        }
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
@@ -66,7 +67,8 @@ public final class Ts43XmlDoc {
 
     /** Names of parameters. */
     public static final class Parm {
-        private Parm() {}
+        private Parm() {
+        }
 
         public static final String TOKEN = "token";
         public static final String APP_ID = "AppID";
@@ -101,7 +103,8 @@ public final class Ts43XmlDoc {
 
     /** Parameter values of XML response content. */
     public static final class ParmValues {
-        private ParmValues() {}
+        private ParmValues() {
+        }
 
         public static final String OPERATION_RESULT_SUCCESS = "1";
         public static final String OPERATION_RESULT_ERROR_GENERAL = "100";
@@ -119,19 +122,19 @@ public final class Ts43XmlDoc {
         public static final String SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD = "4";
         public static final String SUBSCRIPTION_RESULT_DISMISS = "5";
         public static final String SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = "6";
-
         public static final String CONTENTS_TYPE_XML = "xml";
         public static final String CONTENTS_TYPE_JSON = "json";
-
         public static final String DISABLED = "0";
         public static final String ENABLED = "1";
         public static final String INCOMPATIBLE = "2";
     }
+
     /**
      * Maps characteristics to a map of parameters. Key is the characteristic type. Value is
-     * parameter name and value. Example: {"APPLICATION" -> {"AppId" -> "ap2009",
-     * "OperationResult" -> "1"}, "APPLICATION|PrimaryConfiguration" -> {"ICCID" -> "123",
-     * "ServiceStatus" -> "2", "PollingInterval" -> "1"} }
+     * parameter
+     * name and value. Example: {"APPLICATION" -> {"AppId" -> "ap2009", "OperationResult" -> "1"},
+     * "APPLICATION|PrimaryConfiguration" -> {"ICCID" -> "123", "ServiceStatus" -> "2",
+     * "PollingInterval" -> "1"} }
      */
     private final Map<String, Map<String, String>> mCharacteristicsMap = new ArrayMap<>();
 
@@ -150,8 +153,8 @@ public final class Ts43XmlDoc {
      */
     @Nullable
     public String get(ImmutableList<String> characteristicTypes, String parameterName) {
-        Map<String, String> parmMap = mCharacteristicsMap.get(TextUtils.join("|",
-                characteristicTypes));
+        Map<String, String> parmMap = mCharacteristicsMap.get(
+                TextUtils.join("|", characteristicTypes));
         return parmMap == null ? null : parmMap.get(parameterName);
     }
 
@@ -163,18 +166,15 @@ public final class Ts43XmlDoc {
         if (responseBody == null) {
             return;
         }
-
         // Workaround: some server doesn't escape "&" in XML response and that will cause XML parser
         // failure later.
         // This is a quick impl of escaping w/o introducing a ton of new dependencies.
         responseBody = responseBody.replace("&", "&amp;").replace("&amp;amp;", "&amp;");
-
         try {
             InputSource inputSource = new InputSource(new StringReader(responseBody));
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = builderFactory.newDocumentBuilder();
             Document doc = docBuilder.parse(inputSource);
-
             doc.getDocumentElement().normalize();
             NodeList nodeList = doc.getDocumentElement().getChildNodes();
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -186,20 +186,19 @@ public final class Ts43XmlDoc {
         }
     }
 
-    /** Parses characteristics and parm values into characteristicsMap. */
-    private void parseNode(ArrayList<String> characteristics, Node node) {
+    @SuppressWarnings("AndroidJdkLibsChecker") // java.util.Map#getOrDefault
+    /* Parses characteristics and parm values into characteristicsMap. */
+    private void parseNode(List<String> characteristics, Node node) {
         String nodeName = node.getNodeName();
         NamedNodeMap attributes = node.getAttributes();
         if (attributes == null) {
             return;
         }
-
         if (nodeName.equals(NODE_CHARACTERISTIC)) {
             Node typeNode = attributes.getNamedItem("type");
             if (typeNode == null) {
                 return;
             }
-
             characteristics.add(Objects.requireNonNull(typeNode.getNodeValue()));
             NodeList children = node.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
@@ -212,11 +211,11 @@ public final class Ts43XmlDoc {
             if (parmNameNode == null || parmValueNode == null) {
                 return;
             }
-
             String characteristicKey = TextUtils.join("|", characteristics);
             Map<String, String> parmMap =
                     mCharacteristicsMap.getOrDefault(characteristicKey, new ArrayMap<>());
-            parmMap.put(Objects.requireNonNull(parmNameNode.getNodeValue()),
+            parmMap.put(
+                    Objects.requireNonNull(parmNameNode.getNodeValue()),
                     Objects.requireNonNull(parmValueNode.getNodeValue()));
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }
