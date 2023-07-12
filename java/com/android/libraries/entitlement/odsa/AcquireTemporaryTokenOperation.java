@@ -31,7 +31,7 @@ import java.time.Instant;
 /**
  * Acquire temporary token operation described in GSMA Service Entitlement Configuration section 6.
  */
-public class AcquireTemporaryTokenOperation {
+public final class AcquireTemporaryTokenOperation {
     /**
      * Acquire temporary token request described in GSMA Service Entitlement Configuration section
      * 6.2.
@@ -39,8 +39,8 @@ public class AcquireTemporaryTokenOperation {
     @AutoValue
     public abstract static class AcquireTemporaryTokenRequest {
         /**
-         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION},
-         * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
+         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION}, {@link
+         * Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
         @NonNull
@@ -63,43 +63,38 @@ public class AcquireTemporaryTokenOperation {
         @NonNull
         public abstract String companionTerminalId();
 
-        /**
-         * Returns a new {@link Builder} object.
-         */
+        /** Returns a new {@link Builder} object. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenRequest
                     .Builder()
-                    .setAppId("")
+                    .setAppId(Ts43Constants.APP_UNKNOWN)
                     .setOperationTargets(ImmutableList.of())
                     .setCompanionTerminalId("");
         }
 
-        /**
-         * Builder.
-         */
+        /** Builder. */
         @AutoValue.Builder
         public abstract static class Builder {
             /**
              * Sets the application id.
              *
              * @param appId The application id. Can only be
-             * {@link Ts43Constants#APP_ODSA_COMPANION}, {@link Ts43Constants#APP_ODSA_PRIMARY}, or
-             * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
-             *
+             *              {@link Ts43Constants#APP_ODSA_COMPANION},
+             *              {@link Ts43Constants#APP_ODSA_PRIMARY}, or
+             *              {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setAppId(@NonNull @AppId String appId);
 
             /**
-             * Sets the operation targets to be used with temporary token from
-             * {@code AcquireTemporaryToken} operation. Used by HTTP parameter
-             * {@code operation_targets} if set.
+             * Sets the operation targets to be used with temporary token from {@code
+             * AcquireTemporaryToken} operation. Used by HTTP parameter {@code operation_targets} if
+             * set.
              *
              * @param operationTargets The operation targets to be used with temporary token from
-             * {@code AcquireTemporaryToken} operation.
-             *
+             *                         {@code AcquireTemporaryToken} operation.
              * @return The builder.
              */
             @NonNull
@@ -110,18 +105,15 @@ public class AcquireTemporaryTokenOperation {
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
              * {@code companion_terminal_id} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalId The unique identifier of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
             public abstract Builder setCompanionTerminalId(@NonNull String companionTerminalId);
 
-            /**
-             * @return The {@link AcquireTemporaryTokenRequest} object.
-             */
+            /** Returns the {@link AcquireTemporaryTokenRequest} object. */
             @NonNull
             public abstract AcquireTemporaryTokenRequest build();
         }
@@ -132,29 +124,26 @@ public class AcquireTemporaryTokenOperation {
      * 6.5.7.
      */
     @AutoValue
+    @AutoValue.CopyAnnotations
+    @SuppressWarnings("AndroidJdkLibsChecker") // java.time.Instant
     public abstract static class AcquireTemporaryTokenResponse extends OdsaResponse {
-        /**
-         * The temporary token used to establish trust between ECS and the client.
-         */
+        /** The temporary token used to establish trust between ECS and the client. */
         @NonNull
         public abstract String temporaryToken();
 
-        /**
-         * The expiration time (UTC time) of the token. {@code null} if not available.
-         */
+        /** The expiration time (UTC time) of the token. {@code null} if not available. */
+        @AutoValue.CopyAnnotations
+        @SuppressWarnings("AndroidJdkLibsChecker") // java.time.Instant
+
         @Nullable
         public abstract Instant temporaryTokenExpiry();
 
-        /**
-         * The allowed ODSA operations requested using {@link #temporaryToken()}.
-         */
+        /** The allowed ODSA operations requested using {@link #temporaryToken()}. */
         @NonNull
         @Operation
         public abstract ImmutableList<String> operationTargets();
 
-        /**
-         * Returns a new {@link AcquireTemporaryTokenRequest.Builder} object.
-         */
+        /** Returns a new {@link AcquireTemporaryTokenRequest.Builder} object. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenResponse
@@ -164,16 +153,15 @@ public class AcquireTemporaryTokenOperation {
                     .setOperationTargets(ImmutableList.of());
         }
 
-        /**
-         * Builder.
-         */
+        /** Builder. */
         @AutoValue.Builder
+        @AutoValue.CopyAnnotations
+        @SuppressWarnings("AndroidJdkLibsChecker") // java.time.Instant
         public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Sets the temporary token.
              *
              * @param token The temporary token used to establish trust between ECS and the client.
-             *
              * @return The builder.
              */
             @NonNull
@@ -183,30 +171,30 @@ public class AcquireTemporaryTokenOperation {
              * Sets the expiration time of the token.
              *
              * @param expiry The expiration time (UTC time) of the token.
-             *
              * @return The builder.
              */
+            @AutoValue.CopyAnnotations
+            @SuppressWarnings("AndroidJdkLibsChecker") // java.time.Instant
             @NonNull
             public abstract Builder setTemporaryTokenExpiry(@NonNull Instant expiry);
 
             /**
              * Sets the allowed ODSA operations requested using {@link #temporaryToken()}.
              *
-             * @param operationTargets The allowed ODSA operations requested using
-             * {@link #temporaryToken()}.
-             *
+             * @param operationTargets The allowed ODSA operations requested using {@link
+             *                         #temporaryToken()}.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setOperationTargets(
                     @NonNull @Operation ImmutableList<String> operationTargets);
 
-            /**
-             * @return The {@link AcquireTemporaryTokenResponse} object.
-             */
+            /** Returns the {@link AcquireTemporaryTokenResponse} object. */
             @NonNull
             public abstract AcquireTemporaryTokenResponse build();
         }
     }
-}
 
+    private AcquireTemporaryTokenOperation() {
+    }
+}
