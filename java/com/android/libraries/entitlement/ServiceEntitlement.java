@@ -23,7 +23,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 import com.android.libraries.entitlement.http.HttpResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.common.collect.ImmutableList;
@@ -248,10 +247,10 @@ public class ServiceEntitlement {
      * <p>Similar to {@link #queryEntitlementStatus(String, ServiceEntitlementRequest)}, this
      * method sends an HTTP GET request to entitlement server, responds to EAP-AKA challenge if
      * needed, and returns the raw configuration doc as a string. Additional parameters from {@code
-     * operation} are set to the HTTP request. See {@link OdsaOperation} for details.
+     * operation} are set to the HTTP request. See {@link EsimOdsaOperation} for details.
      */
     public String performEsimOdsa(
-            String appId, ServiceEntitlementRequest request, OdsaOperation operation)
+            String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
         HttpResponse response = getEsimOdsaResponse(appId, request, operation);
         return response == null ? null : response.body();
@@ -265,7 +264,7 @@ public class ServiceEntitlement {
      * except that it returns the full HTTP response instead of just the body.
      */
     public HttpResponse getEsimOdsaResponse(
-            String appId, ServiceEntitlementRequest request, OdsaOperation operation)
+            String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
         return eapAkaApi.performEsimOdsaOperation(appId, carrierConfig, request, operation);
     }
