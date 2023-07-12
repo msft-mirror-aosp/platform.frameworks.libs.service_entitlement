@@ -21,30 +21,20 @@ import androidx.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-/**
- * Http constants using for entitlement flow of TS.43.
- */
+/** Http constants using for entitlement flow of TS.43. */
 public final class HttpConstants {
-    /**
-     * HTTP content is unknown.
-     */
+    /** HTTP content is unknown. */
     public static final int UNKNOWN = -1;
 
-    /**
-     * HTTP content is JSON.
-     */
+    /** HTTP content is JSON. */
     public static final int JSON = 0;
 
-    /**
-     * HTTP content is XML.
-     */
+    /** HTTP content is XML. */
     public static final int XML = 1;
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({
-            UNKNOWN,
-            JSON,
-            XML
-    })
+    @IntDef({UNKNOWN, JSON, XML})
     public @interface ContentType {}
+
+    private HttpConstants() {}
 }
