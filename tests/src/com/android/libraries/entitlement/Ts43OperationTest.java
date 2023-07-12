@@ -255,7 +255,7 @@ public class Ts43OperationTest {
         assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET);
-        assertThat(response.subscriptionServiceURL()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
+        assertThat(response.subscriptionServiceUrl()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
         assertThat(response.subscriptionServiceUserData())
                 .isEqualTo(SUBSCRIPTION_SERVICE_USER_DATA);
     }
@@ -329,7 +329,7 @@ public class Ts43OperationTest {
                 CheckEligibilityOperation.ELIGIBILITY_RESULT_ENABLED);
         assertThat(response.companionDeviceServices()).containsExactly(
                 OdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
-        assertThat(response.notEnabledURL()).isEqualTo(new URL(NOT_ENABLED_URL));
+        assertThat(response.notEnabledUrl()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
     }
 
