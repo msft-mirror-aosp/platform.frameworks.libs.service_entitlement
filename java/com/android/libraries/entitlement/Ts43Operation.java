@@ -39,7 +39,6 @@ import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServi
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
 import com.android.libraries.entitlement.odsa.OdsaResponse;
 import com.android.libraries.entitlement.odsa.PlanOffer;
@@ -207,9 +206,9 @@ public class Ts43Operation {
 
         ServiceEntitlementRequest request = builder.build();
 
-        OdsaOperation operation =
-                OdsaOperation.builder()
-                        .setOperation(OdsaOperation.OPERATION_CHECK_ELIGIBILITY)
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_CHECK_ELIGIBILITY)
                         .setCompanionTerminalId(checkEligibilityRequest.companionTerminalId())
                         .setCompanionTerminalVendor(
                                 checkEligibilityRequest.companionTerminalVendor())
@@ -360,9 +359,9 @@ public class Ts43Operation {
 
         ServiceEntitlementRequest request = builder.build();
 
-        OdsaOperation operation =
-                OdsaOperation.builder()
-                        .setOperation(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
                         .setOperationType(manageSubscriptionRequest.operationType())
                         .setCompanionTerminalId(manageSubscriptionRequest.companionTerminalId())
                         .setCompanionTerminalVendor(
@@ -536,9 +535,9 @@ public class Ts43Operation {
 
         ServiceEntitlementRequest request = builder.build();
 
-        OdsaOperation operation =
-                OdsaOperation.builder()
-                        .setOperation(OdsaOperation.OPERATION_MANAGE_SERVICE)
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_MANAGE_SERVICE)
                         .setOperationType(manageServiceRequest.operationType())
                         .setCompanionTerminalId(manageServiceRequest.companionTerminalId())
                         .setCompanionTerminalVendor(manageServiceRequest.companionTerminalVendor())
@@ -612,9 +611,9 @@ public class Ts43Operation {
                         .setAuthenticationToken(mAuthToken)
                         .build();
 
-        OdsaOperation operation =
-                OdsaOperation.builder()
-                        .setOperation(OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION)
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION)
                         .setCompanionTerminalId(acquireConfigurationRequest.companionTerminalId())
                         .setCompanionTerminalIccid(
                                 acquireConfigurationRequest.companionTerminalIccid())
@@ -750,9 +749,9 @@ public class Ts43Operation {
                         .setAuthenticationToken(mAuthToken)
                         .build();
 
-        OdsaOperation operation =
-                OdsaOperation.builder()
-                        .setOperation(OdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN)
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN)
                         .setOperationTargets(acquireTemporaryTokenRequest.operationTargets())
                         .setCompanionTerminalId(acquireTemporaryTokenRequest.companionTerminalId())
                         .build();
@@ -904,26 +903,26 @@ public class Ts43Operation {
                         ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.OPERATION_RESULT);
 
-        builder.setOperationResult(OdsaOperation.OPERATION_RESULT_UNKNOWN);
+        builder.setOperationResult(EsimOdsaOperation.OPERATION_RESULT_UNKNOWN);
         if (!TextUtils.isEmpty(operationResult)) {
             switch (operationResult) {
                 case Ts43XmlDoc.ParmValues.OPERATION_RESULT_SUCCESS:
-                    builder.setOperationResult(OdsaOperation.OPERATION_RESULT_SUCCESS);
+                    builder.setOperationResult(EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
                     break;
                 case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_GENERAL:
-                    builder.setOperationResult(OdsaOperation.OPERATION_RESULT_ERROR_GENERAL);
+                    builder.setOperationResult(EsimOdsaOperation.OPERATION_RESULT_ERROR_GENERAL);
                     break;
                 case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_INVALID_OPERATION:
                     builder.setOperationResult(
-                            OdsaOperation.OPERATION_RESULT_ERROR_INVALID_OPERATION);
+                            EsimOdsaOperation.OPERATION_RESULT_ERROR_INVALID_OPERATION);
                     break;
                 case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_INVALID_PARAMETER:
                     builder.setOperationResult(
-                            OdsaOperation.OPERATION_RESULT_ERROR_INVALID_PARAMETER);
+                            EsimOdsaOperation.OPERATION_RESULT_ERROR_INVALID_PARAMETER);
                     break;
                 case Ts43XmlDoc.ParmValues.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION:
                     builder.setOperationResult(
-                            OdsaOperation.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION);
+                            EsimOdsaOperation.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION);
                     break;
             }
         }
@@ -965,21 +964,21 @@ public class Ts43Operation {
      *
      * @param serviceStatusString Service status in string format defined in GSMA Service
      *                            Entitlement Configuration section 6.5.4.
-     * @return The converted service status. {@link OdsaOperation#SERVICE_STATUS_UNKNOWN} if not
+     * @return The converted service status. {@link EsimOdsaOperation#SERVICE_STATUS_UNKNOWN} if not
      * able to convert.
      */
     @ServiceStatus
     private int getServiceStatusFromString(@NonNull String serviceStatusString) {
         switch (serviceStatusString) {
             case Ts43XmlDoc.ParmValues.SERVICE_STATUS_ACTIVATED:
-                return OdsaOperation.SERVICE_STATUS_ACTIVATED;
+                return EsimOdsaOperation.SERVICE_STATUS_ACTIVATED;
             case Ts43XmlDoc.ParmValues.SERVICE_STATUS_ACTIVATING:
-                return OdsaOperation.SERVICE_STATUS_ACTIVATING;
+                return EsimOdsaOperation.SERVICE_STATUS_ACTIVATING;
             case Ts43XmlDoc.ParmValues.SERVICE_STATUS_DEACTIVATED:
-                return OdsaOperation.SERVICE_STATUS_DEACTIVATED;
+                return EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED;
             case Ts43XmlDoc.ParmValues.SERVICE_STATUS_DEACTIVATED_NO_REUSE:
-                return OdsaOperation.SERVICE_STATUS_DEACTIVATED_NO_REUSE;
+                return EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED_NO_REUSE;
         }
-        return OdsaOperation.SERVICE_STATUS_UNKNOWN;
+        return EsimOdsaOperation.SERVICE_STATUS_UNKNOWN;
     }
 }
