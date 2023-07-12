@@ -30,6 +30,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.CarrierConfig;
+import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
@@ -293,7 +294,7 @@ public class EapAkaApi {
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
     public HttpResponse performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
-            ServiceEntitlementRequest request, OdsaOperation odsaOperation)
+            ServiceEntitlementRequest request, EsimOdsaOperation odsaOperation)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
         appendParametersForAuthentication(urlBuilder, request);
@@ -421,7 +422,7 @@ public class EapAkaApi {
     }
 
     private void appendParametersForEsimOdsaOperation(
-            Uri.Builder urlBuilder, OdsaOperation odsaOperation) {
+            Uri.Builder urlBuilder, EsimOdsaOperation odsaOperation) {
         urlBuilder.appendQueryParameter(OPERATION, odsaOperation.operation());
         if (odsaOperation.operationType() != OdsaOperation.OPERATION_TYPE_NOT_SET) {
             urlBuilder.appendQueryParameter(OPERATION_TYPE,
