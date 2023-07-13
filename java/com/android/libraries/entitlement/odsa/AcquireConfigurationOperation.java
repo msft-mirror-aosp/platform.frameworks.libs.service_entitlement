@@ -24,6 +24,7 @@ import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
 import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -45,8 +46,8 @@ public final class AcquireConfigurationOperation {
     @AutoValue
     public abstract static class AcquireConfigurationRequest {
         /**
-         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION}, {@link
-         * Ts43Constants#APP_ODSA_PRIMARY}, or
+         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION},
+         * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
         @AppId
@@ -60,15 +61,15 @@ public final class AcquireConfigurationOperation {
         public abstract String companionTerminalId();
 
         /**
-         * Returns the ICCID of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_iccid}.
+         * Returns the ICCID of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_iccid}.
          */
         @NonNull
         public abstract String companionTerminalIccid();
 
         /**
-         * Returns the EID of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_eid}.
+         * Returns the EID of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_eid}.
          */
         @NonNull
         public abstract String companionTerminalEid();
@@ -108,6 +109,20 @@ public final class AcquireConfigurationOperation {
         @NonNull
         public abstract String targetTerminalEid();
 
+        /**
+         * Returns the notification token used to register for entitlement configuration request
+         * from network. Used by HTTP parameter {@code notif_token}.
+         */
+        @NonNull
+        public abstract String notificationToken();
+
+        /**
+         * Returns the action associated with the notification token. Used by HTTP parameter
+         * {@code notif_action}.
+         */
+        @NotificationAction
+        public abstract int notificationAction();
+
         /** Returns a new {@link Builder} object. */
         @NonNull
         public static Builder builder() {
@@ -120,7 +135,9 @@ public final class AcquireConfigurationOperation {
                     .setTerminalEid("")
                     .setTargetTerminalId("")
                     .setTargetTerminalIccid("")
-                    .setTargetTerminalEid("");
+                    .setTargetTerminalEid("")
+                    .setNotificationToken("")
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
 
         /** Builder */
@@ -129,8 +146,9 @@ public final class AcquireConfigurationOperation {
             /**
              * Sets the application id.
              *
-             * @param appId The application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION}
-             *              , {@link Ts43Constants#APP_ODSA_PRIMARY}, or
+             * @param appId The application id. Can only be
+             *              {@link Ts43Constants#APP_ODSA_COMPANION},
+             *              {@link Ts43Constants#APP_ODSA_PRIMARY}, or
              *              {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
              * @return The builder.
              */
@@ -150,8 +168,8 @@ public final class AcquireConfigurationOperation {
             public abstract Builder setCompanionTerminalId(@NonNull String companionTerminalId);
 
             /**
-             * Sets the ICCID of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_iccid} if set.
+             * Sets the ICCID of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_iccid} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -239,6 +257,32 @@ public final class AcquireConfigurationOperation {
             @NonNull
             public abstract Builder setTargetTerminalEid(@NonNull String targetTerminalEid);
 
+            /**
+             * Sets the notification token used to register for entitlement configuration request
+             * from network. Used by HTTP parameter {@code notif_token} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationToken The notification token used to register for entitlement
+             *                          configuration request from network.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationToken(@NonNull String notificationToken);
+
+            /**
+             * Sets the action associated with the notification token. Used by HTTP parameter
+             * {@code notif_action} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationAction The action associated with the notification token.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationAction(
+                    @NotificationAction int notificationAction);
+
             /** Returns build the {@link AcquireConfigurationRequest} object. */
             @NonNull
             public abstract AcquireConfigurationRequest build();
@@ -319,7 +363,7 @@ public final class AcquireConfigurationOperation {
              * #serviceStatus()} with {@link OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE} will
              * be defined as an ECS configuration variable (MaxRefreshRequest).
              *
-             * <p>{@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling inverval is not available.
+             * <p>{@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling interval is not available.
              */
             public abstract int pollingInterval();
 
@@ -349,7 +393,7 @@ public final class AcquireConfigurationOperation {
             @AutoValue.Builder
             public abstract static class Builder {
                 /**
-                 * Set the configuration type
+                 * Set the configuration type.
                  *
                  * @param configType The configuration type.
                  * @return The builder.

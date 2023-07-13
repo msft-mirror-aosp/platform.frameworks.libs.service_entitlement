@@ -26,6 +26,7 @@ import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -45,8 +46,8 @@ public final class ManageSubscriptionOperation {
     @AutoValue
     public abstract static class ManageSubscriptionRequest {
         /**
-         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION}, {@link
-         * Ts43Constants#APP_ODSA_PRIMARY}, or
+         * Returns the application id. Can only be {@link Ts43Constants#APP_ODSA_COMPANION},
+         * {@link Ts43Constants#APP_ODSA_PRIMARY}, or
          * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
          */
         @NonNull
@@ -54,8 +55,8 @@ public final class ManageSubscriptionOperation {
         public abstract String appId();
 
         /**
-         * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter {@code
-         * operation_type}.
+         * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter
+         * {@code operation_type}.
          */
         @OperationType
         public abstract int operationType();
@@ -68,29 +69,29 @@ public final class ManageSubscriptionOperation {
         public abstract String companionTerminalId();
 
         /**
-         * Returns the OEM of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_vendor}.
+         * Returns the OEM of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_vendor}.
          */
         @NonNull
         public abstract String companionTerminalVendor();
 
         /**
-         * Returns the model of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_model}.
+         * Returns the model of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_model}.
          */
         @NonNull
         public abstract String companionTerminalModel();
 
         /**
-         * Returns the software version of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_sw_version}.
+         * Returns the software version of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_sw_version}.
          */
         @NonNull
         public abstract String companionTerminalSoftwareVersion();
 
         /**
-         * Returns the user-friendly version of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_friendly_name}.
+         * Returns the user-friendly version of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_friendly_name}.
          */
         @NonNull
         public abstract String companionTerminalFriendlyName();
@@ -104,15 +105,15 @@ public final class ManageSubscriptionOperation {
         public abstract String companionTerminalService();
 
         /**
-         * Returns the ICCID of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_iccid}.
+         * Returns the ICCID of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_iccid}.
          */
         @NonNull
         public abstract String companionTerminalIccid();
 
         /**
-         * Returns the EID of the companion device. Used by HTTP parameter {@code
-         * companion_terminal_eid}.
+         * Returns the EID of the companion device. Used by HTTP parameter
+         * {@code companion_terminal_eid}.
          */
         @NonNull
         public abstract String companionTerminalEid();
@@ -162,8 +163,8 @@ public final class ManageSubscriptionOperation {
         public abstract String targetTerminalEid();
 
         /**
-         * Returns the serial number of primary device. Used by HTTP parameter {@code
-         * target_terminal_sn}.
+         * Returns the serial number of primary device. Used by HTTP parameter
+         * {@code target_terminal_sn}.
          *
          * <p>This is a non-standard params required by some carriers.
          */
@@ -199,6 +200,20 @@ public final class ManageSubscriptionOperation {
         @NonNull
         public abstract String planId();
 
+        /**
+         * Returns the notification token used to register for entitlement configuration request
+         * from network. Used by HTTP parameter {@code notif_token}.
+         */
+        @NonNull
+        public abstract String notificationToken();
+
+        /**
+         * Returns the action associated with the notification token. Used by HTTP parameter
+         * {@code notif_action}.
+         */
+        @NotificationAction
+        public abstract int notificationAction();
+
         /** Returns a new {@link Builder} object. */
         @NonNull
         public static Builder builder() {
@@ -223,7 +238,9 @@ public final class ManageSubscriptionOperation {
                     .setTargetTerminalModel("")
                     .setOldTerminalId("")
                     .setOldTerminalIccid("")
-                    .setPlanId("");
+                    .setPlanId("")
+                    .setNotificationToken("")
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
 
         /** Builder */
@@ -242,8 +259,8 @@ public final class ManageSubscriptionOperation {
             public abstract Builder setAppId(@NonNull @AppId String appId);
 
             /**
-             * Sets the detailed type of the eSIM ODSA operation. Used by HTTP parameter {@code
-             * operation_type} if set.
+             * Sets the detailed type of the eSIM ODSA operation. Used by HTTP parameter
+             * {@code operation_type} if set.
              *
              * @param operationType The detailed type of the eSIM ODSA operation.
              * @return The builder.
@@ -255,14 +272,19 @@ public final class ManageSubscriptionOperation {
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
              * {@code companion_terminal_id} if set.
              *
+             * <p>Used by companion device ODSA operation.
+             *
+             * @param companionTerminalId The unique identifier of the companion device.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setCompanionTerminalId(String companionTerminalId);
 
             /**
-             * Sets the OEM of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_vendor} if set.
+             * Sets the OEM of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_vendor} if set.
+             *
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalVendor The OEM of the companion device.
              * @return The builder.
@@ -272,8 +294,8 @@ public final class ManageSubscriptionOperation {
                     @NonNull String companionTerminalVendor);
 
             /**
-             * Sets the model of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_model} if set.
+             * Sets the model of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_model} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -285,8 +307,8 @@ public final class ManageSubscriptionOperation {
                     @NonNull String companionTerminalModel);
 
             /**
-             * Sets the software version of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_sw_version} if set.
+             * Sets the software version of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_sw_version} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -298,8 +320,8 @@ public final class ManageSubscriptionOperation {
                     @NonNull String companionTerminalSoftwareVersion);
 
             /**
-             * Sets the user-friendly version of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_friendly_name} if set.
+             * Sets the user-friendly version of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_friendly_name} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -325,8 +347,8 @@ public final class ManageSubscriptionOperation {
                     @NonNull @CompanionService String companionTerminalService);
 
             /**
-             * Sets the ICCID of the companion device. Used by HTTP parameter {@code
-             * companion_terminal_iccid} if set.
+             * Sets the ICCID of the companion device. Used by HTTP parameter
+             * {@code companion_terminal_iccid} if set.
              *
              * <p>Used by companion device ODSA operation.
              *
@@ -377,7 +399,8 @@ public final class ManageSubscriptionOperation {
 
             /**
              * Sets the unique identifiers of the primary device eSIM if more than one, like the
-             * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}.
+             * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}
+             * if set.
              *
              * <p>This is a non-standard params required by some carriers.
              *
@@ -385,6 +408,7 @@ public final class ManageSubscriptionOperation {
              *                          than one.
              * @return The builder.
              */
+            @NonNull
             public abstract Builder setTargetTerminalIds(
                     @NonNull ImmutableList<String> targetTerminalIds);
 
@@ -428,8 +452,10 @@ public final class ManageSubscriptionOperation {
             public abstract Builder setTargetTerminalEid(@NonNull String targetTerminalEid);
 
             /**
-             * Sets the serial number of primary device. Used by HTTP parameter {@code
-             * target_terminal_sn}.
+             * Sets the serial number of primary device. Used by HTTP parameter
+             * {@code target_terminal_sn} if set.
+             *
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalSerialNumber The serial number of primary device. This is a
              *                                   non-standard params required by some carriers.
@@ -441,7 +467,9 @@ public final class ManageSubscriptionOperation {
 
             /**
              * Sets the model of primary device. Used by HTTP parameter
-             * {@code target_terminal_model}.
+             * {@code target_terminal_model} if set.
+             *
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalModel The model of primary device. This is a non-standard params
              *                            required by some carriers.
@@ -463,7 +491,8 @@ public final class ManageSubscriptionOperation {
             public abstract Builder setOldTerminalId(@NonNull String oldTerminalId);
 
             /**
-             * Sets the ICCID old device eSIM. Used by HTTP parameter "old_terminal_iccid" if set.
+             * Sets the ICCID old device eSIM. Used by HTTP parameter {@code old_terminal_iccid}
+             * if set.
              *
              * <p>Used by primary device ODSA operation.
              *
@@ -475,13 +504,41 @@ public final class ManageSubscriptionOperation {
 
             /**
              * Sets the identifier of the specific plan offered by an MNO. Used by HTTP parameter
-             * {@code plan_id}.
+             * {@code plan_id} if set.
+             *
+             * <p>Used by primary device ODSA operation.
              *
              * @param planId The identifier of the specific plan offered by an MNO.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setPlanId(@NonNull String planId);
+
+            /**
+             * Sets the notification token used to register for entitlement configuration request
+             * from network. Used by HTTP parameter {@code notif_token} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationToken The notification token used to register for entitlement
+             *                          configuration request from network.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationToken(@NonNull String notificationToken);
+
+            /**
+             * Sets the action associated with the notification token. Used by HTTP parameter
+             * {@code notif_action} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationAction The action associated with the notification token.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationAction(
+                    @NotificationAction int notificationAction);
 
             /** Returns the {@link ManageSubscriptionRequest} object. */
             @NonNull
@@ -491,8 +548,7 @@ public final class ManageSubscriptionOperation {
 
     /**
      * Manage subscription response described in GSMA Service Entitlement Configuration section
-     * 6.5.3
-     * table 37.
+     * 6.5.3 table 37.
      */
     @AutoValue
     public abstract static class ManageSubscriptionResponse extends OdsaResponse {
