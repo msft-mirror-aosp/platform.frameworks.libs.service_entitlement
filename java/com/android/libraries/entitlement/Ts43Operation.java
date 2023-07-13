@@ -204,6 +204,15 @@ public class Ts43Operation {
             builder.setTemporaryToken(mTemporaryToken);
         }
 
+        String notificationToken = checkEligibilityRequest.notificationToken();
+        if (!TextUtils.isEmpty(notificationToken)) {
+            builder.setNotificationToken(notificationToken);
+        }
+        int notificationAction = checkEligibilityRequest.notificationAction();
+        if (Ts43Constants.isValidNotificationAction(notificationAction)) {
+            builder.setNotificationAction(notificationAction);
+        }
+
         ServiceEntitlementRequest request = builder.build();
 
         EsimOdsaOperation operation =
@@ -351,10 +360,20 @@ public class Ts43Operation {
                         .setEntitlementVersion(mEntitlementVersion)
                         .setTerminalId(mImei)
                         .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+
         if (mTokenType == TOKEN_TYPE_NORMAL) {
             builder.setAuthenticationToken(mAuthToken);
         } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
             builder.setTemporaryToken(mTemporaryToken);
+        }
+
+        String notificationToken = manageSubscriptionRequest.notificationToken();
+        if (!TextUtils.isEmpty(notificationToken)) {
+            builder.setNotificationToken(notificationToken);
+        }
+        int notificationAction = manageSubscriptionRequest.notificationAction();
+        if (Ts43Constants.isValidNotificationAction(notificationAction)) {
+            builder.setNotificationAction(notificationAction);
         }
 
         ServiceEntitlementRequest request = builder.build();
@@ -604,12 +623,21 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(acquireConfigurationRequest);
 
-        ServiceEntitlementRequest request =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei)
-                        .setAuthenticationToken(mAuthToken)
-                        .build();
+        ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
+                .setEntitlementVersion(mEntitlementVersion)
+                .setTerminalId(mImei)
+                .setAuthenticationToken(mAuthToken);
+
+        String notificationToken = acquireConfigurationRequest.notificationToken();
+        if (!TextUtils.isEmpty(notificationToken)) {
+            builder.setNotificationToken(notificationToken);
+        }
+        int notificationAction = acquireConfigurationRequest.notificationAction();
+        if (Ts43Constants.isValidNotificationAction(notificationAction)) {
+            builder.setNotificationAction(notificationAction);
+        }
+
+        ServiceEntitlementRequest request = builder.build();
 
         EsimOdsaOperation operation =
                 EsimOdsaOperation.builder()
