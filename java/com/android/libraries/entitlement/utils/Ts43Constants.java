@@ -16,6 +16,7 @@
 
 package com.android.libraries.entitlement.utils;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringDef;
 
@@ -93,7 +94,61 @@ public final class Ts43Constants {
             case APP_PRIVATE_USER_IDENTITY:
             case APP_PHONE_NUMBER_INFORMATION:
                 return true;
-            default: // fall out
+            default: // fall through
+        }
+        return false;
+    }
+
+    /**
+     * Action to disable notification token.
+     */
+    public static final int NOTIFICATION_ACTION_DISABLE = 0;
+
+    /**
+     * Action to enable GCM notification token.
+     */
+    public static final int NOTIFICATION_ACTION_ENABLE_GCM = 1;
+
+    /**
+     * Action to enable FCM notification token.
+     */
+    public static final int NOTIFICATION_ACTION_ENABLE_FCM = 2;
+
+    /**
+     * Action to enable WNS push notification token.
+     */
+    public static final int NOTIFICATION_ACTION_ENABLE_WNS = 3;
+
+    /**
+     * Action to enable APNS notification token.
+     */
+    public static final int NOTIFICATION_ACTION_ENABLE_APNS = 4;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            NOTIFICATION_ACTION_DISABLE,
+            NOTIFICATION_ACTION_ENABLE_GCM,
+            NOTIFICATION_ACTION_ENABLE_FCM,
+            NOTIFICATION_ACTION_ENABLE_WNS,
+            NOTIFICATION_ACTION_ENABLE_APNS,
+    })
+    public @interface NotificationAction {}
+
+    /**
+     * Check if the notification action is valid.
+     *
+     * @param notificationAction The notification action.
+     * @return {@code true} if valid, otherwise {@code false}.
+     */
+    public static boolean isValidNotificationAction(@NotificationAction int notificationAction) {
+        switch (notificationAction) {
+            case NOTIFICATION_ACTION_DISABLE:
+            case NOTIFICATION_ACTION_ENABLE_GCM:
+            case NOTIFICATION_ACTION_ENABLE_FCM:
+            case NOTIFICATION_ACTION_ENABLE_WNS:
+            case NOTIFICATION_ACTION_ENABLE_APNS:
+                return true;
+            default: // fall through
         }
         return false;
     }
