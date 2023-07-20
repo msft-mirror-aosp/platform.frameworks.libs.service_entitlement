@@ -20,8 +20,9 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
-import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
+import com.android.libraries.entitlement.EsimOdsaOperation;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
@@ -342,26 +343,26 @@ public final class AcquireConfigurationOperation {
             /**
              * Service status.
              *
-             * @see OdsaOperation#SERVICE_STATUS_UNKNOWN
-             * @see OdsaOperation#SERVICE_STATUS_ACTIVATED
-             * @see OdsaOperation#SERVICE_STATUS_ACTIVATING
-             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED
-             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
+             * @see EsimOdsaOperation#SERVICE_STATUS_UNKNOWN
+             * @see EsimOdsaOperation#SERVICE_STATUS_ACTIVATED
+             * @see EsimOdsaOperation#SERVICE_STATUS_ACTIVATING
+             * @see EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED
+             * @see EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
              */
-            @ServiceStatus
+            @OdsaServiceStatus
             public abstract int serviceStatus();
 
             /**
              * Specifies the minimum interval (in minutes) with which the device application may
              * poll the ECS to refresh the current {@link #serviceStatus()} using {@link
              * AcquireConfigurationRequest}. This parameter will be present only when {@link
-             * #serviceStatus()} is {@link OdsaOperation#SERVICE_STATUS_ACTIVATING}. If parameter is
-             * not present or value is 0, this polling procedure is not triggered and ODSA app will
-             * keep waiting for any external action to continue the flow.
+             * #serviceStatus()} is {@link EsimOdsaOperation#SERVICE_STATUS_ACTIVATING}. If
+             * parameter is not present or value is 0, this polling procedure is not triggered and
+             * ODSA app will keep waiting for any external action to continue the flow.
              *
              * <p>The maximum number of {@link AcquireConfigurationRequest} before sending a {@link
-             * #serviceStatus()} with {@link OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE} will
-             * be defined as an ECS configuration variable (MaxRefreshRequest).
+             * #serviceStatus()} with {@link EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE}
+             * will be defined as an ECS configuration variable (MaxRefreshRequest).
              *
              * <p>{@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling interval is not available.
              */
@@ -385,7 +386,7 @@ public final class AcquireConfigurationOperation {
                         .Builder()
                         .setType(CONFIGURATION_TYPE_UNKNOWN)
                         .setIccid("")
-                        .setServiceStatus(OdsaOperation.SERVICE_STATUS_UNKNOWN)
+                        .setServiceStatus(EsimOdsaOperation.SERVICE_STATUS_UNKNOWN)
                         .setPollingInterval(POLLING_INTERVAL_NOT_AVAILABLE);
             }
 
@@ -428,7 +429,7 @@ public final class AcquireConfigurationOperation {
                  * @return The builder.
                  */
                 @NonNull
-                public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
+                public abstract Builder setServiceStatus(@OdsaServiceStatus int serviceStatus);
 
                 /**
                  * Set the polling interval.
