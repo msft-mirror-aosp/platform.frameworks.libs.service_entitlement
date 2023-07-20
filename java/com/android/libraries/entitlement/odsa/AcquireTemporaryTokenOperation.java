@@ -19,7 +19,7 @@ package com.android.libraries.entitlement.odsa;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.Operation;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 
@@ -53,7 +53,7 @@ public final class AcquireTemporaryTokenOperation {
          * {@code operation_targets}.
          */
         @NonNull
-        @Operation
+        @OdsaOperation
         public abstract ImmutableList<String> operationTargets();
 
         /**
@@ -99,7 +99,7 @@ public final class AcquireTemporaryTokenOperation {
              */
             @NonNull
             public abstract Builder setOperationTargets(
-                    @NonNull @Operation ImmutableList<String> operationTargets);
+                    @NonNull @OdsaOperation ImmutableList<String> operationTargets);
 
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -140,7 +140,7 @@ public final class AcquireTemporaryTokenOperation {
 
         /** The allowed ODSA operations requested using {@link #temporaryToken()}. */
         @NonNull
-        @Operation
+        @OdsaOperation
         public abstract ImmutableList<String> operationTargets();
 
         /** Returns a new {@link AcquireTemporaryTokenRequest.Builder} object. */
@@ -187,7 +187,7 @@ public final class AcquireTemporaryTokenOperation {
              */
             @NonNull
             public abstract Builder setOperationTargets(
-                    @NonNull @Operation ImmutableList<String> operationTargets);
+                    @NonNull @OdsaOperation ImmutableList<String> operationTargets);
 
             /** Returns the {@link AcquireTemporaryTokenResponse} object. */
             @NonNull

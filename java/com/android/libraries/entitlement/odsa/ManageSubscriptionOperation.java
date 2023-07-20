@@ -20,8 +20,9 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
-import com.android.libraries.entitlement.odsa.OdsaOperation.OperationType;
+import com.android.libraries.entitlement.EsimOdsaOperation;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationType;
 import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -58,7 +59,7 @@ public final class ManageSubscriptionOperation {
          * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter
          * {@code operation_type}.
          */
-        @OperationType
+        @OdsaOperationType
         public abstract int operationType();
 
         /**
@@ -219,13 +220,13 @@ public final class ManageSubscriptionOperation {
         public static Builder builder() {
             return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionRequest.Builder()
                     .setAppId(Ts43Constants.APP_UNKNOWN)
-                    .setOperationType(OdsaOperation.OPERATION_TYPE_NOT_SET)
+                    .setOperationType(EsimOdsaOperation.OPERATION_TYPE_NOT_SET)
                     .setCompanionTerminalId("")
                     .setCompanionTerminalVendor("")
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
                     .setCompanionTerminalFriendlyName("")
-                    .setCompanionTerminalService(OdsaOperation.COMPANION_SERVICE_UNKNOWN)
+                    .setCompanionTerminalService(EsimOdsaOperation.COMPANION_SERVICE_UNKNOWN)
                     .setCompanionTerminalIccid("")
                     .setCompanionTerminalEid("")
                     .setTerminalIccid("")
@@ -266,7 +267,7 @@ public final class ManageSubscriptionOperation {
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setOperationType(@OperationType int operationType);
+            public abstract Builder setOperationType(@OdsaOperationType int operationType);
 
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -613,9 +614,9 @@ public final class ManageSubscriptionOperation {
          * URL refers to web views responsible for a certain action on the eSIM device subscription.
          * The
          * Service Provider can provide different URL based on the operation_type input parameter
-         * ({@link OdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
-         * OdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
-         * OdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
+         * ({@link EsimOdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
+         * EsimOdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
+         * EsimOdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
          *
          * <p>{@code null} if {@link #subscriptionResult()} is not {@link
          * #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
@@ -679,9 +680,9 @@ public final class ManageSubscriptionOperation {
              * @param url URL refers to web views responsible for a certain action on the eSIM
              *            device subscription. The Service Provider can provide different URL based
              *            on the operation_type input parameter (
-             *            {@link OdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
-             *            OdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
-             *            OdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
+             *            {@link EsimOdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
+             *            EsimOdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
+             *            EsimOdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
              * @return The builder.
              */
             @NonNull
