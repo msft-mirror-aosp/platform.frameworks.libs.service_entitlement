@@ -26,6 +26,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
 import com.android.libraries.entitlement.http.HttpConstants;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationRequest;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
@@ -39,7 +40,6 @@ import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServi
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
 import com.android.libraries.entitlement.odsa.OdsaResponse;
 import com.android.libraries.entitlement.odsa.PlanOffer;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -995,7 +995,7 @@ public class Ts43Operation {
      * @return The converted service status. {@link EsimOdsaOperation#SERVICE_STATUS_UNKNOWN} if not
      * able to convert.
      */
-    @ServiceStatus
+    @OdsaServiceStatus
     private int getServiceStatusFromString(@NonNull String serviceStatusString) {
         switch (serviceStatusString) {
             case Ts43XmlDoc.ParmValues.SERVICE_STATUS_ACTIVATED:
