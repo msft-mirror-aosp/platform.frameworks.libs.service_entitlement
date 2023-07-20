@@ -38,7 +38,6 @@ import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -289,7 +288,7 @@ public class EapAkaApi {
 
     /**
      * Retrieves HTTP response from performing ODSA operations.
-     * For operation type, see {@link OdsaOperation}.
+     * For operation type, see {@link EsimOdsaOperation}.
      *
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
@@ -424,7 +423,7 @@ public class EapAkaApi {
     private void appendParametersForEsimOdsaOperation(
             Uri.Builder urlBuilder, EsimOdsaOperation odsaOperation) {
         urlBuilder.appendQueryParameter(OPERATION, odsaOperation.operation());
-        if (odsaOperation.operationType() != OdsaOperation.OPERATION_TYPE_NOT_SET) {
+        if (odsaOperation.operationType() != EsimOdsaOperation.OPERATION_TYPE_NOT_SET) {
             urlBuilder.appendQueryParameter(OPERATION_TYPE,
                     Integer.toString(odsaOperation.operationType()));
         }

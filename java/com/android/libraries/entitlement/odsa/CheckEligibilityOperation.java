@@ -20,7 +20,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
 import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;

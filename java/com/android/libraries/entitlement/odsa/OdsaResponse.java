@@ -19,14 +19,14 @@ package com.android.libraries.entitlement.odsa;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.OperationResult;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationResult;
 
 import java.net.URL;
 
 /** ODSA general response described in GSMA Service Entitlement Configuration section 6.5.1. */
 public abstract class OdsaResponse {
     /** Operation result. */
-    @OperationResult
+    @OdsaOperationResult
     public abstract int operationResult();
 
     /**
@@ -52,7 +52,7 @@ public abstract class OdsaResponse {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setOperationResult(@OperationResult int operationResult);
+        public abstract Builder setOperationResult(@OdsaOperationResult int operationResult);
 
         /**
          * Set the URL to the web view to user on the reason(s) why the authentication failed.

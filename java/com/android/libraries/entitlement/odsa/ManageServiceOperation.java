@@ -18,9 +18,10 @@ package com.android.libraries.entitlement.odsa;
 
 import androidx.annotation.NonNull;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
-import com.android.libraries.entitlement.odsa.OdsaOperation.OperationType;
-import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
+import com.android.libraries.entitlement.EsimOdsaOperation;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationType;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 
@@ -46,7 +47,7 @@ public final class ManageServiceOperation {
          * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter {@code
          * operation_type}.
          */
-        @OperationType
+        @OdsaOperationType
         public abstract int operationType();
 
         /**
@@ -104,13 +105,13 @@ public final class ManageServiceOperation {
         public static Builder builder() {
             return new AutoValue_ManageServiceOperation_ManageServiceRequest.Builder()
                     .setAppId(Ts43Constants.APP_UNKNOWN)
-                    .setOperationType(OdsaOperation.OPERATION_TYPE_NOT_SET)
+                    .setOperationType(EsimOdsaOperation.OPERATION_TYPE_NOT_SET)
                     .setCompanionTerminalId("")
                     .setCompanionTerminalVendor("")
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
                     .setCompanionTerminalFriendlyName("")
-                    .setCompanionTerminalService(OdsaOperation.COMPANION_SERVICE_UNKNOWN)
+                    .setCompanionTerminalService(EsimOdsaOperation.COMPANION_SERVICE_UNKNOWN)
                     .setCompanionTerminalIccid("");
         }
 
@@ -133,12 +134,13 @@ public final class ManageServiceOperation {
              * Sets the detailed type of the eSIM ODSA operation.
              *
              * @param operationType Operation type. Only {@link
-             *                      OdsaOperation#OPERATION_TYPE_ACTIVATE_SERVICE} and {@link
-             *                      OdsaOperation#OPERATION_TYPE_DEACTIVATE_SERVICE} are allowed.
+             *                      EsimOdsaOperation#OPERATION_TYPE_ACTIVATE_SERVICE} and {@link
+             *                      EsimOdsaOperation#OPERATION_TYPE_DEACTIVATE_SERVICE} are
+             *                      allowed.
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setOperationType(@OperationType int operationType);
+            public abstract Builder setOperationType(@OdsaOperationType int operationType);
 
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -235,14 +237,14 @@ public final class ManageServiceOperation {
     @AutoValue
     public abstract static class ManageServiceResponse extends OdsaResponse {
         /** Service status. */
-        @ServiceStatus
+        @OdsaServiceStatus
         public abstract int serviceStatus();
 
         /** Returns a new {@link ManageServiceResponse.Builder} object. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_ManageServiceOperation_ManageServiceResponse.Builder()
-                    .setServiceStatus(OdsaOperation.SERVICE_STATUS_UNKNOWN);
+                    .setServiceStatus(EsimOdsaOperation.SERVICE_STATUS_UNKNOWN);
         }
 
         /** Builder */
@@ -255,7 +257,7 @@ public final class ManageServiceOperation {
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
+            public abstract Builder setServiceStatus(@OdsaServiceStatus int serviceStatus);
 
             /** Build the {@link ManageServiceResponse} object. */
             @NonNull
