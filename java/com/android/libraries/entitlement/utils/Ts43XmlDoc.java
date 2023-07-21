@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -155,7 +156,7 @@ public final class Ts43XmlDoc {
     public String get(ImmutableList<String> characteristicTypes, String parameterName) {
         Map<String, String> parmMap = mCharacteristicsMap.get(
                 TextUtils.join("|", characteristicTypes));
-        return parmMap == null ? null : parmMap.get(parameterName);
+        return parmMap == null ? null : parmMap.get(parameterName.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -215,7 +216,7 @@ public final class Ts43XmlDoc {
             Map<String, String> parmMap =
                     mCharacteristicsMap.getOrDefault(characteristicKey, new ArrayMap<>());
             parmMap.put(
-                    Objects.requireNonNull(parmNameNode.getNodeValue()),
+                    Objects.requireNonNull(parmNameNode.getNodeValue().toLowerCase(Locale.ROOT)),
                     Objects.requireNonNull(parmValueNode.getNodeValue()));
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }
