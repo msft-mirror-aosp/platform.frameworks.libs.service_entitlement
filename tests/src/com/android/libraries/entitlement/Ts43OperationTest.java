@@ -35,6 +35,7 @@ import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.Acq
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberResponse;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
@@ -73,6 +74,8 @@ public class Ts43OperationTest {
     private static final String NOT_ENABLED_URL = "http://www.MNO.org/AppNotAllowed";
 
     private static final String NOT_ENABLED_USER_DATA = "msisdn=XX";
+
+    private static final String MSISDN = "+16502530000";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -198,6 +201,23 @@ public class Ts43OperationTest {
                     + "    <parm name=\"AppID\" value=\"ap2006\"/>\n"
                     + "    <parm name=\"ServiceStatus\" value=\"3\"/>\n"
                     + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
+    public String GET_PHONE_NUMBER_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2014\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "    <parm name=\"MSISDN\" value=\"" + MSISDN + "\"/>\n"
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
@@ -350,5 +370,15 @@ public class Ts43OperationTest {
                 EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.serviceStatus()).isEqualTo(
                 EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED);
+    }
+
+    @Test
+    public void testGetPhoneNumber() throws Exception {
+        doReturn(GET_PHONE_NUMBER_RESPONSE).when(mMockHttpResponse).body();
+
+        GetPhoneNumberResponse response = mTs43Operation.getPhoneNumber();
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.msisdn()).isEqualTo(MSISDN);
     }
 }

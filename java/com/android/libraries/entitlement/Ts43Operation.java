@@ -36,6 +36,7 @@ import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
 import com.android.libraries.entitlement.odsa.DownloadInfo;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberResponse;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
@@ -853,14 +854,66 @@ public class Ts43Operation {
      * Get the phone number as described in GSMA Service Entitlement Configuration section 6.2 and
      * 6.5.8.
      *
-     * @return The phone number in E.164 format.
+     * @return The phone number response from the network.
      * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
      *                                     error from the server, the error code can be retrieved by
      *                                     {@link ServiceEntitlementException#getHttpStatus()}
      */
     @NonNull
-    public String getPhoneNumber() throws ServiceEntitlementException {
-        return "";
+    public GetPhoneNumberResponse getPhoneNumber() throws ServiceEntitlementException {
+        ServiceEntitlementRequest.Builder builder =
+                ServiceEntitlementRequest.builder()
+                        .setEntitlementVersion(mEntitlementVersion)
+                        .setTerminalId(mImei);
+
+        if (mTokenType == TOKEN_TYPE_NORMAL) {
+            builder.setAuthenticationToken(mAuthToken);
+        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
+            builder.setTemporaryToken(mTemporaryToken);
+        }
+
+        ServiceEntitlementRequest request = builder.build();
+
+        EsimOdsaOperation operation =
+                EsimOdsaOperation.builder()
+                        .setOperation(EsimOdsaOperation.OPERATION_GET_PHONE_NUMBER)
+                        .build();
+
+        String rawXml;
+        try {
+            rawXml =
+                    mServiceEntitlement.performEsimOdsa(
+                            EsimOdsaOperation.OPERATION_GET_PHONE_NUMBER, request, operation);
+        } catch (ServiceEntitlementException e) {
+            Log.w(TAG, "getPhoneNumber: Failed to perform ODSA operation. e=" + e);
+            throw e;
+        }
+
+        // Build the response of get phone number operation. Refer to GSMA Service Entitlement
+        // Configuration section 6.5.8.
+        GetPhoneNumberResponse.Builder responseBuilder = GetPhoneNumberResponse.builder();
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+
+        try {
+            processGeneralResult(ts43XmlDoc, responseBuilder);
+        } catch (MalformedURLException e) {
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE,
+                    "getPhoneNumber: Malformed URL " + rawXml);
+        }
+
+        // Parse msisdn.
+        String msisdn =
+                ts43XmlDoc.get(
+                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Ts43XmlDoc.Parm.MSISDN);
+
+        if (!TextUtils.isEmpty(msisdn)) {
+            responseBuilder.setMsisdn(msisdn);
+        }
+
+        return responseBuilder.build();
     }
 
     /**
