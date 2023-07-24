@@ -26,6 +26,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -135,7 +136,7 @@ public class EapAkaApi {
      *
      * @throws ServiceEntitlementException when getting an unexpected http response.
      */
-    @Nullable
+    @NonNull
     public HttpResponse queryEntitlementStatus(ImmutableList<String> appIds,
             CarrierConfig carrierConfig, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
@@ -188,6 +189,7 @@ public class EapAkaApi {
      *
      * @return Challenge response from server whose content type is JSON
      */
+    @NonNull
     private HttpResponse respondToEapAkaChallenge(
             CarrierConfig carrierConfig,
             String eapAkaChallenge,
@@ -256,6 +258,7 @@ public class EapAkaApi {
         }
     }
 
+    @NonNull
     private HttpResponse challengeResponse(
             String eapAkaChallengeResponse,
             CarrierConfig carrierConfig,
@@ -292,6 +295,7 @@ public class EapAkaApi {
      *
      * <p>Implementation based on GSMA TS.43-v5.0 6.1.
      */
+    @NonNull
     public HttpResponse performEsimOdsaOperation(String appId, CarrierConfig carrierConfig,
             ServiceEntitlementRequest request, EsimOdsaOperation odsaOperation)
             throws ServiceEntitlementException {
@@ -337,6 +341,7 @@ public class EapAkaApi {
      * {@link #queryEntitlementStatusFromOidc(String, CarrierConfig, String)} with the
      * authentication result to retrieve the service entitlement configuration.
      */
+    @NonNull
     public String acquireOidcAuthenticationEndpoint(String appId, CarrierConfig carrierConfig,
             ServiceEntitlementRequest request) throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
@@ -354,6 +359,7 @@ public class EapAkaApi {
      *
      * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
      */
+    @NonNull
     public HttpResponse queryEntitlementStatusFromOidc(
             String url, CarrierConfig carrierConfig, String acceptContentType)
             throws ServiceEntitlementException {
@@ -468,6 +474,7 @@ public class EapAkaApi {
                 odsaOperation.oldTerminalId());
     }
 
+    @NonNull
     private HttpResponse httpGet(String url, CarrierConfig carrierConfig, String contentType)
             throws ServiceEntitlementException {
         HttpRequest httpRequest =
@@ -545,6 +552,7 @@ public class EapAkaApi {
     /**
      * Retrieves the history of past HTTP request and responses.
      */
+    @NonNull
     public List<String> getHistory() {
         return mHttpClient.getHistory();
     }
