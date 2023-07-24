@@ -18,7 +18,7 @@ package com.android.libraries.entitlement;
 
 import android.content.Context;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
@@ -201,7 +201,7 @@ public class ServiceEntitlement {
      * @param appId   an app ID string defined in TS.43 section 2.2, e.g. {@link #APP_VOWIFI}.
      * @param request contains parameters that can be used in the HTTP request.
      */
-    @Nullable
+    @NonNull
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         return queryEntitlementStatus(ImmutableList.of(appId), request);
@@ -216,12 +216,11 @@ public class ServiceEntitlement {
      * multiple "app" parameters will be set in the HTTP request, in the order as they appear in
      * parameter {@code appIds}.
      */
-    @Nullable
+    @NonNull
     public String queryEntitlementStatus(ImmutableList<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        HttpResponse response = getEntitlementStatusResponse(appIds, request);
-        return response == null ? null : response.body();
+        return getEntitlementStatusResponse(appIds, request).body();
     }
 
     /**
@@ -232,7 +231,7 @@ public class ServiceEntitlement {
      * <p>Same as {@link #queryEntitlementStatus(ImmutableList, ServiceEntitlementRequest)}
      * except that it returns the full HTTP response instead of just the body.
      */
-    @Nullable
+    @NonNull
     public HttpResponse getEntitlementStatusResponse(ImmutableList<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
@@ -249,20 +248,21 @@ public class ServiceEntitlement {
      * needed, and returns the raw configuration doc as a string. Additional parameters from {@code
      * operation} are set to the HTTP request. See {@link EsimOdsaOperation} for details.
      */
+    @NonNull
     public String performEsimOdsa(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
-        HttpResponse response = getEsimOdsaResponse(appId, request, operation);
-        return response == null ? null : response.body();
+        return getEsimOdsaResponse(appId, request, operation).body();
     }
 
     /**
      * Retrieves the HTTP response after performing on device service activation (ODSA) of eSIM for
      * companion/primary devices.
      *
-     * <p>Same as {@link #performEsimOdsa(String, ServiceEntitlementRequest, OdsaOperation)}
+     * <p>Same as {@link #performEsimOdsa(String, ServiceEntitlementRequest, EsimOdsaOperation)}
      * except that it returns the full HTTP response instead of just the body.
      */
+    @NonNull
     public HttpResponse getEsimOdsaResponse(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
@@ -280,6 +280,7 @@ public class ServiceEntitlement {
      * @param appId an app ID string defined in TS.43 section 2.2
      * @param request contains parameters that can be used in the HTTP request
      */
+    @NonNull
     public String acquireOidcAuthenticationEndpoint(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         mOidcAcceptContentType = request.acceptContentType();
@@ -295,9 +296,9 @@ public class ServiceEntitlement {
      *
      * @param url the redirect url from OIDC authentication result.
      */
+    @NonNull
     public String queryEntitlementStatusFromOidc(String url) throws ServiceEntitlementException {
-        HttpResponse response = getEntitlementStatusResponseFromOidc(url);
-        return response == null ? null : response.body();
+        return getEntitlementStatusResponseFromOidc(url).body();
     }
 
     /**
@@ -309,6 +310,7 @@ public class ServiceEntitlement {
      *
      * @param url the redirect url from OIDC authentication result.
      */
+    @NonNull
     public HttpResponse getEntitlementStatusResponseFromOidc(String url)
             throws ServiceEntitlementException {
         return eapAkaApi.queryEntitlementStatusFromOidc(url, carrierConfig, mOidcAcceptContentType);
@@ -318,6 +320,7 @@ public class ServiceEntitlement {
      * Retrieves the history of past HTTP request and responses if {@code saveHttpHistory} was set
      * in constructor.
      */
+    @NonNull
     public List<String> getHistory() {
         return eapAkaApi.getHistory();
     }
