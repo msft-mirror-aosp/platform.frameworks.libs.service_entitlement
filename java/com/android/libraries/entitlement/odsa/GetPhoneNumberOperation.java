@@ -25,6 +25,43 @@ import com.google.auto.value.AutoValue;
  */
 public final class GetPhoneNumberOperation {
     /**
+     * Get phone number request described in GSMA Service Entitlement Configuration section 6.4.8.
+     */
+    @AutoValue
+    public abstract static class GetPhoneNumberRequest {
+        /**
+         * Returns the terminal id.
+         */
+        @NonNull
+        public abstract String terminalId();
+
+        /** Returns a new {@link GetPhoneNumberRequest.Builder} object. */
+        @NonNull
+        public static Builder builder() {
+            return new AutoValue_GetPhoneNumberOperation_GetPhoneNumberRequest
+                .Builder()
+                .setTerminalId("");
+        }
+
+        /** Builder. */
+        @AutoValue.Builder
+        public abstract static class Builder {
+            /**
+             * Sets the terminal id.
+             *
+             * @param terminalId The terminal id.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setTerminalId(@NonNull String terminalId);
+
+            /** Returns the {@link GetPhoneNumberRequest} object. */
+            @NonNull
+            public abstract GetPhoneNumberRequest build();
+        }
+    }
+
+    /**
      * Get phone number response described in GSMA Service Entitlement Configuration section
      * 6.5.8.
      */

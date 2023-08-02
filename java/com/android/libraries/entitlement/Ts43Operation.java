@@ -36,6 +36,7 @@ import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
 import com.android.libraries.entitlement.odsa.DownloadInfo;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberRequest;
 import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberResponse;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
@@ -854,17 +855,25 @@ public class Ts43Operation {
      * Get the phone number as described in GSMA Service Entitlement Configuration section 6.2 and
      * 6.5.8.
      *
+     * @param getPhoneNumberRequest The get phone number request.
      * @return The phone number response from the network.
      * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
      *                                     error from the server, the error code can be retrieved by
      *                                     {@link ServiceEntitlementException#getHttpStatus()}
      */
     @NonNull
-    public GetPhoneNumberResponse getPhoneNumber() throws ServiceEntitlementException {
+    public GetPhoneNumberResponse getPhoneNumber(
+            @NonNull GetPhoneNumberRequest getPhoneNumberRequest)
+            throws ServiceEntitlementException {
         ServiceEntitlementRequest.Builder builder =
                 ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei);
+                        .setEntitlementVersion(mEntitlementVersion);
+
+        if (!TextUtils.isEmpty(getPhoneNumberRequest.terminalId())) {
+            builder.setTerminalId(getPhoneNumberRequest.terminalId());
+        } else {
+            builder.setTerminalId(mImei);
+        }
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
             builder.setAuthenticationToken(mAuthToken);
@@ -883,7 +892,7 @@ public class Ts43Operation {
         try {
             rawXml =
                     mServiceEntitlement.performEsimOdsa(
-                            EsimOdsaOperation.OPERATION_GET_PHONE_NUMBER, request, operation);
+                        Ts43Constants.APP_PHONE_NUMBER_INFORMATION, request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "getPhoneNumber: Failed to perform ODSA operation. e=" + e);
             throw e;
