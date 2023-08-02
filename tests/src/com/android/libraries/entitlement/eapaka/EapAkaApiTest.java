@@ -25,6 +25,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,8 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.expectThrows;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Network;
 import android.telephony.TelephonyManager;
 
@@ -99,9 +102,15 @@ public class EapAkaApiTest {
     private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
     private static final String BYPASS_EAP_AKA_RESPONSE = "abc";
+    private static final String VENDOR = "VENDOR";
+    private static final String MODEL = "MODEL";
+    private static final String SW_VERSION = "SW_VERSION";
+    private static final String APP_VERSION = "APP_VERSION";
 
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
+    @Mock private PackageManager mMockPackageManager;
+    @Mock private PackageInfo mMockPackageInfo;
     @Mock private HttpClient mMockHttpClient;
     @Mock private Network mMockNetwork;
     @Mock private TelephonyManager mMockTelephonyManager;
@@ -113,8 +122,12 @@ public class EapAkaApiTest {
     private EapAkaApi mEapAkaApiBypassAuthentication;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         mContext = spy(ApplicationProvider.getApplicationContext());
+        when(mContext.getPackageManager()).thenReturn(mMockPackageManager);
+        mMockPackageInfo.versionName = APP_VERSION;
+        when(mMockPackageManager.getPackageInfo(anyString(), anyInt()))
+                .thenReturn(mMockPackageInfo);
         mEapAkaApi = new EapAkaApi(mContext, SUB_ID, mMockHttpClient, "");
         mEapAkaApiBypassAuthentication =
                 new EapAkaApi(mContext, SUB_ID, mMockHttpClient, BYPASS_EAP_AKA_RESPONSE);
@@ -609,6 +622,90 @@ public class EapAkaApiTest {
     }
 
     @Test
+    public void queryEntitlementStatus_userAgentSet() throws Exception {
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(VENDOR)
+                        .setTerminalModel(MODEL)
+                        .setTerminalSoftwareVersion(SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        String userAgent =
+                String.format(
+                        "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                        VENDOR, MODEL, carrierConfig.clientTs43(), APP_VERSION, SW_VERSION);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getValue()
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+    }
+
+    @Test
+    public void queryEntitlementStatus_userAgentSet_duringEapAka() throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        HttpResponse eapChallengeResponse =
+                HttpResponse
+                        .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
+                        .setCookies(ImmutableList.of(COOKIE_VALUE)).build();
+        HttpResponse xmlResponse =
+                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setTerminalVendor(VENDOR)
+                        .setTerminalModel(MODEL)
+                        .setTerminalSoftwareVersion(SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
+        String userAgent =
+                String.format(
+                        "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                        VENDOR, MODEL, carrierConfig.clientTs43(), APP_VERSION, SW_VERSION);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getAllValues().get(0)
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getAllValues().get(1)
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+    }
+
+    @Test
     public void performEsimOdsaOperation_noAuthenticationToken_returnsResult() throws Exception {
         when(mMockTelephonyManagerForSubId.getIccAuthentication(
                 TelephonyManager.APPTYPE_USIM,
@@ -732,10 +829,11 @@ public class EapAkaApiTest {
                         .build();
         when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
         HttpResponse response =
                 mEapAkaApi.queryEntitlementStatusFromOidc(
-                        TEST_URL, carrierConfig, ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+                        TEST_URL, carrierConfig, request);
 
         assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(1)).request(any());
