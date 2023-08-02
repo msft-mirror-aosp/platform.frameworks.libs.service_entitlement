@@ -84,7 +84,7 @@ public class ServiceEntitlement {
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
-    private String mOidcAcceptContentType;
+    private ServiceEntitlementRequest mOidcRequest;
     /**
      * Creates an instance for service entitlement configuration query and operation for the
      * carrier.
@@ -283,7 +283,7 @@ public class ServiceEntitlement {
     @NonNull
     public String acquireOidcAuthenticationEndpoint(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        mOidcAcceptContentType = request.acceptContentType();
+        mOidcRequest = request;
         return eapAkaApi.acquireOidcAuthenticationEndpoint(appId, carrierConfig, request);
     }
 
@@ -313,7 +313,7 @@ public class ServiceEntitlement {
     @NonNull
     public HttpResponse getEntitlementStatusResponseFromOidc(String url)
             throws ServiceEntitlementException {
-        return eapAkaApi.queryEntitlementStatusFromOidc(url, carrierConfig, mOidcAcceptContentType);
+        return eapAkaApi.queryEntitlementStatusFromOidc(url, carrierConfig, mOidcRequest);
     }
 
     /**
