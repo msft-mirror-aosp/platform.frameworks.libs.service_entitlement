@@ -29,6 +29,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43XmlDoc;
@@ -62,6 +63,12 @@ public class Ts43Authentication {
         public abstract String token();
 
         /**
+         * The list of cookies from the {@code Set-Cookie} header of the TS.43 response.
+         */
+        @NonNull
+        public abstract ImmutableList<String> cookies();
+
+        /**
          * Indicates the validity of the token. Note this value is server dependent. The client is
          * expected to interpret this value itself.
          */
@@ -71,13 +78,15 @@ public class Ts43Authentication {
          * Create the {@link Ts43AuthToken} object.
          *
          * @param token The authentication token for TS.43 operations.
+         * @param cookie The list of cookies from the {@code Set-Cookie} header.
          * @param validity Indicates the validity of the token. Note this value is server
          * dependent. If not available, set to {@link #VALIDITY_NOT_AVAILABLE}.
          *
          * @return The {@link Ts43AuthToken} object.
          */
-        public static Ts43AuthToken create(@NonNull String token, long validity) {
-            return new AutoValue_Ts43Authentication_Ts43AuthToken(token, validity);
+        public static Ts43AuthToken create(@NonNull String token,
+                @NonNull ImmutableList<String> cookie, long validity) {
+            return new AutoValue_Ts43Authentication_Ts43AuthToken(token, cookie, validity);
         }
     }
 
@@ -192,17 +201,23 @@ public class Ts43Authentication {
                     SubscriptionManager.getSubscriptionId(slotIndex));
         }
 
+        // Get the full HTTP response instead of just the body so we can reuse the same cookies.
+        HttpResponse response;
         String rawXml;
         try {
-            rawXml = mServiceEntitlement.queryEntitlementStatus(ImmutableList.of(appId), request);
+            response = mServiceEntitlement.getEntitlementStatusResponse(
+                    ImmutableList.of(appId), request);
+            rawXml = response == null ? null : response.body();
             Log.d(TAG, "getAuthToken: rawXml=" + rawXml);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "Failed to get authentication token. e=" + e);
             throw e;
         }
 
-        Ts43XmlDoc ts43xmlDoc = new Ts43XmlDoc(rawXml);
-        String authToken = ts43xmlDoc.get(
+        ImmutableList<String> cookies = response == null ? ImmutableList.of() : response.cookies();
+
+        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
+        String authToken = ts43XmlDoc.get(
                 ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.TOKEN);
         if (TextUtils.isEmpty(authToken)) {
             Log.w(TAG, "Failed to parse authentication token");
@@ -211,7 +226,7 @@ public class Ts43Authentication {
                     "Failed to parse authentication token");
         }
 
-        String validityString = nullToEmpty(ts43xmlDoc.get(ImmutableList.of(
+        String validityString = nullToEmpty(ts43XmlDoc.get(ImmutableList.of(
                 Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
         long validity;
         try {
@@ -219,7 +234,8 @@ public class Ts43Authentication {
         } catch (NumberFormatException e) {
             validity = Ts43AuthToken.VALIDITY_NOT_AVAILABLE;
         }
-        return Ts43AuthToken.create(authToken, validity);
+
+        return Ts43AuthToken.create(authToken, cookies, validity);
     }
 
     /**

@@ -20,12 +20,14 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
-import com.android.libraries.entitlement.odsa.OdsaOperation.OperationType;
+import com.android.libraries.entitlement.EsimOdsaOperation;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationType;
 import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +39,7 @@ import java.net.URL;
 /**
  * Manage subscription operation described in GSMA Service Entitlement Configuration section 6.5.3.
  */
-public class ManageSubscriptionOperation {
+public final class ManageSubscriptionOperation {
     /**
      * HTTP request parameters specific to on device service activation (ODSA) manage subscription
      * request. See GSMA spec TS.43 section 6.2.
@@ -57,7 +59,7 @@ public class ManageSubscriptionOperation {
          * Returns the detailed type of the eSIM ODSA operation. Used by HTTP parameter
          * {@code operation_type}.
          */
-        @OperationType
+        @OdsaOperationType
         public abstract int operationType();
 
         /**
@@ -142,7 +144,7 @@ public class ManageSubscriptionOperation {
          * Returns the unique identifiers of the primary device eSIM if more than one, like the
          * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}.
          *
-         * This is a non-standard params required by some carriers.
+         * <p>This is a non-standard params required by some carriers.
          */
         @NonNull
         public abstract ImmutableList<String> targetTerminalIds();
@@ -165,7 +167,7 @@ public class ManageSubscriptionOperation {
          * Returns the serial number of primary device. Used by HTTP parameter
          * {@code target_terminal_sn}.
          *
-         * This is a non-standard params required by some carriers.
+         * <p>This is a non-standard params required by some carriers.
          */
         @NonNull
         public abstract String targetTerminalSerialNumber();
@@ -174,11 +176,10 @@ public class ManageSubscriptionOperation {
          * Returns the model of primary device. Used by HTTP parameter
          * {@code target_terminal_model}.
          *
-         * This is a non-standard params required by some carriers.
+         * <p>This is a non-standard params required by some carriers.
          */
         @NonNull
         public abstract String targetTerminalModel();
-
 
         /**
          * Returns the unique identifier of the old device eSIM, like the IMEI associated with the
@@ -201,19 +202,31 @@ public class ManageSubscriptionOperation {
         public abstract String planId();
 
         /**
-         * Returns a new {@link Builder} object.
+         * Returns the notification token used to register for entitlement configuration request
+         * from network. Used by HTTP parameter {@code notif_token}.
          */
+        @NonNull
+        public abstract String notificationToken();
+
+        /**
+         * Returns the action associated with the notification token. Used by HTTP parameter
+         * {@code notif_action}.
+         */
+        @NotificationAction
+        public abstract int notificationAction();
+
+        /** Returns a new {@link Builder} object. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionRequest.Builder()
-                    .setAppId("")
-                    .setOperationType(OdsaOperation.OPERATION_TYPE_NOT_SET)
+                    .setAppId(Ts43Constants.APP_UNKNOWN)
+                    .setOperationType(EsimOdsaOperation.OPERATION_TYPE_NOT_SET)
                     .setCompanionTerminalId("")
                     .setCompanionTerminalVendor("")
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
                     .setCompanionTerminalFriendlyName("")
-                    .setCompanionTerminalService("")
+                    .setCompanionTerminalService(EsimOdsaOperation.COMPANION_SERVICE_UNKNOWN)
                     .setCompanionTerminalIccid("")
                     .setCompanionTerminalEid("")
                     .setTerminalIccid("")
@@ -226,21 +239,21 @@ public class ManageSubscriptionOperation {
                     .setTargetTerminalModel("")
                     .setOldTerminalId("")
                     .setOldTerminalIccid("")
-                    .setPlanId("");
+                    .setPlanId("")
+                    .setNotificationToken("")
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
 
-        /**
-         * Builder
-         */
+        /** Builder */
         @AutoValue.Builder
         public abstract static class Builder {
             /**
              * Sets the application id.
              *
              * @param appId The application id. Can only be
-             * {@link Ts43Constants#APP_ODSA_COMPANION}, {@link Ts43Constants#APP_ODSA_PRIMARY}, or
-             * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
-             *
+             *              {@link Ts43Constants#APP_ODSA_COMPANION},
+             *              {@link Ts43Constants#APP_ODSA_PRIMARY}, or {@link
+             *              Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
              * @return The builder.
              */
             @NonNull
@@ -251,18 +264,18 @@ public class ManageSubscriptionOperation {
              * {@code operation_type} if set.
              *
              * @param operationType The detailed type of the eSIM ODSA operation.
-             *
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setOperationType(@OperationType int operationType);
+            public abstract Builder setOperationType(@OdsaOperationType int operationType);
 
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
              * {@code companion_terminal_id} if set.
              *
-             * @param
+             * <p>Used by companion device ODSA operation.
              *
+             * @param companionTerminalId The unique identifier of the companion device.
              * @return The builder.
              */
             @NonNull
@@ -272,8 +285,9 @@ public class ManageSubscriptionOperation {
              * Sets the OEM of the companion device. Used by HTTP parameter
              * {@code companion_terminal_vendor} if set.
              *
-             * @param companionTerminalVendor The OEM of the companion device.
+             * <p>Used by companion device ODSA operation.
              *
+             * @param companionTerminalVendor The OEM of the companion device.
              * @return The builder.
              */
             @NonNull
@@ -284,10 +298,9 @@ public class ManageSubscriptionOperation {
              * Sets the model of the companion device. Used by HTTP parameter
              * {@code companion_terminal_model} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalModel The model of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -298,10 +311,9 @@ public class ManageSubscriptionOperation {
              * Sets the software version of the companion device. Used by HTTP parameter
              * {@code companion_terminal_sw_version} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalSoftwareVersion The software version of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -312,11 +324,10 @@ public class ManageSubscriptionOperation {
              * Sets the user-friendly version of the companion device. Used by HTTP parameter
              * {@code companion_terminal_friendly_name} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalFriendlyName The user-friendly version of the companion
-             * device.
-             *
+             *                                      device.
              * @return The builder.
              */
             @NonNull
@@ -327,10 +338,9 @@ public class ManageSubscriptionOperation {
              * Sets the service type of the companion device, e.g. if the MSISDN is same as the
              * primary device. Used by HTTP parameter {@code companion_terminal_service} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalService The service type of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -341,10 +351,9 @@ public class ManageSubscriptionOperation {
              * Sets the ICCID of the companion device. Used by HTTP parameter
              * {@code companion_terminal_iccid} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalIccid The ICCID of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -355,10 +364,9 @@ public class ManageSubscriptionOperation {
              * Sets the eUICC identifier (EID) of the companion device. Used by HTTP parameter
              * {@code companion_terminal_eid} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalEid The eUICC identifier (EID) of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -368,11 +376,10 @@ public class ManageSubscriptionOperation {
              * Sets the ICCID of the primary device eSIM in case of primary SIM not present. Used by
              * HTTP parameter {@code terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param terminalIccid The ICCID of the primary device eSIM in case of primary SIM not
-             * present.
-             *
+             *                      present.
              * @return The builder.
              */
             @NonNull
@@ -382,11 +389,10 @@ public class ManageSubscriptionOperation {
              * Sets the eUICC identifier (EID) of the primary device eSIM in case of primary SIM not
              * present. Used by HTTP parameter {@code terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param terminalEid The eUICC identifier (EID) of the primary device eSIM in case of
-             * primary SIM not present.
-             *
+             *                    primary SIM not present.
              * @return The builder.
              */
             @NonNull
@@ -394,15 +400,16 @@ public class ManageSubscriptionOperation {
 
             /**
              * Sets the unique identifiers of the primary device eSIM if more than one, like the
-             * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}.
+             * IMEIs on dual-SIM devices. Used by HTTP parameter {@code target_terminal_imeis}
+             * if set.
              *
-             * This is a non-standard params required by some carriers.
+             * <p>This is a non-standard params required by some carriers.
              *
              * @param targetTerminalIds The unique identifiers of the primary device eSIM if more
-             * than one.
-             *
+             *                          than one.
              * @return The builder.
              */
+            @NonNull
             public abstract Builder setTargetTerminalIds(
                     @NonNull ImmutableList<String> targetTerminalIds);
 
@@ -411,11 +418,10 @@ public class ManageSubscriptionOperation {
              * the IMEI associated with the eSIM. Used by HTTP parameter {@code target_terminal_id}
              * if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalId The unique identifier of the primary device eSIM in case of
-             * multiple SIM.
-             *
+             *                         multiple SIM.
              * @return The builder.
              */
             @NonNull
@@ -425,10 +431,9 @@ public class ManageSubscriptionOperation {
              * Sets the ICCID primary device eSIM in case of multiple SIM. Used by HTTP parameter
              * {@code target_terminal_iccid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalIccid The ICCID primary device eSIM in case of multiple SIM.
-             *
              * @return The builder.
              */
             @NonNull
@@ -438,11 +443,10 @@ public class ManageSubscriptionOperation {
              * Sets the eUICC identifier (EID) of the primary device eSIM in case of multiple SIM.
              * Used by HTTP parameter {@code target_terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalEid The eUICC identifier (EID) of the primary device eSIM in
-             * case of multiple SIM.
-             *
+             *                          case of multiple SIM.
              * @return The builder.
              */
             @NonNull
@@ -450,12 +454,12 @@ public class ManageSubscriptionOperation {
 
             /**
              * Sets the serial number of primary device. Used by HTTP parameter
-             * {@code target_terminal_sn}.
+             * {@code target_terminal_sn} if set.
              *
-             * @param targetTerminalSerialNumber The serial number of primary device.
+             * <p>Used by primary device ODSA operation.
              *
-             * This is a non-standard params required by some carriers.
-             *
+             * @param targetTerminalSerialNumber The serial number of primary device. This is a
+             *                                   non-standard params required by some carriers.
              * @return The builder.
              */
             @NonNull
@@ -464,12 +468,12 @@ public class ManageSubscriptionOperation {
 
             /**
              * Sets the model of primary device. Used by HTTP parameter
-             * {@code target_terminal_model}.
+             * {@code target_terminal_model} if set.
              *
-             * @param targetTerminalModel The model of primary device.
+             * <p>Used by primary device ODSA operation.
              *
-             * This is a non-standard params required by some carriers.
-             *
+             * @param targetTerminalModel The model of primary device. This is a non-standard params
+             *                            required by some carriers.
              * @return The builder.
              */
             @NonNull
@@ -477,24 +481,23 @@ public class ManageSubscriptionOperation {
 
             /**
              * Sets the unique identifier of the old device eSIM, like the IMEI associated with the
-             * eSIM. Used by HTTP parameter {@code old_terminal_id} if set.
+             * eSIM.Used by HTTP parameter {@code old_terminal_id} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param oldTerminalId The unique identifier of the old device eSIM.
-             *
              * @return The builder.
              */
             @NonNull
             public abstract Builder setOldTerminalId(@NonNull String oldTerminalId);
 
             /**
-             * Sets the ICCID old device eSIM. Used by HTTP parameter "old_terminal_iccid" if set.
+             * Sets the ICCID old device eSIM. Used by HTTP parameter {@code old_terminal_iccid}
+             * if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param oldTerminalIccid The ICCID old device eSIM.
-             *
              * @return The builder.
              */
             @NonNull
@@ -502,18 +505,43 @@ public class ManageSubscriptionOperation {
 
             /**
              * Sets the identifier of the specific plan offered by an MNO. Used by HTTP parameter
-             * {@code plan_id}.
+             * {@code plan_id} if set.
+             *
+             * <p>Used by primary device ODSA operation.
              *
              * @param planId The identifier of the specific plan offered by an MNO.
-             *
              * @return The builder.
              */
             @NonNull
             public abstract Builder setPlanId(@NonNull String planId);
 
             /**
-             * @return The {@link ManageSubscriptionRequest} object.
+             * Sets the notification token used to register for entitlement configuration request
+             * from network. Used by HTTP parameter {@code notif_token} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationToken The notification token used to register for entitlement
+             *                          configuration request from network.
+             * @return The builder.
              */
+            @NonNull
+            public abstract Builder setNotificationToken(@NonNull String notificationToken);
+
+            /**
+             * Sets the action associated with the notification token. Used by HTTP parameter
+             * {@code notif_action} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationAction The action associated with the notification token.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationAction(
+                    @NotificationAction int notificationAction);
+
+            /** Returns the {@link ManageSubscriptionRequest} object. */
             @NonNull
             public abstract ManageSubscriptionRequest build();
         }
@@ -525,10 +553,9 @@ public class ManageSubscriptionOperation {
      */
     @AutoValue
     public abstract static class ManageSubscriptionResponse extends OdsaResponse {
-        /**
-         * Subscription result unknown.
-         */
+        /** Subscription result unknown. */
         public static final int SUBSCRIPTION_RESULT_UNKNOWN = -1;
+
         /**
          * Indicates that end-user must go through the subscription web view procedure, using
          * information included below.
@@ -576,41 +603,41 @@ public class ManageSubscriptionOperation {
                 SUBSCRIPTION_RESULT_DISMISS,
                 SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE
         })
-        public @interface SubscriptionResult {}
+        public @interface SubscriptionResult {
+        }
 
-        /**
-         * The subscription result.
-         */
+        /** The subscription result. */
         @SubscriptionResult
         public abstract int subscriptionResult();
 
         /**
          * URL refers to web views responsible for a certain action on the eSIM device subscription.
-         * The Service Provider can provide different URL based on the operation_type input
-         * parameter ({@link OdsaOperation#OPERATION_TYPE_SUBSCRIBE},
-         * {@link OdsaOperation#OPERATION_TYPE_UNSUBSCRIBE},
-         * {@link OdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
+         * The
+         * Service Provider can provide different URL based on the operation_type input parameter
+         * ({@link EsimOdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
+         * EsimOdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
+         * EsimOdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
          *
-         * {@code null} if {@link #subscriptionResult()} is not
-         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
+         * <p>{@code null} if {@link #subscriptionResult()} is not {@link
+         * #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
          */
         @Nullable
-        public abstract URL subscriptionServiceURL();
+        public abstract URL subscriptionServiceUrl();
 
         /**
          * User data sent to the Service Provider when requesting the
-         * {@link #subscriptionServiceURL()} web view. It should contain user-specific attributes to
-         * improve user experience.
+         * {@link #subscriptionServiceUrl()}
+         * web view. It should contain user-specific attributes to improve user experience.
          *
-         * {@code null} if {@link #subscriptionResult()} is not
-         * {@link #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
+         * <p>{@code null} if {@link #subscriptionResult()} is not {@link
+         * #SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET}.
          */
         @Nullable
         public abstract String subscriptionServiceUserData();
 
         /**
          * Specifies content and HTTP method to use when reaching out to the web server specified by
-         * {@link #subscriptionServiceURL()}.
+         * {@link #subscriptionServiceUrl()}.
          */
         @ContentType
         public abstract int subscriptionServiceContentsType();
@@ -619,15 +646,13 @@ public class ManageSubscriptionOperation {
          * Specifies how and where to download the eSIM profile associated with the companion or
          * primary device.
          *
-         * {@code null} if {@link #subscriptionResult()} is not
-         * {@link #SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE}.
+         * <p>{@code null} if {@link #subscriptionResult()} is not {@link
+         * #SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE}.
          */
         @Nullable
         public abstract DownloadInfo downloadInfo();
 
-        /**
-         * @return The builder
-         */
+        /** Returns the builder. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_ManageSubscriptionOperation_ManageSubscriptionResponse.Builder()
@@ -635,16 +660,13 @@ public class ManageSubscriptionOperation {
                     .setSubscriptionServiceContentsType(HttpConstants.UNKNOWN);
         }
 
-        /**
-         * Builder
-         */
+        /** Builder */
         @AutoValue.Builder
         public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Set subscription result.
              *
              * @param subscriptionResult The subscription result.
-             *
              * @return The builder.
              */
             @NonNull
@@ -656,24 +678,22 @@ public class ManageSubscriptionOperation {
              * subscription.
              *
              * @param url URL refers to web views responsible for a certain action on the eSIM
-             * device subscription. The Service Provider can provide different URL based on the
-             * operation_type input parameter (
-             * {@link OdsaOperation#OPERATION_TYPE_SUBSCRIBE},
-             * {@link OdsaOperation#OPERATION_TYPE_UNSUBSCRIBE},
-             * {@link OdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
-             *
+             *            device subscription. The Service Provider can provide different URL based
+             *            on the operation_type input parameter (
+             *            {@link EsimOdsaOperation#OPERATION_TYPE_SUBSCRIBE}, {@link
+             *            EsimOdsaOperation#OPERATION_TYPE_UNSUBSCRIBE}, {@link
+             *            EsimOdsaOperation#OPERATION_TYPE_CHANGE_SUBSCRIPTION}).
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setSubscriptionServiceURL(@NonNull URL url);
+            public abstract Builder setSubscriptionServiceUrl(@NonNull URL url);
 
             /**
              * Set user data sent to the Service Provider.
              *
-             * @param userData User data sent to the Service Provider when requesting the
-             * {@link #subscriptionServiceURL()} web view. It should contain user-specific
-             * attributes to improve user experience.
-             *
+             * @param userData User data sent to the Service Provider when requesting the {@link
+             *                 #subscriptionServiceUrl()} web view. It should contain user-specific
+             *                 attributes to improve user experience.
              * @return The builder.
              */
             @NonNull
@@ -682,9 +702,8 @@ public class ManageSubscriptionOperation {
             /**
              * Set the content type.
              *
-             * @param contentType Specifies content and HTTP method to use when reaching out to
-             * the web server specified by {@link #subscriptionServiceURL()}.
-             *
+             * @param contentType Specifies content and HTTP method to use when reaching out to the
+             *                    web server specified by {@link #subscriptionServiceUrl()}.
              * @return The builder.
              */
             @NonNull
@@ -696,18 +715,18 @@ public class ManageSubscriptionOperation {
              * device.
              *
              * @param downloadInfo Specifies how and where to download the eSIM profile associated
-             * with the companion or primary device.
-             *
+             *                     with the companion or primary device.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setDownloadInfo(@NonNull DownloadInfo downloadInfo);
 
-            /**
-             * @return The {@link ManageSubscriptionResponse} object.
-             */
+            /** Returns the {@link ManageSubscriptionResponse} object. */
             @NonNull
             public abstract ManageSubscriptionResponse build();
         }
+    }
+
+    private ManageSubscriptionOperation() {
     }
 }

@@ -32,8 +32,19 @@ public abstract class CarrierConfig {
     /** Default value of {@link #timeoutInSec} if not set. */
     public static final int DEFAULT_TIMEOUT_IN_SEC = 30;
 
+    public static final String CLIENT_TS_43_IMS_ENTITLEMENT = "IMS-Entitlement";
+    public static final String CLIENT_TS_43_COMPANION_ODSA = "Companion-ODSA";
+    public static final String CLIENT_TS_43_PRIMARY_ODSA = "Primary-ODSA";
+    public static final String CLIENT_TS_43_SERVER_ODSA = "Server-ODSA";
+
     /** The carrier's entitlement server URL. See {@link Builder#setServerUrl}. */
     public abstract String serverUrl();
+
+    /**
+     * Client-ts43 attribute. Used to set the User-Agent header in HTTP requests as defined in TS.43
+     * section 2.2.
+     */
+    public abstract String clientTs43();
 
     /** Client side timeout for HTTP connection. See {@link Builder#setTimeoutInSec}. */
     public abstract int timeoutInSec();
@@ -46,6 +57,7 @@ public abstract class CarrierConfig {
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
                 .setServerUrl("")
+                .setClientTs43("")
                 .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC);
     }
 
@@ -59,6 +71,9 @@ public abstract class CarrierConfig {
          * https://aes.mnc<MNC>.mcc<MCC>.pub.3gppnetwork.org} as defined in GSMA TS.43 section 2.1.
          */
         public abstract Builder setServerUrl(String url);
+
+        /** Sets the Client-ts43 attribute. Used to set the User-Agent header in HTTP requests. */
+        public abstract Builder setClientTs43(String clientTs43);
 
         /**
          * Sets the client side timeout for HTTP connection. Default to

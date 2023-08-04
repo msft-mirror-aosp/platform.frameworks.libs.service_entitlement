@@ -25,6 +25,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,8 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.expectThrows;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Network;
 import android.telephony.TelephonyManager;
 
@@ -39,6 +42,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.CarrierConfig;
+import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.ServiceEntitlement;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
@@ -46,7 +50,6 @@ import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -99,9 +102,15 @@ public class EapAkaApiTest {
     private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
     private static final String BYPASS_EAP_AKA_RESPONSE = "abc";
+    private static final String VENDOR = "VENDOR";
+    private static final String MODEL = "MODEL";
+    private static final String SW_VERSION = "SW_VERSION";
+    private static final String APP_VERSION = "APP_VERSION";
 
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
+    @Mock private PackageManager mMockPackageManager;
+    @Mock private PackageInfo mMockPackageInfo;
     @Mock private HttpClient mMockHttpClient;
     @Mock private Network mMockNetwork;
     @Mock private TelephonyManager mMockTelephonyManager;
@@ -113,8 +122,12 @@ public class EapAkaApiTest {
     private EapAkaApi mEapAkaApiBypassAuthentication;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         mContext = spy(ApplicationProvider.getApplicationContext());
+        when(mContext.getPackageManager()).thenReturn(mMockPackageManager);
+        mMockPackageInfo.versionName = APP_VERSION;
+        when(mMockPackageManager.getPackageInfo(anyString(), anyInt()))
+                .thenReturn(mMockPackageInfo);
         mEapAkaApi = new EapAkaApi(mContext, SUB_ID, mMockHttpClient, "");
         mEapAkaApiBypassAuthentication =
                 new EapAkaApi(mContext, SUB_ID, mMockHttpClient, BYPASS_EAP_AKA_RESPONSE);
@@ -137,11 +150,11 @@ public class EapAkaApiTest {
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
 
-        String response =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(response).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(httpResponse);
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getValue().timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
@@ -167,11 +180,11 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String respopnse =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
         // Verify that the 2nd request has cookies set by the 1st response
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
@@ -249,11 +262,11 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String respopnse =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
@@ -296,11 +309,11 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String respopnse =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(4)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
@@ -429,11 +442,11 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String response =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(response).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         // Verify that the 2nd/3rd request has cookie set by the 1st/2nd response
         verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
@@ -540,11 +553,11 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String respopnse =
+        HttpResponse response =
                 mEapAkaApiBypassAuthentication.queryEntitlementStatus(
                         ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
 
-        assertThat(respopnse).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         // Verify that the 2nd request has cookies set by the 1st response
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
@@ -609,6 +622,90 @@ public class EapAkaApiTest {
     }
 
     @Test
+    public void queryEntitlementStatus_userAgentSet() throws Exception {
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(VENDOR)
+                        .setTerminalModel(MODEL)
+                        .setTerminalSoftwareVersion(SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        String userAgent =
+                String.format(
+                        "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                        VENDOR, MODEL, carrierConfig.clientTs43(), APP_VERSION, SW_VERSION);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getValue()
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+    }
+
+    @Test
+    public void queryEntitlementStatus_userAgentSet_duringEapAka() throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        HttpResponse eapChallengeResponse =
+                HttpResponse
+                        .builder().setContentType(ContentType.JSON).setBody(EAP_AKA_CHALLENGE)
+                        .setCookies(ImmutableList.of(COOKIE_VALUE)).build();
+        HttpResponse xmlResponse =
+                HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setTerminalVendor(VENDOR)
+                        .setTerminalModel(MODEL)
+                        .setTerminalSoftwareVersion(SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
+        String userAgent =
+                String.format(
+                        "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                        VENDOR, MODEL, carrierConfig.clientTs43(), APP_VERSION, SW_VERSION);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getAllValues().get(0)
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getAllValues().get(1)
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+    }
+
+    @Test
     public void performEsimOdsaOperation_noAuthenticationToken_returnsResult() throws Exception {
         when(mMockTelephonyManagerForSubId.getIccAuthentication(
                 TelephonyManager.APPTYPE_USIM,
@@ -626,36 +723,36 @@ public class EapAkaApiTest {
                 .thenReturn(eapChallengeResponse).thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        OdsaOperation operation = OdsaOperation.builder().build();
+        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
 
-        String response =
+        HttpResponse response =
                 mEapAkaApi.performEsimOdsaOperation(ServiceEntitlement.APP_ODSA_COMPANION,
                         carrierConfig, request, operation);
 
-        assertThat(response).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(2)).request(any());
     }
 
     @Test
     public void performEsimOdsaOperation_manageSubscription_returnsResult() throws Exception {
-        HttpResponse httpResponse =
+        HttpResponse xmlResponse =
                 HttpResponse.builder().setContentType(ContentType.XML).setBody(RESPONSE_XML)
                         .build();
-        when(mMockHttpClient.request(any())).thenReturn(httpResponse);
+        when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
         CarrierConfig carrierConfig =
                 CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder().setAuthenticationToken(TOKEN).build();
-        OdsaOperation operation = OdsaOperation.builder()
-                .setOperation(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
-                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+        EsimOdsaOperation operation = EsimOdsaOperation.builder()
+                .setOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .build();
 
-        String response =
+        HttpResponse response =
                 mEapAkaApi.performEsimOdsaOperation(ServiceEntitlement.APP_ODSA_COMPANION,
                         carrierConfig, request, operation);
 
-        assertThat(response).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(1)).request(any());
     }
 
@@ -682,7 +779,7 @@ public class EapAkaApiTest {
                 .thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        OdsaOperation operation = OdsaOperation.builder().build();
+        EsimOdsaOperation operation = EsimOdsaOperation.builder().build();
 
         ServiceEntitlementException exception =
                 expectThrows(
@@ -725,20 +822,20 @@ public class EapAkaApiTest {
 
     @Test
     public void queryEntitlementStatusFromOidc() throws Exception {
-        HttpResponse response =
+        HttpResponse xmlResponse =
                 HttpResponse.builder()
                         .setContentType(ContentType.XML)
                         .setBody(RESPONSE_XML)
                         .build();
-        when(mMockHttpClient.request(any()))
-                .thenReturn(response);
+        when(mMockHttpClient.request(any())).thenReturn(xmlResponse);
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
-        String xmlResponse =
+        HttpResponse response =
                 mEapAkaApi.queryEntitlementStatusFromOidc(
-                        TEST_URL, carrierConfig, ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+                        TEST_URL, carrierConfig, request);
 
-        assertThat(xmlResponse).isEqualTo(RESPONSE_XML);
+        assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(1)).request(any());
     }
 }

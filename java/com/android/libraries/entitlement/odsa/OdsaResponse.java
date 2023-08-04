@@ -19,18 +19,14 @@ package com.android.libraries.entitlement.odsa;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.OperationResult;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationResult;
 
 import java.net.URL;
 
-/**
- * ODSA general response described in GSMA Service Entitlement Configuration section 6.5.1.
- */
+/** ODSA general response described in GSMA Service Entitlement Configuration section 6.5.1. */
 public abstract class OdsaResponse {
-    /**
-     * Operation result.
-     */
-    @OperationResult
+    /** Operation result. */
+    @OdsaOperationResult
     public abstract int operationResult();
 
     /**
@@ -41,32 +37,28 @@ public abstract class OdsaResponse {
     public abstract URL generalErrorUrl();
 
     /**
-     * User data sent to the Service Provider when requesting the {@link #generalErrorUrl()}
-     * web view. It should contain user-specific attributes to improve user experience.
+     * User data sent to the Service Provider when requesting the {@link #generalErrorUrl()} web
+     * view. It should contain user-specific attributes to improve user experience.
      */
     @Nullable
     public abstract String generalErrorUserData();
 
-    /**
-     * Builder
-     */
+    /** Builder */
     public abstract static class Builder {
         /**
          * Set the operation result.
          *
          * @param operationResult The operation result.
-         *
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setOperationResult(@OperationResult int operationResult);
+        public abstract Builder setOperationResult(@OdsaOperationResult int operationResult);
 
         /**
          * Set the URL to the web view to user on the reason(s) why the authentication failed.
          *
-         * @param url The provided URL shall present a web view to user on the reason(s) why
-         * the authentication failed.
-         *
+         * @param url The provided URL shall present a web view to user on the reason(s) why the
+         *            authentication failed.
          * @return The builder.
          */
         @NonNull
@@ -75,14 +67,13 @@ public abstract class OdsaResponse {
         /**
          * Set the user data of {@link #generalErrorUrl()}.
          *
-         * @param userData User data sent to the Service Provider when requesting the
-         * {@link #generalErrorUrl()} web view. It should contain user-specific attributes to
-         * improve user experience.
-         *
+         * @param userData User data sent to the Service Provider when requesting the {@link
+         *                 #generalErrorUrl()} web view. It should contain user-specific attributes
+         *                 to improve user
+         *                 experience.
          * @return The builder.
          */
         @NonNull
         public abstract Builder setGeneralErrorUserData(@NonNull String userData);
-
     }
 }

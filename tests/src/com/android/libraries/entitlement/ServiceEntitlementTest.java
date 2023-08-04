@@ -29,7 +29,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
+import com.android.libraries.entitlement.http.HttpResponse;
 
 import com.google.common.collect.ImmutableList;
 
@@ -58,6 +58,7 @@ public class ServiceEntitlementTest {
 
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
     @Mock EapAkaApi mMockEapAkaApi;
+    @Mock HttpResponse mMockHttpResponse;
     @Mock private TelephonyManager mMockTelephonyManager;
     @Mock private TelephonyManager mMockTelephonyManagerForSubId;
 
@@ -101,7 +102,10 @@ public class ServiceEntitlementTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         when(mMockEapAkaApi.queryEntitlementStatus(
                 ImmutableList.of(ServiceEntitlement.APP_VOLTE), mCarrierConfig, request))
-                .thenReturn(QUERY_APP_VOLTE_RESULT);
+                .thenAnswer(invocation -> {
+                    when(mMockHttpResponse.body()).thenReturn(QUERY_APP_VOLTE_RESULT);
+                    return mMockHttpResponse;
+                });
 
         assertThat(
                 mServiceEntitlement.queryEntitlementStatus(ServiceEntitlement.APP_VOLTE, request))
@@ -113,7 +117,10 @@ public class ServiceEntitlementTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         when(mMockEapAkaApi.queryEntitlementStatus(
                 ImmutableList.of(ServiceEntitlement.APP_VOWIFI), mCarrierConfig, request))
-                .thenReturn(QUERY_APP_VOWIFI_RESULT);
+                .thenAnswer(invocation -> {
+                    when(mMockHttpResponse.body()).thenReturn(QUERY_APP_VOWIFI_RESULT);
+                    return mMockHttpResponse;
+                });
 
         assertThat(
                 mServiceEntitlement.queryEntitlementStatus(
@@ -125,10 +132,13 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaCompanion_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        OdsaOperation odsaOperation = OdsaOperation.builder().build();
+        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_COMPANION, mCarrierConfig, request, odsaOperation))
-                .thenReturn(QUERY_APP_ODSA_COMPANION_RESULT);
+                .thenAnswer(invocation -> {
+                    when(mMockHttpResponse.body()).thenReturn(QUERY_APP_ODSA_COMPANION_RESULT);
+                    return mMockHttpResponse;
+                });
 
         assertThat(
                 mServiceEntitlement.performEsimOdsa(
@@ -139,10 +149,13 @@ public class ServiceEntitlementTest {
     @Test
     public void performEsimOdsa_appOdsaPrimary_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
-        OdsaOperation odsaOperation = OdsaOperation.builder().build();
+        EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
                 ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, request, odsaOperation))
-                .thenReturn(QUERY_APP_ODSA_PRIMARY_RESULT);
+                .thenAnswer(invocation -> {
+                    when(mMockHttpResponse.body()).thenReturn(QUERY_APP_ODSA_PRIMARY_RESULT);
+                    return mMockHttpResponse;
+                });
 
         assertThat(
                 mServiceEntitlement.performEsimOdsa(
@@ -167,7 +180,10 @@ public class ServiceEntitlementTest {
     public void queryEntitlementStatusFromOidc_returnResult() throws Exception {
         when(mMockEapAkaApi.queryEntitlementStatusFromOidc(
                 ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, null))
-                .thenReturn(QUERY_ENTITLEMENT_STATUS_FROM_OIDC);
+                .thenAnswer(invocation -> {
+                    when(mMockHttpResponse.body()).thenReturn(QUERY_ENTITLEMENT_STATUS_FROM_OIDC);
+                    return mMockHttpResponse;
+                });
 
         assertThat(
                 mServiceEntitlement.queryEntitlementStatusFromOidc(
