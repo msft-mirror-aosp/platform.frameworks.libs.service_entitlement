@@ -35,6 +35,7 @@ import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.Acq
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberRequest;
 import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberResponse;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
@@ -62,6 +63,7 @@ public class Ts43OperationTest {
     private static final String SUBSCRIPTION_SERVICE_URL = "http://www.MNO.org/CDSubs";
     private static final String SUBSCRIPTION_SERVICE_USER_DATA = "imsi=XX";
     private static final String IMEI = "861536030196001";
+    private static final String TERMINAL_ID = "861536030196005";
     private static final String COMPANION_TERMINAL_ID = "98112687006099944";
     private static final String COMPANION_TERMINAL_EID = "JHSDHljhsdfy763hh";
     private static final String ICCID = "123456789";
@@ -376,7 +378,11 @@ public class Ts43OperationTest {
     public void testGetPhoneNumber() throws Exception {
         doReturn(GET_PHONE_NUMBER_RESPONSE).when(mMockHttpResponse).body();
 
-        GetPhoneNumberResponse response = mTs43Operation.getPhoneNumber();
+        GetPhoneNumberRequest request = GetPhoneNumberRequest.builder()
+                .setTerminalId(TERMINAL_ID)
+                .build();
+
+        GetPhoneNumberResponse response = mTs43Operation.getPhoneNumber(request);
         assertThat(response.operationResult()).isEqualTo(
                 EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.msisdn()).isEqualTo(MSISDN);
