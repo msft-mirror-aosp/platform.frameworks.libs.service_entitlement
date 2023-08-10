@@ -22,6 +22,7 @@ java_defaults {
     libs: [
         "androidx.annotation_annotation",
         "auto_value_annotations",
+        "error_prone_annotations",
     ],
     plugins: ["auto_value_plugin"],
     sdk_version: "system_current",
