@@ -767,6 +767,7 @@ public class Ts43Operation {
      *                                     {@link ServiceEntitlementException#getHttpStatus()}
      */
     @NonNull
+    @SuppressWarnings("AndroidJdkLibsChecker") // java.time.Instant
     public AcquireTemporaryTokenResponse acquireTemporaryToken(
             @NonNull AcquireTemporaryTokenRequest acquireTemporaryTokenRequest)
             throws ServiceEntitlementException {
@@ -933,6 +934,7 @@ public class Ts43Operation {
      * @return The download info.
      */
     @Nullable
+    @SuppressWarnings("AndroidJdkLibsChecker") // java.util.Base64
     private DownloadInfo parseDownloadInfo(
             @NonNull ImmutableList<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
         String activationCode =
