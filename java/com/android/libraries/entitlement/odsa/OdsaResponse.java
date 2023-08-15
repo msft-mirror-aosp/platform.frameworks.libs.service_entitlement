@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationResult;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
 import java.net.URL;
 
 /** ODSA general response described in GSMA Service Entitlement Configuration section 6.5.1. */
@@ -52,6 +54,7 @@ public abstract class OdsaResponse {
          * @return The builder.
          */
         @NonNull
+        @CanIgnoreReturnValue
         public abstract Builder setOperationResult(@OdsaOperationResult int operationResult);
 
         /**
@@ -62,6 +65,7 @@ public abstract class OdsaResponse {
          * @return The builder.
          */
         @NonNull
+        @CanIgnoreReturnValue
         public abstract Builder setGeneralErrorUrl(@NonNull URL url);
 
         /**
@@ -74,6 +78,7 @@ public abstract class OdsaResponse {
          * @return The builder.
          */
         @NonNull
+        @CanIgnoreReturnValue
         public abstract Builder setGeneralErrorUserData(@NonNull String userData);
     }
 }
