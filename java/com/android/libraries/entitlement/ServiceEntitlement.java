@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
 import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.utils.DebugUtils;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.common.collect.ImmutableList;
@@ -98,12 +99,7 @@ public class ServiceEntitlement {
      *                          for how to get the subscription ID.
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
-        this(
-                context,
-                carrierConfig,
-                simSubscriptionId,
-                /* saveHttpHistory= */ false,
-                /* bypassEapAkaResponse= */ "");
+        this(context, carrierConfig, simSubscriptionId, /* saveHttpHistory= */ false);
     }
 
     /**
@@ -128,7 +124,7 @@ public class ServiceEntitlement {
                 carrierConfig,
                 simSubscriptionId,
                 saveHttpHistory,
-                /* bypassEapAkaResponse= */ "");
+                DebugUtils.getBypassEapAkaResponse());
     }
 
     /**
