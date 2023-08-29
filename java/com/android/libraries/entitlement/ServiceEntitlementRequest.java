@@ -130,7 +130,7 @@ public abstract class ServiceEntitlementRequest {
                 .setAuthenticationToken("")
                 .setTemporaryToken("")
                 .setTerminalId("")
-                .setTerminalVendor(Build.MANUFACTURER.substring(0, 4))
+                .setTerminalVendor(Build.MANUFACTURER)
                 .setTerminalModel(Build.MODEL)
                 .setTerminalSoftwareVersion(VERSION.RELEASE)
                 .setAppName("")
