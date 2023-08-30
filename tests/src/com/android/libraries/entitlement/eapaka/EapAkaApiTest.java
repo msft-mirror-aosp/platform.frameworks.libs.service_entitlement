@@ -102,9 +102,15 @@ public class EapAkaApiTest {
     private static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
     private static final String BYPASS_EAP_AKA_RESPONSE = "abc";
-    private static final String VENDOR = "VENDOR";
+    private static final String VENDOR = "VEND";
     private static final String MODEL = "MODEL";
     private static final String SW_VERSION = "SW_VERSION";
+    private static final String LONG_VENDOR = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private static final String LONG_MODEL = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private static final String LONG_SW_VERSION = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private static final String LONG_VENDOR_TRIMMED = "aaaa";
+    private static final String LONG_MODEL_TRIMMED = "aaaaaaaaaa";
+    private static final String LONG_SW_VERSION_TRIMMED = "aaaaaaaaaaaaaaaaaaaa";
     private static final String APP_VERSION = "APP_VERSION";
 
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
@@ -622,6 +628,36 @@ public class EapAkaApiTest {
     }
 
     @Test
+    public void queryEntitlementStatus_terminalVendorModelSWVersionTrimmed() throws Exception {
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(LONG_VENDOR)
+                        .setTerminalModel(LONG_MODEL)
+                        .setTerminalSoftwareVersion(LONG_SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        String urlParams =
+                String.format(
+                        "terminal_vendor=%s&terminal_model=%s&terminal_sw_version=%s",
+                        LONG_VENDOR_TRIMMED, LONG_MODEL_TRIMMED, LONG_SW_VERSION_TRIMMED);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getValue()
+                                .url())
+                .contains(urlParams);
+    }
+
+    @Test
     public void queryEntitlementStatus_userAgentSet() throws Exception {
         CarrierConfig carrierConfig =
                 CarrierConfig.builder()
@@ -699,6 +735,42 @@ public class EapAkaApiTest {
         assertThat(
                         mHttpRequestCaptor
                                 .getAllValues().get(1)
+                                .requestProperties()
+                                .get(HttpHeaders.USER_AGENT)
+                                .get(0))
+                .isEqualTo(userAgent);
+    }
+
+    @Test
+    public void queryEntitlementStatus_userAgentTrimmed() throws Exception {
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setClientTs43(CarrierConfig.CLIENT_TS_43_IMS_ENTITLEMENT)
+                        .build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(LONG_VENDOR)
+                        .setTerminalModel(LONG_MODEL)
+                        .setTerminalSoftwareVersion(LONG_SW_VERSION)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_VOWIFI), carrierConfig, request);
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        String userAgent =
+                String.format(
+                        "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                        LONG_VENDOR_TRIMMED,
+                        LONG_MODEL_TRIMMED,
+                        carrierConfig.clientTs43(),
+                        APP_VERSION,
+                        LONG_SW_VERSION_TRIMMED);
+        assertThat(
+                        mHttpRequestCaptor
+                                .getValue()
                                 .requestProperties()
                                 .get(HttpHeaders.USER_AGENT)
                                 .get(0))
