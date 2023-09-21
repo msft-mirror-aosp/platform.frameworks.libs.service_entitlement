@@ -105,6 +105,11 @@ public class EapAkaApi {
     // at most three times.
     private static final int MAX_EAP_AKA_ATTEMPTS = 3;
 
+    // Max TERMINAL_* string length according to GSMA RCC.14 section 2.4
+    private static final int MAX_TERMINAL_VENDOR_LENGTH = 4;
+    private static final int MAX_TERMINAL_MODEL_LENGTH = 10;
+    private static final int MAX_TERMINAL_SOFTWARE_VERSION_LENGTH = 20;
+
     private final Context mContext;
     private final int mSimSubscriptionId;
     private final HttpClient mHttpClient;
@@ -330,18 +335,13 @@ public class EapAkaApi {
                         .addRequestProperty(HttpHeaders.COOKIE, cookies)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network());
-        if (!TextUtils.isEmpty(carrierConfig.clientTs43())
-                && !TextUtils.isEmpty(terminalVendor)
-                && !TextUtils.isEmpty(terminalModel)
-                && !TextUtils.isEmpty(terminalSoftwareVersion)) {
             String userAgent =
-                    String.format(
-                            "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                    getUserAgent(
+                            carrierConfig.clientTs43(),
                             terminalVendor,
                             terminalModel,
-                            carrierConfig.clientTs43(),
-                            mAppVersion,
                             terminalSoftwareVersion);
+        if (!TextUtils.isEmpty(userAgent)) {
             builder.addRequestProperty(HttpHeaders.USER_AGENT, userAgent);
         }
         return mHttpClient.request(builder.build());
@@ -506,9 +506,17 @@ public class EapAkaApi {
 
         urlBuilder
                 // Identity and Authentication parameters
-                .appendQueryParameter(TERMINAL_VENDOR, request.terminalVendor())
-                .appendQueryParameter(TERMINAL_MODEL, request.terminalModel())
-                .appendQueryParameter(TERMIAL_SW_VERSION, request.terminalSoftwareVersion())
+                .appendQueryParameter(
+                        TERMINAL_VENDOR,
+                        trimString(request.terminalVendor(), MAX_TERMINAL_VENDOR_LENGTH))
+                .appendQueryParameter(
+                        TERMINAL_MODEL,
+                        trimString(request.terminalModel(), MAX_TERMINAL_MODEL_LENGTH))
+                .appendQueryParameter(
+                        TERMIAL_SW_VERSION,
+                        trimString(
+                                request.terminalSoftwareVersion(),
+                                MAX_TERMINAL_SOFTWARE_VERSION_LENGTH))
                 // General Service parameters
                 .appendQueryParameter(VERS, Integer.toString(request.configurationVersion()))
                 .appendQueryParameter(ENTITLEMENT_VERSION, request.entitlementVersion());
@@ -582,18 +590,13 @@ public class EapAkaApi {
                         .addRequestProperty(HttpHeaders.ACCEPT, contentType)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network());
-        if (!TextUtils.isEmpty(carrierConfig.clientTs43())
-                && !TextUtils.isEmpty(terminalVendor)
-                && !TextUtils.isEmpty(terminalModel)
-                && !TextUtils.isEmpty(terminalSoftwareVersion)) {
-            String userAgent =
-                    String.format(
-                            "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
-                            terminalVendor,
-                            terminalModel,
-                            carrierConfig.clientTs43(),
-                            mAppVersion,
-                            terminalSoftwareVersion);
+        String userAgent =
+                getUserAgent(
+                        carrierConfig.clientTs43(),
+                        terminalVendor,
+                        terminalModel,
+                        terminalSoftwareVersion);
+        if (!TextUtils.isEmpty(userAgent)) {
             builder.addRequestProperty(HttpHeaders.USER_AGENT, userAgent);
         }
         return mHttpClient.request(builder.build());
@@ -649,6 +652,30 @@ public class EapAkaApi {
             // should be impossible
         }
         return "";
+    }
+
+    private String getUserAgent(
+            String clientTs43,
+            String terminalVendor,
+            String terminalModel,
+            String terminalSoftwareVersion) {
+        if (!TextUtils.isEmpty(clientTs43)
+                && !TextUtils.isEmpty(terminalVendor)
+                && !TextUtils.isEmpty(terminalModel)
+                && !TextUtils.isEmpty(terminalSoftwareVersion)) {
+            return String.format(
+                    "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                    trimString(terminalVendor, MAX_TERMINAL_VENDOR_LENGTH),
+                    trimString(terminalModel, MAX_TERMINAL_MODEL_LENGTH),
+                    clientTs43,
+                    mAppVersion,
+                    trimString(terminalSoftwareVersion, MAX_TERMINAL_SOFTWARE_VERSION_LENGTH));
+        }
+        return "";
+    }
+
+    private String trimString(String s, int maxLength) {
+        return s.substring(0, Math.min(s.length(), maxLength));
     }
 
     /**
