@@ -20,10 +20,12 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.odsa.OdsaOperation.CompanionService;
-import com.android.libraries.entitlement.odsa.OdsaOperation.ServiceStatus;
+import com.android.libraries.entitlement.EsimOdsaOperation;
+import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
+import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -34,7 +36,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Acquire configuration operation described in GSMA Service Entitlement Configuration section 6.
  */
-public class AcquireConfigurationOperation {
+public final class AcquireConfigurationOperation {
     /** Indicating polling interval not available. */
     public static final int POLLING_INTERVAL_NOT_AVAILABLE = -1;
 
@@ -51,6 +53,7 @@ public class AcquireConfigurationOperation {
          */
         @AppId
         public abstract String appId();
+
         /**
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
          * {@code companion_terminal_id}.
@@ -108,11 +111,24 @@ public class AcquireConfigurationOperation {
         public abstract String targetTerminalEid();
 
         /**
-         * Returns a new {@link Builder} object.
+         * Returns the notification token used to register for entitlement configuration request
+         * from network. Used by HTTP parameter {@code notif_token}.
          */
         @NonNull
+        public abstract String notificationToken();
+
+        /**
+         * Returns the action associated with the notification token. Used by HTTP parameter
+         * {@code notif_action}.
+         */
+        @NotificationAction
+        public abstract int notificationAction();
+
+        /** Returns a new {@link Builder} object. */
+        @NonNull
         public static Builder builder() {
-            return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationRequest.Builder()
+            return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationRequest
+                    .Builder()
                     .setCompanionTerminalId("")
                     .setCompanionTerminalIccid("")
                     .setCompanionTerminalEid("")
@@ -120,33 +136,33 @@ public class AcquireConfigurationOperation {
                     .setTerminalEid("")
                     .setTargetTerminalId("")
                     .setTargetTerminalIccid("")
-                    .setTargetTerminalEid("");
+                    .setTargetTerminalEid("")
+                    .setNotificationToken("")
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
 
-        /**
-         * Builder
-         */
+        /** Builder */
         @AutoValue.Builder
         public abstract static class Builder {
             /**
              * Sets the application id.
              *
              * @param appId The application id. Can only be
-             * {@link Ts43Constants#APP_ODSA_COMPANION}, {@link Ts43Constants#APP_ODSA_PRIMARY}, or
-             * {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
-             *
+             *              {@link Ts43Constants#APP_ODSA_COMPANION},
+             *              {@link Ts43Constants#APP_ODSA_PRIMARY}, or
+             *              {@link Ts43Constants#APP_ODSA_SERVER_INITIATED_REQUESTS}.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setAppId(@NonNull @AppId String appId);
+
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
              * {@code companion_terminal_id} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalId The unique identifier of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -156,10 +172,9 @@ public class AcquireConfigurationOperation {
              * Sets the ICCID of the companion device. Used by HTTP parameter
              * {@code companion_terminal_iccid} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalIccid The ICCID of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -170,10 +185,9 @@ public class AcquireConfigurationOperation {
              * Sets the eUICC identifier (EID) of the companion device. Used by HTTP parameter
              * {@code companion_terminal_eid} if set.
              *
-             * Used by companion device ODSA operation.
+             * <p>Used by companion device ODSA operation.
              *
              * @param companionTerminalEid The eUICC identifier (EID) of the companion device.
-             *
              * @return The builder.
              */
             @NonNull
@@ -183,11 +197,10 @@ public class AcquireConfigurationOperation {
              * Sets the ICCID of the primary device eSIM in case of primary SIM not present. Used by
              * HTTP parameter {@code terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param terminalIccid The ICCID of the primary device eSIM in case of primary SIM not
-             * present.
-             *
+             *                      present.
              * @return The builder.
              */
             @NonNull
@@ -197,11 +210,10 @@ public class AcquireConfigurationOperation {
              * Sets the eUICC identifier (EID) of the primary device eSIM in case of primary SIM not
              * present. Used by HTTP parameter {@code terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param terminalEid The eUICC identifier (EID) of the primary device eSIM in case of
-             * primary SIM not present.
-             *
+             *                    primary SIM not present.
              * @return The builder.
              */
             @NonNull
@@ -212,11 +224,10 @@ public class AcquireConfigurationOperation {
              * the IMEI associated with the eSIM. Used by HTTP parameter {@code target_terminal_id}
              * if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalId The unique identifier of the primary device eSIM in case of
-             * multiple SIM.
-             *
+             *                         multiple SIM.
              * @return The builder.
              */
             @NonNull
@@ -226,10 +237,9 @@ public class AcquireConfigurationOperation {
              * Sets the ICCID primary device eSIM in case of multiple SIM. Used by HTTP parameter
              * {@code target_terminal_iccid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalIccid The ICCID primary device eSIM in case of multiple SIM.
-             *
              * @return The builder.
              */
             @NonNull
@@ -239,19 +249,42 @@ public class AcquireConfigurationOperation {
              * Sets the eUICC identifier (EID) of the primary device eSIM in case of multiple SIM.
              * Used by HTTP parameter {@code target_terminal_eid} if set.
              *
-             * Used by primary device ODSA operation.
+             * <p>Used by primary device ODSA operation.
              *
              * @param targetTerminalEid The eUICC identifier (EID) of the primary device eSIM in
-             * case of multiple SIM.
-             *
+             *                          case of multiple SIM.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setTargetTerminalEid(@NonNull String targetTerminalEid);
 
             /**
-             * @return Build the {@link AcquireConfigurationRequest} object.
+             * Sets the notification token used to register for entitlement configuration request
+             * from network. Used by HTTP parameter {@code notif_token} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationToken The notification token used to register for entitlement
+             *                          configuration request from network.
+             * @return The builder.
              */
+            @NonNull
+            public abstract Builder setNotificationToken(@NonNull String notificationToken);
+
+            /**
+             * Sets the action associated with the notification token. Used by HTTP parameter
+             * {@code notif_action} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param notificationAction The action associated with the notification token.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setNotificationAction(
+                    @NotificationAction int notificationAction);
+
+            /** Returns build the {@link AcquireConfigurationRequest} object. */
             @NonNull
             public abstract AcquireConfigurationRequest build();
         }
@@ -263,29 +296,19 @@ public class AcquireConfigurationOperation {
      */
     @AutoValue
     public abstract static class AcquireConfigurationResponse extends OdsaResponse {
-        /**
-         * Configuration
-         */
+        /** Configuration */
         @AutoValue
         public abstract static class Configuration {
-            /**
-             * The configuration type is unknown.
-             */
+            /** The configuration type is unknown. */
             public static final int CONFIGURATION_TYPE_UNKNOWN = -1;
 
-            /**
-             * The configuration is for ODSA primary device.
-             */
+            /** The configuration is for ODSA primary device. */
             public static final int CONFIGURATION_TYPE_PRIMARY = 1;
 
-            /**
-             * The configuration is for companion device.
-             */
+            /** The configuration is for companion device. */
             public static final int CONFIGURATION_TYPE_COMPANION = 2;
 
-            /**
-             * The configuration is for server-initiated ODSA.
-             */
+            /** The configuration is for server-initiated ODSA. */
             public static final int CONFIGURATION_TYPE_ENTERPRISE = 3;
 
             @Retention(RetentionPolicy.SOURCE)
@@ -295,11 +318,10 @@ public class AcquireConfigurationOperation {
                     CONFIGURATION_TYPE_COMPANION,
                     CONFIGURATION_TYPE_ENTERPRISE
             })
-            public @interface ConfigurationType {}
+            public @interface ConfigurationType {
+            }
 
-            /**
-             * Indicates the configuration type.
-             */
+            /** Indicates the configuration type. */
             @ConfigurationType
             public abstract int type();
 
@@ -321,29 +343,28 @@ public class AcquireConfigurationOperation {
             /**
              * Service status.
              *
-             * @see OdsaOperation#SERVICE_STATUS_UNKNOWN
-             * @see OdsaOperation#SERVICE_STATUS_ACTIVATED
-             * @see OdsaOperation#SERVICE_STATUS_ACTIVATING
-             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED
-             * @see OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
+             * @see EsimOdsaOperation#SERVICE_STATUS_UNKNOWN
+             * @see EsimOdsaOperation#SERVICE_STATUS_ACTIVATED
+             * @see EsimOdsaOperation#SERVICE_STATUS_ACTIVATING
+             * @see EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED
+             * @see EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE
              */
-            @ServiceStatus
+            @OdsaServiceStatus
             public abstract int serviceStatus();
 
             /**
              * Specifies the minimum interval (in minutes) with which the device application may
-             * poll the ECS to refresh the current {@link #serviceStatus()} using
-             * {@link AcquireConfigurationRequest}. This parameter will be present only when
-             * {@link #serviceStatus()} is {@link OdsaOperation#SERVICE_STATUS_ACTIVATING}. If
+             * poll the ECS to refresh the current {@link #serviceStatus()} using {@link
+             * AcquireConfigurationRequest}. This parameter will be present only when {@link
+             * #serviceStatus()} is {@link EsimOdsaOperation#SERVICE_STATUS_ACTIVATING}. If
              * parameter is not present or value is 0, this polling procedure is not triggered and
              * ODSA app will keep waiting for any external action to continue the flow.
              *
-             * The maximum number of {@link AcquireConfigurationRequest} before sending a
-             * {@link #serviceStatus()} with
-             * {@link OdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE} will be defined as an ECS
-             * configuration variable (MaxRefreshRequest).
+             * <p>The maximum number of {@link AcquireConfigurationRequest} before sending a {@link
+             * #serviceStatus()} with {@link EsimOdsaOperation#SERVICE_STATUS_DEACTIVATED_NO_REUSE}
+             * will be defined as an ECS configuration variable (MaxRefreshRequest).
              *
-             * {@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling inverval is not available.
+             * <p>{@link #POLLING_INTERVAL_NOT_AVAILABLE} when polling interval is not available.
              */
             public abstract int pollingInterval();
 
@@ -354,45 +375,38 @@ public class AcquireConfigurationOperation {
             @Nullable
             public abstract DownloadInfo downloadInfo();
 
-            /**
-             * Includes all information collected by the ES of the companion device.
-             */
+            /** Includes all information collected by the ES of the companion device. */
             @Nullable
             public abstract CompanionDeviceInfo companionDeviceInfo();
 
-            /**
-             * @return The builder.
-             */
+            /** Returns the builder. */
             @NonNull
             public static Builder builder() {
                 return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationResponse_Configuration
                         .Builder()
                         .setType(CONFIGURATION_TYPE_UNKNOWN)
                         .setIccid("")
-                        .setServiceStatus(OdsaOperation.SERVICE_STATUS_UNKNOWN)
+                        .setServiceStatus(EsimOdsaOperation.SERVICE_STATUS_UNKNOWN)
                         .setPollingInterval(POLLING_INTERVAL_NOT_AVAILABLE);
             }
 
-            /**
-             * The builder of {@link Configuration}
-             */
+            /** The builder of {@link Configuration} */
             @AutoValue.Builder
             public abstract static class Builder {
                 /**
-                 * Set the configuration type
+                 * Set the configuration type.
                  *
                  * @param configType The configuration type.
-                 *
                  * @return The builder.
                  */
                 @NonNull
                 public abstract Builder setType(@ConfigurationType int configType);
+
                 /**
                  * Set the iccid.
                  *
                  * @param iccid Integrated Circuit Card Identification - Identifier of the eSIM
-                 * profile on the device’s eSIM.
-                 *
+                 *              profile on the device’s eSIM.
                  * @return The builder.
                  */
                 @NonNull
@@ -402,7 +416,6 @@ public class AcquireConfigurationOperation {
                  * Set the applicable companion device service.
                  *
                  * @param companionDeviceService Indicates the applicable companion device service.
-                 *
                  * @return The builder.
                  */
                 @NonNull
@@ -413,19 +426,18 @@ public class AcquireConfigurationOperation {
                  * Set the service status.
                  *
                  * @param serviceStatus Service status.
-                 *
                  * @return The builder.
                  */
                 @NonNull
-                public abstract Builder setServiceStatus(@ServiceStatus int serviceStatus);
+                public abstract Builder setServiceStatus(@OdsaServiceStatus int serviceStatus);
 
                 /**
                  * Set the polling interval.
                  *
                  * @param pollingInterval The minimum interval (in minutes) with which the device
-                 * application may poll the ECS to refresh the current {@link #serviceStatus()}
-                 * using {@link AcquireConfigurationRequest}.
-                 *
+                 *                        application may poll the ECS to refresh the current
+                 *                        {@link #serviceStatus()} using
+                 *                        {@link AcquireConfigurationRequest}.
                  * @return The builder.
                  */
                 @NonNull
@@ -435,8 +447,7 @@ public class AcquireConfigurationOperation {
                  * Set the download information.
                  *
                  * @param downloadInfo Specifies how and where to download the eSIM profile
-                 * associated with the device.
-                 *
+                 *                     associated with the device.
                  * @return The builder.
                  */
                 @NonNull
@@ -446,17 +457,14 @@ public class AcquireConfigurationOperation {
                  * Set the companion device info.
                  *
                  * @param companionDeviceInfo Includes all information collected by the ES of the
-                 * companion device.
-                 *
+                 *                            companion device.
                  * @return The builder.
                  */
                 @NonNull
                 public abstract Builder setCompanionDeviceInfo(
                         @NonNull CompanionDeviceInfo companionDeviceInfo);
 
-                /**
-                 * @return Build the {@link Configuration} object.
-                 */
+                /** Returns build the {@link Configuration} object. */
                 @NonNull
                 public abstract Configuration build();
             }
@@ -470,9 +478,7 @@ public class AcquireConfigurationOperation {
         @NonNull
         public abstract ImmutableList<Configuration> configurations();
 
-        /**
-         * @return The builder.
-         */
+        /** Returns the builder. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationResponse
@@ -480,29 +486,28 @@ public class AcquireConfigurationOperation {
                     .setConfigurations(ImmutableList.of());
         }
 
-        /**
-         * The builder of {@link AcquireConfigurationResponse}
-         */
+        /** The builder of {@link AcquireConfigurationResponse} */
         @AutoValue.Builder
         public abstract static class Builder extends OdsaResponse.Builder {
             /**
              * Set the configurations
              *
              * @param configs Configurations defined in GSMA Service Entitlement Configuration
-             * section 6.5.5. Could be more than one if multiple companion device(s) associated with
-             * the requesting device that carry a configuration for ODSA.
-             *
+             *                section 6.5.5. Could be more than one if multiple companion device(s)
+             *                associated with the requesting device that carry a configuration for
+             *                ODSA.
              * @return The builder.
              */
             @NonNull
             public abstract Builder setConfigurations(
                     @NonNull ImmutableList<Configuration> configs);
 
-            /**
-             * @return Build the {@link AcquireConfigurationResponse} object.
-             */
+            /** Returns build the {@link AcquireConfigurationResponse} object. */
             @NonNull
             public abstract AcquireConfigurationResponse build();
         }
+    }
+
+    private AcquireConfigurationOperation() {
     }
 }

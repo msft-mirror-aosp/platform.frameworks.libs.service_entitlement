@@ -21,48 +21,37 @@ import androidx.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
 
-/**
- * Mobile plan described in GSMA Service Entitlement Configuration section 6.5.6 table 43.
- */
+/** Mobile plan described in GSMA Service Entitlement Configuration section 6.5.6 table 43. */
 @AutoValue
 public abstract class PlanOffer {
-    /**
-     * ID for the plan offered by the MNO.
-     */
+    /** ID for the plan offered by the MNO. */
     @NonNull
     public abstract String planId();
 
     /**
-     * Name of the plan offered by the MNO. It is considered as an optional parameter due to it
-     * is not required in any request, but it is recommended to make easier the plan
-     * identification.
+     * Name of the plan offered by the MNO. It is considered as an optional parameter due to it is
+     * not required in any request, but it is recommended to make easier the plan identification.
      */
     @Nullable
     public abstract String planName();
 
     /**
-     * Description of the plan offered by the MNO. It is considered as an optional parameter due
-     * to it is not required in any request, but it is recommended to make easier the plan
+     * Description of the plan offered by the MNO. It is considered as an optional parameter due to
+     * it is not required in any request, but it is recommended to make easier the plan
      * identification.
      */
     @Nullable
     public abstract String planDescription();
 
-    /**
-     * @return The builder of {@link PlanOffer}.
-     */
+    /** Returns the builder of {@link PlanOffer}. */
     public static Builder builder() {
         return new AutoValue_PlanOffer.Builder();
     }
 
-    /**
-     * Builder of PlanOffer
-     */
+    /** Builder of PlanOffer */
     @AutoValue.Builder
     public abstract static class Builder {
-        /**
-         * Sets ID for the plan offered by the MNO.
-         */
+        /** Sets ID for the plan offered by the MNO. */
         @NonNull
         public abstract Builder setPlanId(@NonNull String planId);
 
@@ -82,9 +71,7 @@ public abstract class PlanOffer {
         @NonNull
         public abstract Builder setPlanDescription(@NonNull String planDescription);
 
-        /**
-         * Build the {@link PlanOffer} object.
-         */
+        /** Build the {@link PlanOffer} object. */
         @NonNull
         public abstract PlanOffer build();
     }

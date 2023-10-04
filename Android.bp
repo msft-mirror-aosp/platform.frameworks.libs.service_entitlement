@@ -22,6 +22,7 @@ java_defaults {
     libs: [
         "androidx.annotation_annotation",
         "auto_value_annotations",
+        "error_prone_annotations",
     ],
     plugins: ["auto_value_plugin"],
     sdk_version: "system_current",
@@ -93,6 +94,7 @@ java_library {
     ],
     srcs: [
         "java/com/android/libraries/entitlement/CarrierConfig.java",
+        "java/com/android/libraries/entitlement/EsimOdsaOperation.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementException.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
         "java/com/android/libraries/entitlement/odsa/*.java",

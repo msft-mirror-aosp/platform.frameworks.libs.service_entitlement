@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import android.content.Context;
@@ -28,6 +27,7 @@ import android.telephony.TelephonyManager;
 import android.testing.AndroidTestingRunner;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationRequest;
 import com.android.libraries.entitlement.odsa.AcquireConfigurationOperation.AcquireConfigurationResponse;
 import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.AcquireTemporaryTokenRequest;
@@ -35,11 +35,12 @@ import com.android.libraries.entitlement.odsa.AcquireTemporaryTokenOperation.Acq
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityRequest;
 import com.android.libraries.entitlement.odsa.CheckEligibilityOperation.CheckEligibilityResponse;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberRequest;
+import com.android.libraries.entitlement.odsa.GetPhoneNumberOperation.GetPhoneNumberResponse;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceRequest;
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
-import com.android.libraries.entitlement.odsa.OdsaOperation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.common.collect.ImmutableList;
@@ -62,6 +63,7 @@ public class Ts43OperationTest {
     private static final String SUBSCRIPTION_SERVICE_URL = "http://www.MNO.org/CDSubs";
     private static final String SUBSCRIPTION_SERVICE_USER_DATA = "imsi=XX";
     private static final String IMEI = "861536030196001";
+    private static final String TERMINAL_ID = "861536030196005";
     private static final String COMPANION_TERMINAL_ID = "98112687006099944";
     private static final String COMPANION_TERMINAL_EID = "JHSDHljhsdfy763hh";
     private static final String ICCID = "123456789";
@@ -74,6 +76,8 @@ public class Ts43OperationTest {
     private static final String NOT_ENABLED_URL = "http://www.MNO.org/AppNotAllowed";
 
     private static final String NOT_ENABLED_USER_DATA = "msisdn=XX";
+
+    private static final String MSISDN = "+16502530000";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -202,12 +206,28 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
-    private CarrierConfig mCarrierConfig;
-
-    private ServiceEntitlement mServiceEntitlement;
+    public String GET_PHONE_NUMBER_RESPONSE =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2014\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "    <parm name=\"MSISDN\" value=\"" + MSISDN + "\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
 
     @Mock
     private EapAkaApi mMockEapAkaApi;
+
+    @Mock
+    private HttpResponse mMockHttpResponse;
 
     @Mock
     private Context mContext;
@@ -220,8 +240,11 @@ public class Ts43OperationTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mCarrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
-        mServiceEntitlement = new ServiceEntitlement(mCarrierConfig, mMockEapAkaApi);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlement serviceEntitlement =
+                new ServiceEntitlement(carrierConfig, mMockEapAkaApi);
+        doReturn(mMockHttpResponse).when(mMockEapAkaApi)
+                .performEsimOdsaOperation(any(), any(), any(), any());
 
         doReturn(2).when(mTelephonyManager).getActiveModemCount();
         doReturn(IMEI).when(mTelephonyManager).getImei(0);
@@ -235,48 +258,44 @@ public class Ts43OperationTest {
 
         Field field = Ts43Operation.class.getDeclaredField("mServiceEntitlement");
         field.setAccessible(true);
-        field.set(mTs43Operation, mServiceEntitlement);
+        field.set(mTs43Operation, serviceEntitlement);
     }
 
     @Test
     public void testManageSubscription_continueToWebsheet() throws Exception {
-        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                        anyString(), any(CarrierConfig.class),
-                        any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET).when(mMockHttpResponse).body();
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .setCompanionTerminalId(COMPANION_TERMINAL_ID)
                 .setCompanionTerminalEid(COMPANION_TERMINAL_EID)
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_CONTINUE_TO_WEBSHEET);
-        assertThat(response.subscriptionServiceURL()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
+        assertThat(response.subscriptionServiceUrl()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
         assertThat(response.subscriptionServiceUserData())
                 .isEqualTo(SUBSCRIPTION_SERVICE_USER_DATA);
     }
 
     @Test
     public void testManageSubscription_downloadProfile() throws Exception {
-        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_DOWNLOAD_PROFILE)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                        anyString(), any(CarrierConfig.class),
-                        any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_DOWNLOAD_PROFILE).when(mMockHttpResponse).body();
 
         ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationType(OdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
                 .setCompanionTerminalId(COMPANION_TERMINAL_ID)
                 .setCompanionTerminalEid(COMPANION_TERMINAL_EID)
                 .build();
 
         ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE);
         assertThat(response.downloadInfo().profileIccid()).isEqualTo(ICCID);
@@ -286,75 +305,86 @@ public class Ts43OperationTest {
 
     @Test
     public void testAcquireTemporaryToken() throws Exception {
-        doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE)
-                .when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE).when(mMockHttpResponse).body();
 
         AcquireTemporaryTokenRequest request = AcquireTemporaryTokenRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
-                .setOperationTargets(ImmutableList.of(OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
-                        OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
+                .setOperationTargets(ImmutableList.of(
+                        EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                        EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
                 .build();
         AcquireTemporaryTokenResponse response = mTs43Operation.acquireTemporaryToken(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.temporaryToken()).isEqualTo(TEMPORARY_TOKEN);
         assertThat(response.temporaryTokenExpiry().toString()).isEqualTo(TEMPORARY_TOKEN_EXPIRY);
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
-                OdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
-                OdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
+                EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
     }
 
     @Test
     public void testAcquireConfiguration() throws Exception {
-        doReturn(ACQUIRE_CONFIGURATION_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(ACQUIRE_CONFIGURATION_RESPONSE).when(mMockHttpResponse).body();
         AcquireConfigurationRequest request = AcquireConfigurationRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
 
         AcquireConfigurationResponse response = mTs43Operation.acquireConfiguration(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.configurations()).hasSize(1);
         AcquireConfigurationResponse.Configuration config = response.configurations().get(0);
         assertThat(config.iccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
-        assertThat(config.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_ACTIVATED);
+        assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
     }
 
     @Test
     public void testCheckEligibility() throws Exception {
-        doReturn(CHECK_ELIGIBILITY_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(CHECK_ELIGIBILITY_RESPONSE).when(mMockHttpResponse).body();
         CheckEligibilityRequest request = CheckEligibilityRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
 
         CheckEligibilityResponse response = mTs43Operation.checkEligibility(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.appEligibility()).isEqualTo(
                 CheckEligibilityOperation.ELIGIBILITY_RESULT_ENABLED);
         assertThat(response.companionDeviceServices()).containsExactly(
-                OdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
-        assertThat(response.notEnabledURL()).isEqualTo(new URL(NOT_ENABLED_URL));
+                EsimOdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
+        assertThat(response.notEnabledUrl()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
     }
 
     @Test
     public void testManageService() throws Exception {
-        doReturn(MANAGE_SERVICE_RESPONSE).when(mMockEapAkaApi).performEsimOdsaOperation(
-                anyString(), any(CarrierConfig.class),
-                any(ServiceEntitlementRequest.class), any(OdsaOperation.class));
+        doReturn(MANAGE_SERVICE_RESPONSE).when(mMockHttpResponse).body();
         ManageServiceRequest request = ManageServiceRequest.builder()
                 .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
                 .build();
 
         ManageServiceResponse response = mTs43Operation.manageService(request);
-        assertThat(response.operationResult()).isEqualTo(OdsaOperation.OPERATION_RESULT_SUCCESS);
-        assertThat(response.serviceStatus()).isEqualTo(OdsaOperation.SERVICE_STATUS_DEACTIVATED);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.serviceStatus()).isEqualTo(
+                EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED);
+    }
+
+    @Test
+    public void testGetPhoneNumber() throws Exception {
+        doReturn(GET_PHONE_NUMBER_RESPONSE).when(mMockHttpResponse).body();
+
+        GetPhoneNumberRequest request = GetPhoneNumberRequest.builder()
+                .setTerminalId(TERMINAL_ID)
+                .build();
+
+        GetPhoneNumberResponse response = mTs43Operation.getPhoneNumber(request);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.msisdn()).isEqualTo(MSISDN);
     }
 }
