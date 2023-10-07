@@ -48,7 +48,7 @@ android_test {
         "service-entitlement-testing-utils",
         "testables",
         "testng",
-        "truth-prebuilt",
+        "truth",
     ],
     certificate: "platform",
     test_suites: ["device-tests"],
