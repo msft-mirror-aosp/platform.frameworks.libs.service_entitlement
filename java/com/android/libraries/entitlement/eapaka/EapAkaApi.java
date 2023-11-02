@@ -515,6 +515,7 @@ public class EapAkaApi {
                 request.terminalSoftwareVersion());
     }
 
+    @SuppressWarnings("HardwareIds")
     private void appendParametersForAuthentication(
             Uri.Builder urlBuilder, ServiceEntitlementRequest request) {
         if (!TextUtils.isEmpty(request.authenticationToken())) {
@@ -535,6 +536,7 @@ public class EapAkaApi {
         }
     }
 
+    @SuppressWarnings("HardwareIds")
     private void appendParametersForAuthentication(
             JSONObject postData, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
