@@ -83,6 +83,11 @@ public class ServiceEntitlement {
     public static final String APP_PHONE_NUMBER_INFORMATION =
             Ts43Constants.APP_PHONE_NUMBER_INFORMATION;
 
+    /**
+     * App ID for satellite entitlement.
+     */
+    public static final String APP_SATELLITE_ENTITLEMENT = Ts43Constants.APP_SATELLITE_ENTITLEMENT;
+
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
     private ServiceEntitlementRequest mOidcRequest;
