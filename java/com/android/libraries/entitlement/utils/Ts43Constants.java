@@ -59,7 +59,7 @@ public final class Ts43Constants {
     public static final String APP_PHONE_NUMBER_INFORMATION = "ap2014";
 
     /** App ID for satellite entitlement. */
-    public static final String APP_SATELLITE_ENTITLEMENT = "ap2015";
+    public static final String APP_SATELLITE_ENTITLEMENT = "ap2016";
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
