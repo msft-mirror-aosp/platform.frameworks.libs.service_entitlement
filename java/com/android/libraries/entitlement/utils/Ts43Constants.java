@@ -58,6 +58,9 @@ public final class Ts43Constants {
     /** App ID for phone number information. */
     public static final String APP_PHONE_NUMBER_INFORMATION = "ap2014";
 
+    /** App ID for satellite entitlement. */
+    public static final String APP_SATELLITE_ENTITLEMENT = "ap2016";
+
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
             APP_UNKNOWN,
@@ -70,7 +73,8 @@ public final class Ts43Constants {
             APP_ODSA_SERVER_INITIATED_REQUESTS,
             APP_DIRECT_CARRIER_BILLING,
             APP_PRIVATE_USER_IDENTITY,
-            APP_PHONE_NUMBER_INFORMATION
+            APP_PHONE_NUMBER_INFORMATION,
+            APP_SATELLITE_ENTITLEMENT
     })
     public @interface AppId {
     }
@@ -93,6 +97,7 @@ public final class Ts43Constants {
             case APP_DIRECT_CARRIER_BILLING:
             case APP_PRIVATE_USER_IDENTITY:
             case APP_PHONE_NUMBER_INFORMATION:
+            case APP_SATELLITE_ENTITLEMENT:
                 return true;
             default: // fall through
         }
