@@ -104,6 +104,9 @@ public class EapAkaApi {
 
     private static final String BOOST_TYPE = "boost_type";
 
+    private static final String MESSAGE_RESPONSE = "MSG_response";
+    private static final String MESSAGE_BUTTON = "MSG_btn";
+
     // In case of EAP-AKA synchronization failure or another challenge, we try to authenticate for
     // at most three times.
     private static final int MAX_EAP_AKA_ATTEMPTS = 3;
@@ -711,6 +714,8 @@ public class EapAkaApi {
         appendOptionalQueryParameter(
                 urlBuilder, OLD_TERMINAL_ICCID, odsaOperation.oldTerminalIccid());
         appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ID, odsaOperation.oldTerminalId());
+        appendOptionalQueryParameter(urlBuilder, MESSAGE_RESPONSE, odsaOperation.messageResponse());
+        appendOptionalQueryParameter(urlBuilder, MESSAGE_BUTTON, odsaOperation.messageButton());
     }
 
     private void appendParametersForEsimOdsaOperation(
@@ -764,6 +769,9 @@ public class EapAkaApi {
             appendOptionalQueryParameter(
                     postData, OLD_TERMINAL_ICCID, odsaOperation.oldTerminalIccid());
             appendOptionalQueryParameter(postData, OLD_TERMINAL_ID, odsaOperation.oldTerminalId());
+            appendOptionalQueryParameter(
+                    postData, MESSAGE_RESPONSE, odsaOperation.messageResponse());
+            appendOptionalQueryParameter(postData, MESSAGE_BUTTON, odsaOperation.messageButton());
         } catch (JSONException jsonException) {
             // Should never happen
             throw new ServiceEntitlementException(

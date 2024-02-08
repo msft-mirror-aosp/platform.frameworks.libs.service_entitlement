@@ -64,6 +64,7 @@ public final class Ts43XmlDoc {
         public static final String USER = "USER";
         public static final String TOKEN = "TOKEN";
         public static final String DOWNLOAD_INFO = "DownloadInfo";
+        public static final String MSG = "MSG";
     }
 
     /** Names of parameters. */
@@ -78,6 +79,7 @@ public final class Ts43XmlDoc {
         public static final String OPERATION_RESULT = "OperationResult";
         public static final String GENERAL_ERROR_URL = "GeneralErrorURL";
         public static final String GENERAL_ERROR_USER_DATA = "GeneralErrorUserData";
+        public static final String GENERAL_ERROR_TEXT = "GeneralErrorText";
         public static final String PRIMARY_APP_ELIGIBILITY = "PrimaryAppEligibility";
         public static final String COMPANION_APP_ELIGIBILITY = "CompanionAppEligibility";
         public static final String ENTERPRISE_APP_ELIGIBILITY = "EnterpriseAppEligibility";
@@ -100,6 +102,12 @@ public final class Ts43XmlDoc {
         public static final String PROFILE_ICCID = "ProfileIccid";
         public static final String PROFILE_SMDP_ADDRESS = "ProfileSmdpAddress";
         public static final String OPERATION_TARGETS = "OperationTargets";
+        public static final String MESSAGE = "Message";
+        public static final String ACCEPT_BUTTON = "Accept_btn";
+        public static final String ACCEPT_BUTTON_LABEL = "Accept_btn_label";
+        public static final String REJECT_BUTTON = "Reject_btn";
+        public static final String REJECT_BUTTON_LABEL = "Reject_btn_label";
+        public static final String ACCEPT_FREETEXT = "Accept_freetext";
     }
 
     /** Parameter values of XML response content. */
@@ -112,6 +120,7 @@ public final class Ts43XmlDoc {
         public static final String OPERATION_RESULT_ERROR_INVALID_OPERATION = "101";
         public static final String OPERATION_RESULT_ERROR_INVALID_PARAMETER = "102";
         public static final String OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION = "103";
+        public static final String OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE = "104";
         public static final String PRIMARY_APP_ELIGIBILITY_ENABLED = "1";
         public static final String SERVICE_STATUS_ACTIVATED = "1";
         public static final String SERVICE_STATUS_ACTIVATING = "2";
@@ -123,6 +132,8 @@ public final class Ts43XmlDoc {
         public static final String SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD = "4";
         public static final String SUBSCRIPTION_RESULT_DISMISS = "5";
         public static final String SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = "6";
+        public static final String SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY = "7";
+        public static final String SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT = "8";
         public static final String CONTENTS_TYPE_XML = "xml";
         public static final String CONTENTS_TYPE_JSON = "json";
         public static final String DISABLED = "0";
