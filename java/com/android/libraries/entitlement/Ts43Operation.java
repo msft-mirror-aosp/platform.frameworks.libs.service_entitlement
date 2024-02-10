@@ -42,6 +42,7 @@ import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServi
 import com.android.libraries.entitlement.odsa.ManageServiceOperation.ManageServiceResponse;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionRequest;
 import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.ManageSubscriptionResponse;
+import com.android.libraries.entitlement.odsa.MessageInfo;
 import com.android.libraries.entitlement.odsa.OdsaResponse;
 import com.android.libraries.entitlement.odsa.PlanOffer;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -412,6 +413,8 @@ public class Ts43Operation {
                         .setTargetTerminalModel(manageSubscriptionRequest.targetTerminalModel())
                         .setOldTerminalId(manageSubscriptionRequest.oldTerminalId())
                         .setOldTerminalIccid(manageSubscriptionRequest.oldTerminalIccid())
+                        .setMessageResponse(manageSubscriptionRequest.messageResponse())
+                        .setMessageButton(manageSubscriptionRequest.messageButton())
                         .build();
 
         String rawXml;
@@ -520,6 +523,15 @@ public class Ts43Operation {
                 case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE:
                     subscriptionResult =
                             ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE;
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY:
+                    subscriptionResult =
+                            ManageSubscriptionResponse
+                                    .SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY;
+                    break;
+                case Ts43XmlDoc.ParmValues.SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT:
+                    subscriptionResult =
+                            ManageSubscriptionResponse.SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT;
                     break;
             }
         }
@@ -732,6 +744,18 @@ public class Ts43Operation {
                         ts43XmlDoc);
         if (downloadInfo != null) {
             configBuilder.setDownloadInfo(downloadInfo);
+        }
+
+        // Parse message info
+        MessageInfo messageInfo =
+                parseMessageInfo(
+                        ImmutableList.of(
+                                Ts43XmlDoc.CharacteristicType.APPLICATION,
+                                Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION,
+                                Ts43XmlDoc.CharacteristicType.MSG),
+                        ts43XmlDoc);
+        if (messageInfo != null) {
+            configBuilder.setMessageInfo(messageInfo);
         }
 
         // TODO: Support different type of configuration.
@@ -979,6 +1003,62 @@ public class Ts43Operation {
     }
 
     /**
+     * Parse the MSG info from {@link AcquireConfigurationResponse}.
+     *
+     * @param characteristics The XML nodes to search.
+     * @param ts43XmlDoc The XML format http response.
+     * @return The MSG info.
+     */
+    @Nullable
+    private MessageInfo parseMessageInfo(
+            @NonNull ImmutableList<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
+        String message =
+                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.MESSAGE));
+        String acceptButton =
+                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_BUTTON));
+        String acceptButtonLabel =
+                Strings.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_BUTTON_LABEL));
+        String rejectButton =
+                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.REJECT_BUTTON));
+        String rejectButtonLabel =
+                Strings.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.REJECT_BUTTON_LABEL));
+        String acceptFreetext =
+                Strings.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_FREETEXT));
+
+        // MessageInfo should contain message, accept button, reject button, and accept freetext
+        if (!message.isEmpty() && !acceptButton.isEmpty() && !rejectButton.isEmpty()
+                && !acceptFreetext.isEmpty()) {
+            return MessageInfo.builder()
+                    .setMessage(message)
+                    .setAcceptButton(acceptButton)
+                    .setAcceptButtonLabel(acceptButtonLabel)
+                    .setRejectButton(rejectButton)
+                    .setRejectButtonLabel(rejectButtonLabel)
+                    .setAcceptFreetext(acceptFreetext)
+                    .build();
+        } else {
+            Log.w(
+                    TAG,
+                    "Failed to parse message info. message="
+                            + message
+                            + ", acceptButton="
+                            + acceptButton
+                            + ", acceptButtonLabel="
+                            + acceptButtonLabel
+                            + ", rejectButton="
+                            + rejectButton
+                            + ", rejectButtonLabel="
+                            + rejectButtonLabel
+                            + ", acceptFreetext="
+                            + acceptFreetext);
+            return null;
+        }
+    }
+
+    /**
      * Process the common ODSA result from HTTP response.
      *
      * @param ts43XmlDoc The TS.43 ODSA operation response in XLM format.
@@ -1016,6 +1096,10 @@ public class Ts43Operation {
                     builder.setOperationResult(
                             EsimOdsaOperation.OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION);
                     break;
+                case Ts43XmlDoc.ParmValues.OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE:
+                    builder.setOperationResult(
+                            EsimOdsaOperation.OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE);
+                    break;
             }
         }
 
@@ -1035,6 +1119,15 @@ public class Ts43Operation {
                         Ts43XmlDoc.Parm.GENERAL_ERROR_USER_DATA);
         if (!TextUtils.isEmpty(generalErrorUserData)) {
             builder.setGeneralErrorUserData(generalErrorUserData);
+        }
+
+        // Parse the general error text
+        String generalErrorText =
+                ts43XmlDoc.get(
+                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Ts43XmlDoc.Parm.GENERAL_ERROR_TEXT);
+        if (!TextUtils.isEmpty(generalErrorText)) {
+            builder.setGeneralErrorText(generalErrorText);
         }
 
         // Parse the token for next operation.
