@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.MessageButton;
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationType;
 import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
@@ -215,6 +216,21 @@ public final class ManageSubscriptionOperation {
         @NotificationAction
         public abstract int notificationAction();
 
+        /**
+         * Returns the user response to the MSG content.
+         * Used by HTTP parameter {@code MSG_response}.
+         */
+        @NonNull
+        public abstract String messageResponse();
+
+        /**
+         * Returns whether the user has accepted or rejected the MSG content.
+         * Used by HTTP parameter {@code MSG_btn}.
+         */
+        @NonNull
+        @MessageButton
+        public abstract String messageButton();
+
         /** Returns a new {@link Builder} object. */
         @NonNull
         public static Builder builder() {
@@ -241,7 +257,9 @@ public final class ManageSubscriptionOperation {
                     .setOldTerminalIccid("")
                     .setPlanId("")
                     .setNotificationToken("")
-                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
+                    .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM)
+                    .setMessageResponse("")
+                    .setMessageButton("");
         }
 
         /** Builder */
@@ -541,6 +559,30 @@ public final class ManageSubscriptionOperation {
             public abstract Builder setNotificationAction(
                     @NotificationAction int notificationAction);
 
+            /**
+             * Sets the user response to the MSG content. Used by HTTP parameter
+             * {@code MSG_response} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param messageResponse The response entered by the user on the device UI.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setMessageResponse(@NonNull String messageResponse);
+
+            /**
+             * Sets whether the user has accepted or rejected the MSG content. Used by HTTP
+             * parameter {@code MSG_btn} if set.
+             *
+             * <p>Used by primary device ODSA operation.
+             *
+             * @param messageButton Whether the user has accepted or rejected the MSG content.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setMessageButton(@NonNull @MessageButton String messageButton);
+
             /** Returns the {@link ManageSubscriptionRequest} object. */
             @NonNull
             public abstract ManageSubscriptionRequest build();
@@ -593,6 +635,20 @@ public final class ManageSubscriptionOperation {
          */
         public static final int SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = 6;
 
+        /**
+         * Indicates that implementing redownloadable profile is mandatory. If device is not able to
+         * support this, it should end the process.
+         * This parameter only applies when peration_type is
+         * {@link EsimOdsaOperation#OPERATION_TYPE_TRANSFER_SUBSCRIPTION}.
+         */
+        public static final int SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY = 7;
+
+        /**
+         * Indicates that user input without a webview is required in order to complete the
+         * operation_type requested with the information submitted to the ECS.
+         */
+        public static final int SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT = 8;
+
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({
                 SUBSCRIPTION_RESULT_UNKNOWN,
@@ -601,7 +657,9 @@ public final class ManageSubscriptionOperation {
                 SUBSCRIPTION_RESULT_DONE,
                 SUBSCRIPTION_RESULT_DELAYED_DOWNLOAD,
                 SUBSCRIPTION_RESULT_DISMISS,
-                SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE
+                SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE,
+                SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY,
+                SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT
         })
         public @interface SubscriptionResult {
         }
