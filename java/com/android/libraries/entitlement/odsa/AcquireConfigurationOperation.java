@@ -379,6 +379,13 @@ public final class AcquireConfigurationOperation {
             @Nullable
             public abstract CompanionDeviceInfo companionDeviceInfo();
 
+            /**
+             * Specifies how to communicate terms and conditions to the user or query information
+             * from the user without a webview.
+             */
+            @Nullable
+            public abstract MessageInfo messageInfo();
+
             /** Returns the builder. */
             @NonNull
             public static Builder builder() {
@@ -463,6 +470,16 @@ public final class AcquireConfigurationOperation {
                 @NonNull
                 public abstract Builder setCompanionDeviceInfo(
                         @NonNull CompanionDeviceInfo companionDeviceInfo);
+
+                /**
+                 * Set the MSG information.
+                 *
+                 * @param messageInfo Specifies how to communicate terms and conditions to the user
+                 *                    or query information from the user without a webview.
+                 * @return The builder.
+                 */
+                @NonNull
+                public abstract Builder setMessageInfo(@NonNull MessageInfo messageInfo);
 
                 /** Returns build the {@link Configuration} object. */
                 @NonNull
