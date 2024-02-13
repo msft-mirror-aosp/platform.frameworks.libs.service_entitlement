@@ -581,7 +581,7 @@ public final class ManageSubscriptionOperation {
              * @return The builder.
              */
             @NonNull
-            public abstract Builder setMessageButton(@NonNull @MessageButton String messageButton);
+            public abstract Builder setMessageButton(@NonNull String messageButton);
 
             /** Returns the {@link ManageSubscriptionRequest} object. */
             @NonNull
@@ -729,7 +729,7 @@ public final class ManageSubscriptionOperation {
              */
             @NonNull
             public abstract Builder setSubscriptionResult(
-                    @NonNull @SubscriptionResult int subscriptionResult);
+                    @SubscriptionResult int subscriptionResult);
 
             /**
              * Set the URL refers to web views responsible for a certain action on the eSIM device
