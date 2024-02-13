@@ -684,7 +684,7 @@ public abstract class EsimOdsaOperation {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setMessageButton(@NonNull @MessageButton String messageButton);
+        public abstract Builder setMessageButton(@NonNull String messageButton);
 
         /** Returns the {@link EsimOdsaOperation} object. */
         @NonNull

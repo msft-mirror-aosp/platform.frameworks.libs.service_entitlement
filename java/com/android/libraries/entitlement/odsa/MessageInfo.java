@@ -110,7 +110,7 @@ public abstract class MessageInfo {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setAcceptButton(@NonNull @MessageValue String button);
+        public abstract Builder setAcceptButton(@NonNull String button);
 
         /**
          * Set the label for the {@code Accept} button to be presented to the user.
@@ -129,7 +129,7 @@ public abstract class MessageInfo {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setRejectButton(@NonNull @MessageValue String button);
+        public abstract Builder setRejectButton(@NonNull String button);
 
         /**
          * Set the label for the {@code Reject} button to be presented to the user.
@@ -148,7 +148,7 @@ public abstract class MessageInfo {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setAcceptFreetext(@NonNull @MessageValue String accept);
+        public abstract Builder setAcceptFreetext(@NonNull String accept);
 
         /** Build the MessageInfo object. */
         @NonNull
