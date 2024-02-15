@@ -45,6 +45,11 @@ public abstract class HttpResponse {
     public abstract ImmutableList<String> cookies();
 
     /**
+     * Content of the "Location" response header.
+     */
+    public abstract String location();
+
+    /**
      * Builder of {@link HttpResponse}.
      */
     @AutoValue.Builder
@@ -63,6 +68,11 @@ public abstract class HttpResponse {
          * Sets the content of the "Set-Cookie" response headers.
          */
         public abstract Builder setCookies(List<String> cookies);
+
+        /**
+         * Sets the content of the "Location" response header.
+         */
+        public abstract Builder setLocation(String location);
     }
 
     public static Builder builder() {
@@ -71,7 +81,8 @@ public abstract class HttpResponse {
                 .setBody("")
                 .setResponseCode(0)
                 .setResponseMessage("")
-                .setCookies(ImmutableList.of());
+                .setCookies(ImmutableList.of())
+                .setLocation("");
     }
 
     /**
@@ -91,7 +102,9 @@ public abstract class HttpResponse {
                 .append(responseMessage())
                 .append(" cookies=[")
                 .append(cookies().size())
-                .append(" cookies]}")
+                .append(" cookies]")
+                .append(" location=")
+                .append(location())
                 .toString();
     }
 }

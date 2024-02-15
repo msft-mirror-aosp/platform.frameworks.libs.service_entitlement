@@ -22,6 +22,7 @@ java_defaults {
     libs: [
         "androidx.annotation_annotation",
         "auto_value_annotations",
+        "error_prone_annotations",
     ],
     plugins: ["auto_value_plugin"],
     sdk_version: "system_current",
@@ -32,12 +33,11 @@ java_library {
     defaults: ["service-entitlement-defaults"],
     name: "service-entitlement-impl",
     visibility: [
-        "//visibility:private"
+        "//visibility:private",
     ],
     srcs: [
         "java/com/android/libraries/entitlement/eapaka/*.java",
         "java/com/android/libraries/entitlement/http/*.java",
-        "java/com/android/libraries/entitlement/utils/*.java",
     ],
     static_libs: [
         "guava",
@@ -71,6 +71,8 @@ java_library {
     srcs: [
         "java/com/android/libraries/entitlement/ServiceEntitlement.java",
         "java/com/android/libraries/entitlement/EapAkaHelper.java",
+        "java/com/android/libraries/entitlement/Ts43Authentication.java",
+        "java/com/android/libraries/entitlement/Ts43Operation.java",
     ],
     static_libs: [
         "guava",
@@ -82,6 +84,9 @@ java_library {
         "//apex_available:platform",
         "com.android.wifi",
     ],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 java_library {
@@ -95,6 +100,8 @@ java_library {
         "java/com/android/libraries/entitlement/EsimOdsaOperation.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementException.java",
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
+        "java/com/android/libraries/entitlement/odsa/*.java",
+        "java/com/android/libraries/entitlement/utils/*.java",
     ],
     static_libs: [
         "guava",
