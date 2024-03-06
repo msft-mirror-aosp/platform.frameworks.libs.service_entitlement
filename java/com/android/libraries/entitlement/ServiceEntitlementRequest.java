@@ -32,10 +32,9 @@ public abstract class ServiceEntitlementRequest {
     public static final String ACCEPT_CONTENT_TYPE_XML = "text/vnd.wap.connectivity-xml";
     /** Accepts the content type in JSON format. */
     public static final String ACCEPT_CONTENT_TYPE_JSON =
-            "application/vnd.gsma.eap-relay.v1.0+json";
-    /** Accepts the content type in JSON or XML format. */
+            "application/json";
     public static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
-            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
+            "application/json, text/vnd.wap.connectivity-xml";
     /** Default value of configuration version. */
     public static final int DEFAULT_CONFIGURATION_VERSION = 0;
 
