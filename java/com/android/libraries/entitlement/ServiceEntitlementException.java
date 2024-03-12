@@ -30,6 +30,11 @@ public class ServiceEntitlementException extends Exception {
      */
     public static final int ERROR_UNKNOWN = 0;
 
+    /**
+     * Failure to compose JSON when making POST requests.
+     */
+    public static final int ERROR_JSON_COMPOSE_FAILURE = 1;
+
     // Android telephony related failures
     /**
      * Android telephony is unable to provide info like IMSI, e.g. when modem crashed.
