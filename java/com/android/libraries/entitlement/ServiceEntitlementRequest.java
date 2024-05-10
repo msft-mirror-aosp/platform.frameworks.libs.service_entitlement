@@ -19,30 +19,24 @@ package com.android.libraries.entitlement;
 import android.os.Build;
 import android.os.Build.VERSION;
 
+import com.android.libraries.entitlement.utils.Ts43Constants;
+
 import com.google.auto.value.AutoValue;
 
 /**
- * Service entitlement HTTP request parameters, as defiend in GSMA spec TS.43 section 2.2.
+ * Service entitlement HTTP request parameters, as defined in GSMA spec TS.43 section 2.2.
  */
 @AutoValue
 public abstract class ServiceEntitlementRequest {
-    /** Disables notification token. */
-    public static final int NOTICATION_ACTION_DISABLE = 0;
-    /** Enables FCM notification token. */
-    public static final int NOTICATION_ACTION_ENABLE_FCM = 2;
     /** Accepts the content type in XML format. */
     public static final String ACCEPT_CONTENT_TYPE_XML = "text/vnd.wap.connectivity-xml";
     /** Accepts the content type in JSON format. */
     public static final String ACCEPT_CONTENT_TYPE_JSON =
-            "application/vnd.gsma.eap-relay.v1.0+json";
-    /** Accepts the content type in JSON or XML format. */
+            "application/json";
     public static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
-            "application/vnd.gsma.eap-relay.v1.0+json, text/vnd.wap.connectivity-xml";
+            "application/json, text/vnd.wap.connectivity-xml";
     /** Default value of configuration version. */
     public static final int DEFAULT_CONFIGURATION_VERSION = 0;
-    /** Default value of entitlement version. */
-    public static final String DEFAULT_ENTITLEMENT_VERSION = "2.0";
-
 
     /**
      * Returns the version of configuration currently stored on the client. Used by HTTP parameter
@@ -107,10 +101,8 @@ public abstract class ServiceEntitlementRequest {
     /**
      * Returns the action associated with the FCM registration token. Used by HTTP parameter
      * "notif_action".
-     *
-     * @see #NOTICATION_ACTION_ENABLE_FCM
-     * @see #NOTICATION_ACTION_DISABLE
      */
+    @Ts43Constants.NotificationAction
     public abstract int notificationAction();
 
     /**
@@ -123,10 +115,9 @@ public abstract class ServiceEntitlementRequest {
     public abstract String acceptContentType();
 
     /**
-     * Returns the network identifier for premium network. Used for premium network slice
-     * entitlement.
+     * Returns the boost type for premium network. Used for premium network slice entitlement.
      */
-    public abstract String networkIdentifier();
+    public abstract String boostType();
 
     /**
      * Returns a new {@link Builder} object.
@@ -134,19 +125,19 @@ public abstract class ServiceEntitlementRequest {
     public static Builder builder() {
         return new AutoValue_ServiceEntitlementRequest.Builder()
                 .setConfigurationVersion(DEFAULT_CONFIGURATION_VERSION)
-                .setEntitlementVersion(DEFAULT_ENTITLEMENT_VERSION)
+                .setEntitlementVersion(Ts43Constants.DEFAULT_ENTITLEMENT_VERSION)
                 .setAuthenticationToken("")
                 .setTemporaryToken("")
                 .setTerminalId("")
                 .setTerminalVendor(Build.MANUFACTURER)
                 .setTerminalModel(Build.MODEL)
-                .setTerminalSoftwareVersion(VERSION.BASE_OS)
+                .setTerminalSoftwareVersion(VERSION.RELEASE)
                 .setAppName("")
                 .setAppVersion("")
                 .setNotificationToken("")
-                .setNotificationAction(NOTICATION_ACTION_ENABLE_FCM)
+                .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM)
                 .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML)
-                .setNetworkIdentifier("");
+                .setBoostType("");
     }
 
     /**
@@ -167,7 +158,8 @@ public abstract class ServiceEntitlementRequest {
          * Sets the current version of the entitlement specification. Used by HTTP parameter
          * "entitlement_version".
          *
-         * <p>If not set, default to {@link #DEFAULT_ENTITLEMENT_VERSION} base on TS.43-v5.0.
+         * <p>If not set, default to {@link Ts43Constants#DEFAULT_ENTITLEMENT_VERSION} base on
+         * TS.43-v5.0.
          */
         public abstract Builder setEntitlementVersion(String value);
 
@@ -243,13 +235,10 @@ public abstract class ServiceEntitlementRequest {
          * Sets the action associated with the FCM registration token. Used by HTTP parameter
          * "notif_action".
          *
-         * <p>Required if a token is set with {@link #setNotificationToken}, and default to {@link
-         * #NOTICATION_ACTION_ENABLE_FCM}; otherwise ignored.
-         *
-         * @see #NOTICATION_ACTION_ENABLE_FCM
-         * @see #NOTICATION_ACTION_DISABLE
+         * <p>Required if a token is set with {@link #setNotificationToken}, and default to
+         * {@link Ts43Constants#NOTIFICATION_ACTION_ENABLE_FCM}; otherwise ignored.
          */
-        public abstract Builder setNotificationAction(int value);
+        public abstract Builder setNotificationAction(@Ts43Constants.NotificationAction int value);
 
         /**
          * Sets the configuration document format the caller accepts, e.g. XML or JSON. Used by HTTP
@@ -264,12 +253,12 @@ public abstract class ServiceEntitlementRequest {
         public abstract Builder setAcceptContentType(String contentType);
 
         /**
-         * Sets the network identifier for premium network. Used by HTTP parameter
-         * "network_identifier" in case of premium network slice entitlement.
+         * Sets the boost type for premium network. Used by HTTP parameter
+         * "boost_type" in case of premium network slice entitlement.
          *
          * <p>Optional.
          */
-        public abstract Builder setNetworkIdentifier(String value);
+        public abstract Builder setBoostType(String value);
 
         public abstract ServiceEntitlementRequest build();
     }
