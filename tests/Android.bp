@@ -14,6 +14,7 @@
 // limitations under the License.
 
 package {
+    default_team: "trendy_team_pmw_telephony",
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
@@ -48,7 +49,7 @@ android_test {
         "service-entitlement-testing-utils",
         "testables",
         "testng",
-        "truth-prebuilt",
+        "truth",
     ],
     certificate: "platform",
     test_suites: ["device-tests"],

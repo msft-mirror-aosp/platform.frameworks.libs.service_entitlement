@@ -18,67 +18,93 @@ package com.android.libraries.entitlement;
 
 import android.content.Context;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
+import com.android.libraries.entitlement.http.HttpResponse;
+import com.android.libraries.entitlement.utils.DebugUtils;
+import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
 /**
- * Implemnets protocol for carrier service entitlement configuration query and operation, based on
+ * Implements protocol for carrier service entitlement configuration query and operation, based on
  * GSMA TS.43 spec.
  */
 public class ServiceEntitlement {
     /**
      * App ID for Voice-Over-LTE entitlement.
      */
-    public static final String APP_VOLTE = "ap2003";
+    public static final String APP_VOLTE = Ts43Constants.APP_VOLTE;
     /**
      * App ID for Voice-Over-WiFi entitlement.
      */
-    public static final String APP_VOWIFI = "ap2004";
+    public static final String APP_VOWIFI = Ts43Constants.APP_VOWIFI;
     /**
      * App ID for SMS-Over-IP entitlement.
      */
-    public static final String APP_SMSOIP = "ap2005";
+    public static final String APP_SMSOIP = Ts43Constants.APP_SMSOIP;
     /**
-     * App ID for on device service activation (OSDA) for companion device.
+     * App ID for on device service activation (ODSA) for companion device.
      */
-    public static final String APP_ODSA_COMPANION = "ap2006";
+    public static final String APP_ODSA_COMPANION = Ts43Constants.APP_ODSA_COMPANION;
     /**
-     * App ID for on device service activation (OSDA) for primary device.
+     * App ID for on device service activation (ODSA) for primary device.
      */
-    public static final String APP_ODSA_PRIMARY = "ap2009";
+    public static final String APP_ODSA_PRIMARY = Ts43Constants.APP_ODSA_PRIMARY;
     /**
      * App ID for data plan information entitlement.
      */
-    public static final String APP_DATA_PLAN_BOOST = "ap2010";
+    public static final String APP_DATA_PLAN_BOOST = Ts43Constants.APP_DATA_PLAN_BOOST;
+
+    /**
+     * App ID for server initiated requests, entitlement and activation.
+     */
+    public static final String APP_ODSA_SERVER_INITIATED_REQUESTS =
+            Ts43Constants.APP_ODSA_SERVER_INITIATED_REQUESTS;
+
+    /**
+     * App ID for direct carrier billing.
+     */
+    public static final String APP_DIRECT_CARRIER_BILLING =
+            Ts43Constants.APP_DIRECT_CARRIER_BILLING;
+
+    /**
+     * App ID for private user identity.
+     */
+    public static final String APP_PRIVATE_USER_IDENTITY = Ts43Constants.APP_PRIVATE_USER_IDENTITY;
+
+    /**
+     * App ID for phone number information.
+     */
+    public static final String APP_PHONE_NUMBER_INFORMATION =
+            Ts43Constants.APP_PHONE_NUMBER_INFORMATION;
+
+    /**
+     * App ID for satellite entitlement.
+     */
+    public static final String APP_SATELLITE_ENTITLEMENT = Ts43Constants.APP_SATELLITE_ENTITLEMENT;
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
-
+    private ServiceEntitlementRequest mOidcRequest;
     /**
      * Creates an instance for service entitlement configuration query and operation for the
      * carrier.
      *
      * @param context           context of application
      * @param carrierConfig     carrier specific configs used in the queries and operations.
-     * @param simSubscriptionId the subscroption ID of the carrier's SIM on device. This indicates
+     * @param simSubscriptionId the subscription ID of the carrier's SIM on device. This indicates
      *                          which SIM to retrieve IMEI/IMSI from and perform EAP-AKA
      *                          authentication with. See
      *                          {@link android.telephony.SubscriptionManager}
-     *                          for how to get the subscroption ID.
+     *                          for how to get the subscription ID.
      */
     public ServiceEntitlement(Context context, CarrierConfig carrierConfig, int simSubscriptionId) {
-        this(
-                context,
-                carrierConfig,
-                simSubscriptionId,
-                /* saveHttpHistory= */ false,
-                /* bypassEapAkaResponse= */ "");
+        this(context, carrierConfig, simSubscriptionId, /* saveHttpHistory= */ false);
     }
 
     /**
@@ -87,9 +113,9 @@ public class ServiceEntitlement {
      *
      * @param context context of application
      * @param carrierConfig carrier specific configs used in the queries and operations.
-     * @param simSubscriptionId the subscroption ID of the carrier's SIM on device. This indicates
+     * @param simSubscriptionId the subscription ID of the carrier's SIM on device. This indicates
      *     which SIM to retrieve IMEI/IMSI from and perform EAP-AKA authentication with. See {@link
-     *     android.telephony.SubscriptionManager} for how to get the subscroption ID.
+     *     android.telephony.SubscriptionManager} for how to get the subscription ID.
      * @param saveHttpHistory set to {@code true} to save the history of request and response which
      *     can later be retrieved by {@code getHistory()}. Intended for debugging.
      */
@@ -103,7 +129,7 @@ public class ServiceEntitlement {
                 carrierConfig,
                 simSubscriptionId,
                 saveHttpHistory,
-                /* bypassEapAkaResponse= */ "");
+                DebugUtils.getBypassEapAkaResponse());
     }
 
     /**
@@ -112,9 +138,9 @@ public class ServiceEntitlement {
      *
      * @param context context of application
      * @param carrierConfig carrier specific configs used in the queries and operations.
-     * @param simSubscriptionId the subscroption ID of the carrier's SIM on device. This indicates
+     * @param simSubscriptionId the subscription ID of the carrier's SIM on device. This indicates
      *     which SIM to retrieve IMEI/IMSI from and perform EAP-AKA authentication with. See {@link
-     *     android.telephony.SubscriptionManager} for how to get the subscroption ID.
+     *     android.telephony.SubscriptionManager} for how to get the subscription ID.
      * @param saveHttpHistory set to {@code true} to save the history of request and response which
      *     can later be retrieved by {@code getHistory()}. Intended for debugging.
      * @param bypassEapAkaResponse set to non empty string to bypass EAP-AKA authentication.
@@ -155,14 +181,14 @@ public class ServiceEntitlement {
      * <li>"token": not set, or {@code request.authenticationToken()} if it's not empty.
      * <li>"IMSI": if "token" is set, set to {@link android.telephony.TelephonyManager#getImei}.
      * <li>"EAP_ID": if "token" is not set, set this parameter to trigger embedded EAP-AKA
-     * authentication as decribed in TS.43 section 2.6.1. Its value is derived from IMSI as per
+     * authentication as described in TS.43 section 2.6.1. Its value is derived from IMSI as per
      * GSMA spec RCC.14 section C.2.
      * <li>"terminal_id": IMEI, or {@code request.terminalId()} if it's not empty.
      * <li>"terminal_vendor": {@link android.os.Build#MANUFACTURER}, or {@code
      * request.terminalVendor()} if it's not empty.
      * <li>"terminal_model": {@link android.os.Build#MODEL}, or {@code request.terminalModel()} if
      * it's not empty.
-     * <li>"terminal_sw_version": {@llink android.os.Build.VERSION#BASE_OS}, or {@code
+     * <li>"terminal_sw_version": {@link android.os.Build.VERSION#BASE_OS}, or {@code
      * request.terminalSoftwareVersion()} if it's not empty.
      * <li>"app_name": not set, or {@code request.appName()} if it's not empty.
      * <li>"app_version": not set, or {@code request.appVersion()} if it's not empty.
@@ -176,10 +202,10 @@ public class ServiceEntitlement {
      * @param appId   an app ID string defined in TS.43 section 2.2, e.g. {@link #APP_VOWIFI}.
      * @param request contains parameters that can be used in the HTTP request.
      */
-    @Nullable
+    @NonNull
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return eapAkaApi.queryEntitlementStatus(ImmutableList.of(appId), carrierConfig, request);
+        return queryEntitlementStatus(ImmutableList.of(appId), request);
     }
 
     /**
@@ -187,11 +213,27 @@ public class ServiceEntitlement {
      * request/response. For on device service activation (ODSA) of eSIM for companion/primary
      * devices, use {@link #performEsimOdsa} instead.
      *
-     * <p>Same with {@link #queryEntitlementStatus(String, ServiceEntitlementRequest)} except that
+     * <p>Same as {@link #queryEntitlementStatus(String, ServiceEntitlementRequest)} except that
      * multiple "app" parameters will be set in the HTTP request, in the order as they appear in
      * parameter {@code appIds}.
      */
+    @NonNull
     public String queryEntitlementStatus(ImmutableList<String> appIds,
+            ServiceEntitlementRequest request)
+            throws ServiceEntitlementException {
+        return getEntitlementStatusResponse(appIds, request).body();
+    }
+
+    /**
+     * Retrieves service entitlement configurations for multiple app IDs in one HTTP
+     * request/response. For on device service activation (ODSA) of eSIM for companion/primary
+     * devices, use {@link #performEsimOdsa} instead.
+     *
+     * <p>Same as {@link #queryEntitlementStatus(ImmutableList, ServiceEntitlementRequest)}
+     * except that it returns the full HTTP response instead of just the body.
+     */
+    @NonNull
+    public HttpResponse getEntitlementStatusResponse(ImmutableList<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         return eapAkaApi.queryEntitlementStatus(appIds, carrierConfig, request);
@@ -207,16 +249,79 @@ public class ServiceEntitlement {
      * needed, and returns the raw configuration doc as a string. Additional parameters from {@code
      * operation} are set to the HTTP request. See {@link EsimOdsaOperation} for details.
      */
+    @NonNull
     public String performEsimOdsa(
+            String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
+            throws ServiceEntitlementException {
+        return getEsimOdsaResponse(appId, request, operation).body();
+    }
+
+    /**
+     * Retrieves the HTTP response after performing on device service activation (ODSA) of eSIM for
+     * companion/primary devices.
+     *
+     * <p>Same as {@link #performEsimOdsa(String, ServiceEntitlementRequest, EsimOdsaOperation)}
+     * except that it returns the full HTTP response instead of just the body.
+     */
+    @NonNull
+    public HttpResponse getEsimOdsaResponse(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
         return eapAkaApi.performEsimOdsaOperation(appId, carrierConfig, request, operation);
     }
 
     /**
+     * Retrieves the endpoint for OpenID Connect(OIDC) authentication.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43
+     *
+     * <p>The user should call {@link #queryEntitlementStatusFromOidc(String url)} with the
+     * authentication result to retrieve the service entitlement configuration.
+     *
+     * @param appId an app ID string defined in TS.43 section 2.2
+     * @param request contains parameters that can be used in the HTTP request
+     */
+    @NonNull
+    public String acquireOidcAuthenticationEndpoint(String appId, ServiceEntitlementRequest request)
+            throws ServiceEntitlementException {
+        mOidcRequest = request;
+        return eapAkaApi.acquireOidcAuthenticationEndpoint(appId, carrierConfig, request);
+    }
+
+    /**
+     * Retrieves the service entitlement configuration from OIDC authentication result.
+     *
+     * <p>Implementation based on section 2.8.2 of TS.43.
+     *
+     * <p>{@link #acquireOidcAuthenticationEndpoint} must be called before calling this method.
+     *
+     * @param url the redirect url from OIDC authentication result.
+     */
+    @NonNull
+    public String queryEntitlementStatusFromOidc(String url) throws ServiceEntitlementException {
+        return getEntitlementStatusResponseFromOidc(url).body();
+    }
+
+    /**
+     * Retrieves the HTTP response containing the service entitlement configuration from
+     * OIDC authentication result.
+     *
+     * <p>Same as {@link #queryEntitlementStatusFromOidc(String)} except that it returns the
+     * full HTTP response instead of just the body.
+     *
+     * @param url the redirect url from OIDC authentication result.
+     */
+    @NonNull
+    public HttpResponse getEntitlementStatusResponseFromOidc(String url)
+            throws ServiceEntitlementException {
+        return eapAkaApi.queryEntitlementStatusFromOidc(url, carrierConfig, mOidcRequest);
+    }
+
+    /**
      * Retrieves the history of past HTTP request and responses if {@code saveHttpHistory} was set
      * in constructor.
      */
+    @NonNull
     public List<String> getHistory() {
         return eapAkaApi.getHistory();
     }
