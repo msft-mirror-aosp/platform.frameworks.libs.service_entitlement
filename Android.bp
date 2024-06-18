@@ -33,7 +33,7 @@ java_library {
     defaults: ["service-entitlement-defaults"],
     name: "service-entitlement-impl",
     visibility: [
-        "//visibility:private"
+        "//visibility:private",
     ],
     srcs: [
         "java/com/android/libraries/entitlement/eapaka/*.java",
@@ -84,6 +84,9 @@ java_library {
         "//apex_available:platform",
         "com.android.wifi",
     ],
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 java_library {

@@ -161,6 +161,9 @@ public abstract class EsimOdsaOperation {
      */
     public static final int OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION = 103;
 
+    /** The user has entered an invalid response for the MSG content. */
+    public static final int OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE = 104;
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             OPERATION_RESULT_UNKNOWN,
@@ -168,7 +171,8 @@ public abstract class EsimOdsaOperation {
             OPERATION_RESULT_ERROR_GENERAL,
             OPERATION_RESULT_ERROR_INVALID_OPERATION,
             OPERATION_RESULT_ERROR_INVALID_PARAMETER,
-            OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION
+            OPERATION_RESULT_WARNING_NOT_SUPPORTED_OPERATION,
+            OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE
     })
     public @interface OdsaOperationResult {
     }
@@ -189,6 +193,20 @@ public abstract class EsimOdsaOperation {
             COMPANION_SERVICE_DIFFERENT_NUMBER
     })
     public @interface CompanionService {
+    }
+
+    /** Indicates the MSG content has been rejected by the user. */
+    public static final String MESSAGE_BUTTON_REJECTED = "0";
+
+    /** Indicates the MSG content has been accepted by the user. */
+    public static final String MESSAGE_BUTTON_ACCEPTED = "1";
+
+    @Retention(RetentionPolicy.SOURCE)
+    @StringDef({
+            MESSAGE_BUTTON_REJECTED,
+            MESSAGE_BUTTON_ACCEPTED
+    })
+    public @interface MessageButton {
     }
 
     /** Returns the ODSA operation. Used by HTTP parameter {@code operation}. */
@@ -318,6 +336,18 @@ public abstract class EsimOdsaOperation {
     /** Returns the ICCID of old device eSIM. Used by HTTP parameter {@code old_terminal_iccid}. */
     public abstract String oldTerminalIccid();
 
+    /**
+     * Returns the user response to the MSG content. Used by HTTP parameter {@code MSG_response}.
+     */
+    public abstract String messageResponse();
+
+    /**
+     * Returns whether the user has accepted or rejected the MSG content.
+     * Used by HTTP parameter {@code MSG_btn}.
+     */
+    @MessageButton
+    public abstract String messageButton();
+
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_EsimOdsaOperation.Builder()
@@ -341,7 +371,9 @@ public abstract class EsimOdsaOperation {
                 .setTargetTerminalSerialNumber("")
                 .setTargetTerminalModel("")
                 .setOldTerminalId("")
-                .setOldTerminalIccid("");
+                .setOldTerminalIccid("")
+                .setMessageResponse("")
+                .setMessageButton("");
     }
 
     /**
@@ -629,6 +661,30 @@ public abstract class EsimOdsaOperation {
          */
         @NonNull
         public abstract Builder setOldTerminalIccid(@NonNull String oldTerminalIccid);
+
+        /**
+         * Sets the user response to the MSG content. Used by HTTP parameter {@code MSG_response}
+         * if set.
+         *
+         * <p>Used by primary device ODSA operation.
+         *
+         * @param messageResponse The response entered by the user on the device UI.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setMessageResponse(@NonNull String messageResponse);
+
+        /**
+         * Sets whether the user has accepted or rejected the MSG content. Used by HTTP parameter
+         * {@code MSG_btn} if set.
+         *
+         * <p>Used by primary device ODSA operation.
+         *
+         * @param messageButton Whether the user has accepted or rejected the MSG content.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setMessageButton(@NonNull String messageButton);
 
         /** Returns the {@link EsimOdsaOperation} object. */
         @NonNull

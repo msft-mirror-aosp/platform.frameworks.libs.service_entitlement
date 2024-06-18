@@ -68,6 +68,11 @@ public class Ts43OperationTest {
     private static final String COMPANION_TERMINAL_EID = "JHSDHljhsdfy763hh";
     private static final String ICCID = "123456789";
     private static final String PROFILE_SMDP_ADDRESS = "SMDP+ ADDR";
+    private static final String MESSAGE_ACCEPT_PRESENT = "1";
+    private static final String MESSAGE_RESPONSE = "MESSAGE RESPONSE";
+    private static final String MESSAGE = "MESSAGE";
+    private static final String ACCEPT_BUTTON_LABEL = "Accept";
+    private static final String REJECT_BUTTON_LABEL = "Reject";
 
     private static final String TEMPORARY_TOKEN = "A8daAd8ads7fau34789947kjhsfad;kjfh";
 
@@ -78,6 +83,8 @@ public class Ts43OperationTest {
     private static final String NOT_ENABLED_USER_DATA = "msisdn=XX";
 
     private static final String MSISDN = "+16502530000";
+
+    private static final String GENERAL_ERROR_TEXT = "error text";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -122,6 +129,30 @@ public class Ts43OperationTest {
                     + "    </characteristic>\n"
                     + "</wap-provisioningdoc>";
 
+    private static final String MANAGE_SUBSCRIPTION_RESPONSE_INVALID_USER_INPUT =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "    <characteristic type=\"VERS\">\n"
+                    + "        <parm name=\"version\" value=\"1\"/>\n"
+                    + "        <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "    </characteristic>\n"
+                    + "    <characteristic type=\"TOKEN\">\n"
+                    + "        <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "    </characteristic>\n"
+                    + "    <characteristic type=\"APPLICATION\">\n"
+                    + "        <parm name=\"AppID\" value=\"ap2006\"/>\n"
+                    + "        <characteristic type=\"DownloadInfo\">\n"
+                    + "            <parm name=\"ProfileIccid\" value=\"" + ICCID + "\"/>\n"
+                    + "            <parm name=\"ProfileSmdpAddress\" value=\""
+                    + PROFILE_SMDP_ADDRESS + "\"/>\n"
+                    + "        </characteristic>\n"
+                    + "        <parm name=\"SubscriptionResult\" value=\"8\"/>\n"
+                    + "        <parm name=\"OperationResult\" value=\"104\"/>\n"
+                    + "        <parm name=\"GeneralErrorText\" value=\"" + GENERAL_ERROR_TEXT
+                    + "\"/>\n"
+                    + "    </characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
     private static final String ACQUIRE_TEMPORARY_TOKEN_RESPONSE =
             "<?xml version=\"1.0\"?>\n"
                     + "<wap-provisioningdoc version=\"1.1\">\n"
@@ -161,6 +192,39 @@ public class Ts43OperationTest {
                     + "                <parm name=\"ProfileIccid\" value=\"" + ICCID + "\"/>\n"
                     + "                <parm name=\"ProfileSmdpAddress\" value=\""
                     + PROFILE_SMDP_ADDRESS + "\"/>\n"
+                    + "            </characteristic>\n"
+                    + "            <parm name=\"ServiceStatus\" value=\"1\"/>\n"
+                    + "        </characteristic>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>\n";
+
+    private static final String ACQUIRE_CONFIGURATION_RESPONSE_MSG =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2006\"/>\n"
+                    + "        <characteristic type=\"PrimaryConfiguration\">\n"
+                    + "            <parm name=\"ICCID\" value=\"" + ICCID + "\"/>\n"
+                    + "            <characteristic type=\"MSG\">\n"
+                    + "                <parm name=\"Message\" value=\"" + MESSAGE + "\"/>\n"
+                    + "                <parm name=\"Accept_btn\" value=\"" + MESSAGE_ACCEPT_PRESENT
+                    + "\"/>\n"
+                    + "                <parm name=\"Accept_btn_label\" value=\""
+                    + ACCEPT_BUTTON_LABEL + "\"/>\n"
+                    + "                <parm name=\"Reject_btn\" value=\"" + MESSAGE_ACCEPT_PRESENT
+                    + "\"/>\n"
+                    + "                <parm name=\"Reject_btn_label\" value=\""
+                    + REJECT_BUTTON_LABEL + "\"/>\n"
+                    + "                <parm name=\"Accept_freetext\" value=\""
+                    + MESSAGE_ACCEPT_PRESENT + "\"/>\n"
                     + "            </characteristic>\n"
                     + "            <parm name=\"ServiceStatus\" value=\"1\"/>\n"
                     + "        </characteristic>\n"
@@ -304,6 +368,27 @@ public class Ts43OperationTest {
     }
 
     @Test
+    public void testManageSubscription_invalidUserInput() throws Exception {
+        doReturn(MANAGE_SUBSCRIPTION_RESPONSE_INVALID_USER_INPUT).when(mMockHttpResponse).body();
+
+        ManageSubscriptionRequest request = ManageSubscriptionRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .setOperationType(EsimOdsaOperation.OPERATION_TYPE_SUBSCRIBE)
+                .setCompanionTerminalId(COMPANION_TERMINAL_ID)
+                .setCompanionTerminalEid(COMPANION_TERMINAL_EID)
+                .setMessageResponse(MESSAGE_RESPONSE)
+                .setMessageButton(MESSAGE_ACCEPT_PRESENT)
+                .build();
+
+        ManageSubscriptionResponse response = mTs43Operation.manageSubscription(request);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_ERROR_INVALID_MSG_RESPONSE);
+        assertThat(response.subscriptionResult()).isEqualTo(
+                ManageSubscriptionResponse.SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT);
+        assertThat(response.generalErrorText()).isEqualTo(GENERAL_ERROR_TEXT);
+    }
+
+    @Test
     public void testAcquireTemporaryToken() throws Exception {
         doReturn(ACQUIRE_TEMPORARY_TOKEN_RESPONSE).when(mMockHttpResponse).body();
 
@@ -339,6 +424,28 @@ public class Ts43OperationTest {
         assertThat(config.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
+        assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
+    }
+
+    @Test
+    public void testAcquireConfiguration_messageInfo() throws Exception {
+        doReturn(ACQUIRE_CONFIGURATION_RESPONSE_MSG).when(mMockHttpResponse).body();
+        AcquireConfigurationRequest request = AcquireConfigurationRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .build();
+
+        AcquireConfigurationResponse response = mTs43Operation.acquireConfiguration(request);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.configurations()).hasSize(1);
+        AcquireConfigurationResponse.Configuration config = response.configurations().get(0);
+        assertThat(config.iccid()).isEqualTo(ICCID);
+        assertThat(config.messageInfo().message()).isEqualTo(MESSAGE);
+        assertThat(config.messageInfo().acceptButton()).isEqualTo(MESSAGE_ACCEPT_PRESENT);
+        assertThat(config.messageInfo().acceptButtonLabel()).isEqualTo(ACCEPT_BUTTON_LABEL);
+        assertThat(config.messageInfo().rejectButton()).isEqualTo(MESSAGE_ACCEPT_PRESENT);
+        assertThat(config.messageInfo().rejectButtonLabel()).isEqualTo(REJECT_BUTTON_LABEL);
+        assertThat(config.messageInfo().acceptFreetext()).isEqualTo(MESSAGE_ACCEPT_PRESENT);
         assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
     }
 
