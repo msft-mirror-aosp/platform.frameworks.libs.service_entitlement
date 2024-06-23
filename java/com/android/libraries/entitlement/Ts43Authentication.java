@@ -19,6 +19,7 @@ package com.android.libraries.entitlement;
 import static com.google.common.base.Strings.nullToEmpty;
 
 import android.content.Context;
+import android.os.Build;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -197,8 +198,18 @@ public class Ts43Authentication {
                 .build();
 
         if (mServiceEntitlement == null) {
-            mServiceEntitlement = new ServiceEntitlement(mContext, carrierConfig,
-                    SubscriptionManager.getSubscriptionId(slotIndex));
+            int subId = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID;
+            if (Build.VERSION.SDK_INT < 34) {
+                SubscriptionManager subscriptionManager =
+                        mContext.getSystemService(SubscriptionManager.class);
+                int[] subIds = subscriptionManager.getSubscriptionIds(slotIndex);
+                if (subIds != null && subIds.length > 0) {
+                    subId = subIds[0];
+                }
+            } else {
+                subId = SubscriptionManager.getSubscriptionId(slotIndex);
+            }
+            mServiceEntitlement = new ServiceEntitlement(mContext, carrierConfig, subId);
         }
 
         // Get the full HTTP response instead of just the body so we can reuse the same cookies.
