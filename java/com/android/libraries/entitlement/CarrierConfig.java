@@ -46,6 +46,9 @@ public abstract class CarrierConfig {
      */
     public abstract String clientTs43();
 
+    /** Returns {@code true} if HTTP POST, instead of GET, should be used for TS.43 requests. */
+    public abstract boolean useHttpPost();
+
     /** Client side timeout for HTTP connection. See {@link Builder#setTimeoutInSec}. */
     public abstract int timeoutInSec();
 
@@ -58,6 +61,7 @@ public abstract class CarrierConfig {
         return new AutoValue_CarrierConfig.Builder()
                 .setServerUrl("")
                 .setClientTs43("")
+                .setUseHttpPost(false)
                 .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC);
     }
 
@@ -74,6 +78,9 @@ public abstract class CarrierConfig {
 
         /** Sets the Client-ts43 attribute. Used to set the User-Agent header in HTTP requests. */
         public abstract Builder setClientTs43(String clientTs43);
+
+        /** Set to {@code true} to use HTTP POST instead of GET for TS.43 requests. */
+        public abstract Builder setUseHttpPost(boolean useHttpPost);
 
         /**
          * Sets the client side timeout for HTTP connection. Default to

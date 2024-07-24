@@ -45,6 +45,12 @@ public abstract class OdsaResponse {
     @Nullable
     public abstract String generalErrorUserData();
 
+    /**
+     * User-specific content string to be shown to the user.
+     */
+    @Nullable
+    public abstract String generalErrorText();
+
     /** Builder */
     public abstract static class Builder {
         /**
@@ -73,12 +79,21 @@ public abstract class OdsaResponse {
          *
          * @param userData User data sent to the Service Provider when requesting the {@link
          *                 #generalErrorUrl()} web view. It should contain user-specific attributes
-         *                 to improve user
-         *                 experience.
+         *                 to improve user experience.
          * @return The builder.
          */
         @NonNull
         @CanIgnoreReturnValue
         public abstract Builder setGeneralErrorUserData(@NonNull String userData);
+
+        /**
+         * Set the user text of {@link #generalErrorText()}.
+         *
+         * @param text User-specific content string to be shown to the user.
+         * @return The builder.
+         */
+        @NonNull
+        @CanIgnoreReturnValue
+        public abstract Builder setGeneralErrorText(@NonNull String text);
     }
 }
