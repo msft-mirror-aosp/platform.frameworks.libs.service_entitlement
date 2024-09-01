@@ -39,6 +39,7 @@ import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
+import com.android.libraries.entitlement.http.HttpCookieJar;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
@@ -215,10 +216,13 @@ public class EapAkaApi {
                         ERROR_MALFORMED_HTTP_RESPONSE,
                         "Failed to parse EAP-AKA challenge: " + challengeResponse.body());
             }
+            ImmutableList<String> cookies = HttpCookieJar
+                    .parseSetCookieHeaders(challengeResponse.cookies())
+                    .toCookieHeaders();
             return respondToEapAkaChallenge(
                     carrierConfig,
                     eapAkaChallenge,
-                    challengeResponse.cookies(),
+                    cookies,
                     MAX_EAP_AKA_ATTEMPTS,
                     request.acceptContentType(),
                     request.terminalVendor(),
@@ -441,10 +445,13 @@ public class EapAkaApi {
                         ERROR_MALFORMED_HTTP_RESPONSE,
                         "Failed to parse EAP-AKA challenge: " + challengeResponse.body());
             }
+            ImmutableList<String> cookies = HttpCookieJar
+                    .parseSetCookieHeaders(challengeResponse.cookies())
+                    .toCookieHeaders();
             return respondToEapAkaChallenge(
                     carrierConfig,
                     eapAkaChallenge,
-                    challengeResponse.cookies(),
+                    cookies,
                     MAX_EAP_AKA_ATTEMPTS,
                     request.acceptContentType(),
                     request.terminalVendor(),
