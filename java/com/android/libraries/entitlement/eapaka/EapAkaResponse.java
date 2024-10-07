@@ -113,7 +113,7 @@ public class EapAkaResponse {
                             securityContext.getIk(),
                             securityContext.getCk());
             // K_aut is the key used to calculate MAC
-            if (mk.getAut() == null) {
+            if (mk == null || mk.getAut() == null) {
                 throw new ServiceEntitlementException(
                         ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "Can't generate K_Aut!");
             }
