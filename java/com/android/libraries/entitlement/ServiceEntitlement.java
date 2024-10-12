@@ -88,6 +88,11 @@ public class ServiceEntitlement {
      */
     public static final String APP_SATELLITE_ENTITLEMENT = Ts43Constants.APP_SATELLITE_ENTITLEMENT;
 
+    /**
+     * App ID for ODSA for Cross-TS.43 platform device, Entitlement and Activation.
+     */
+    public static final String APP_ODSA_CROSS_TS43 = Ts43Constants.APP_ODSA_CROSS_TS43;
+
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
     private ServiceEntitlementRequest mOidcRequest;

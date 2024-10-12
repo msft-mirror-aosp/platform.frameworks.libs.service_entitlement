@@ -61,6 +61,9 @@ public final class Ts43Constants {
     /** App ID for satellite entitlement. */
     public static final String APP_SATELLITE_ENTITLEMENT = "ap2016";
 
+    /** App ID for ODSA for Cross-TS.43 platform device, Entitlement and Activation */
+    public static final String APP_ODSA_CROSS_TS43 = "ap2017";
+
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
             APP_UNKNOWN,
@@ -74,7 +77,8 @@ public final class Ts43Constants {
             APP_DIRECT_CARRIER_BILLING,
             APP_PRIVATE_USER_IDENTITY,
             APP_PHONE_NUMBER_INFORMATION,
-            APP_SATELLITE_ENTITLEMENT
+            APP_SATELLITE_ENTITLEMENT,
+            APP_ODSA_CROSS_TS43
     })
     public @interface AppId {
     }
@@ -98,6 +102,7 @@ public final class Ts43Constants {
             case APP_PRIVATE_USER_IDENTITY:
             case APP_PHONE_NUMBER_INFORMATION:
             case APP_SATELLITE_ENTITLEMENT:
+            case APP_ODSA_CROSS_TS43:
                 return true;
             default: // fall through
         }
