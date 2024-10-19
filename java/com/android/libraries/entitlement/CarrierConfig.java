@@ -32,10 +32,10 @@ public abstract class CarrierConfig {
     /** Default value of {@link #timeoutInSec} if not set. */
     public static final int DEFAULT_TIMEOUT_IN_SEC = 30;
 
-    public static final String CLIENT_TS_43_IMS_ENTITLEMENT = "IMS-Entitlement";
-    public static final String CLIENT_TS_43_COMPANION_ODSA = "Companion-ODSA";
-    public static final String CLIENT_TS_43_PRIMARY_ODSA = "Primary-ODSA";
-    public static final String CLIENT_TS_43_SERVER_ODSA = "Server-ODSA";
+    public static final String CLIENT_TS_43_IMS_ENTITLEMENT = "client-IMS-Entitlement";
+    public static final String CLIENT_TS_43_COMPANION_ODSA = "client-Companion-ODSA";
+    public static final String CLIENT_TS_43_PRIMARY_ODSA = "client-Primary-ODSA";
+    public static final String CLIENT_TS_43_SERVER_ODSA = "client-Server-ODSA";
 
     /** The carrier's entitlement server URL. See {@link Builder#setServerUrl}. */
     public abstract String serverUrl();
