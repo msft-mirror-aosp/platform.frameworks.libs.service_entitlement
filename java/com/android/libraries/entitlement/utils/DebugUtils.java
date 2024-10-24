@@ -37,7 +37,7 @@ public final class DebugUtils {
     /** Logs PII data if allowed. */
     public static void logPii(String message) {
         if (isPiiLoggable()) {
-            Log.d(TAG, message);
+            Log.i(TAG, message);
         }
     }
 
