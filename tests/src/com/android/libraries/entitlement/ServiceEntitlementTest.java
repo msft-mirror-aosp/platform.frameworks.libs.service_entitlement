@@ -18,6 +18,8 @@ package com.android.libraries.entitlement;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.expectThrows;
@@ -102,7 +104,10 @@ public class ServiceEntitlementTest {
     public void queryEntitlementStatus_appVolte_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         when(mMockEapAkaApi.queryEntitlementStatus(
-                        ImmutableList.of(ServiceEntitlement.APP_VOLTE), mCarrierConfig, request))
+                        eq(ImmutableList.of(ServiceEntitlement.APP_VOLTE)),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        any()))
                 .thenAnswer(
                         invocation -> {
                             when(mMockHttpResponse.body()).thenReturn(QUERY_APP_VOLTE_RESULT);
@@ -119,7 +124,10 @@ public class ServiceEntitlementTest {
     public void queryEntitlementStatus_appVowifi_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         when(mMockEapAkaApi.queryEntitlementStatus(
-                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI), mCarrierConfig, request))
+                        eq(ImmutableList.of(ServiceEntitlement.APP_VOWIFI)),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        any()))
                 .thenAnswer(
                         invocation -> {
                             when(mMockHttpResponse.body()).thenReturn(QUERY_APP_VOWIFI_RESULT);
@@ -137,10 +145,11 @@ public class ServiceEntitlementTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
-                        ServiceEntitlement.APP_ODSA_COMPANION,
-                        mCarrierConfig,
-                        request,
-                        odsaOperation))
+                        eq(ServiceEntitlement.APP_ODSA_COMPANION),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        eq(odsaOperation),
+                        any()))
                 .thenAnswer(
                         invocation -> {
                             when(mMockHttpResponse.body())
@@ -159,10 +168,11 @@ public class ServiceEntitlementTest {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         EsimOdsaOperation odsaOperation = EsimOdsaOperation.builder().build();
         when(mMockEapAkaApi.performEsimOdsaOperation(
-                        ServiceEntitlement.APP_ODSA_PRIMARY,
-                        mCarrierConfig,
-                        request,
-                        odsaOperation))
+                        eq(ServiceEntitlement.APP_ODSA_PRIMARY),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        eq(odsaOperation),
+                        any()))
                 .thenAnswer(
                         invocation -> {
                             when(mMockHttpResponse.body())
@@ -180,7 +190,10 @@ public class ServiceEntitlementTest {
     public void acquireOidcAuthenticationEndpoint_returnResult() throws Exception {
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
         when(mMockEapAkaApi.acquireOidcAuthenticationEndpoint(
-                        ServiceEntitlement.APP_ODSA_COMPANION, mCarrierConfig, request))
+                        eq(ServiceEntitlement.APP_ODSA_COMPANION),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        any()))
                 .thenReturn(QUERY_OIDC_RESULT);
 
         assertThat(
@@ -192,7 +205,10 @@ public class ServiceEntitlementTest {
     @Test
     public void queryEntitlementStatusFromOidc_returnResult() throws Exception {
         when(mMockEapAkaApi.queryEntitlementStatusFromOidc(
-                        ServiceEntitlement.APP_ODSA_PRIMARY, mCarrierConfig, null))
+                        eq(ServiceEntitlement.APP_ODSA_PRIMARY),
+                        eq(mCarrierConfig),
+                        eq(null),
+                        any()))
                 .thenAnswer(
                         invocation -> {
                             when(mMockHttpResponse.body())

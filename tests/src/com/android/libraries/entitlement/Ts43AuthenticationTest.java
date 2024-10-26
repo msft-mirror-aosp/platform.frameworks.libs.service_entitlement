@@ -123,8 +123,9 @@ public class Ts43AuthenticationTest {
         doReturn(Context.TELEPHONY_SERVICE).when(mContext)
                 .getSystemServiceName(TelephonyManager.class);
         doReturn(mTelephonyManager).when(mContext).getSystemService(Context.TELEPHONY_SERVICE);
-        doReturn(mMockHttpResponse).when(mMockEapAkaApi)
-                .queryEntitlementStatus(any(), any(), any());
+        doReturn(mMockHttpResponse)
+                .when(mMockEapAkaApi)
+                .queryEntitlementStatus(any(), any(), any(), any());
         doReturn(COOKIES).when(mMockHttpResponse).cookies();
     }
 
@@ -185,9 +186,13 @@ public class Ts43AuthenticationTest {
 
     @Test
     public void testGetAuthToken_httpResponseError() throws Exception {
-        doThrow(new ServiceEntitlementException(
-                ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS, 1234, "http error"))
-                .when(mMockEapAkaApi).queryEntitlementStatus(any(), any(), any());
+        doThrow(
+                        new ServiceEntitlementException(
+                                ServiceEntitlementException.ERROR_HTTP_STATUS_NOT_SUCCESS,
+                                1234,
+                                "http error"))
+                .when(mMockEapAkaApi)
+                .queryEntitlementStatus(any(), any(), any(), any());
         try {
             mTs43Authentication.getAuthToken(
                     0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
