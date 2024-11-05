@@ -44,6 +44,7 @@ import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 
 import org.json.JSONException;
@@ -159,7 +160,8 @@ public class EapAkaApi {
     public HttpResponse queryEntitlementStatus(
             ImmutableList<String> appIds,
             CarrierConfig carrierConfig,
-            ServiceEntitlementRequest request)
+            ServiceEntitlementRequest request,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
@@ -173,6 +175,13 @@ public class EapAkaApi {
             appendParametersForServiceEntitlementRequest(urlBuilder, appIds, request);
         }
 
+        String userAgent =
+                getUserAgent(
+                        carrierConfig.clientTs43(),
+                        request.terminalVendor(),
+                        request.terminalModel(),
+                        request.terminalSoftwareVersion());
+
         if (!TextUtils.isEmpty(request.authenticationToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
             Log.d(TAG, "Fast Re-Authentication");
@@ -181,16 +190,14 @@ public class EapAkaApi {
                             postData,
                             carrierConfig,
                             request.acceptContentType(),
-                            request.terminalVendor(),
-                            request.terminalModel(),
-                            request.terminalSoftwareVersion())
+                            userAgent,
+                            additionalHeaders)
                     : httpGet(
                             urlBuilder.toString(),
                             carrierConfig,
                             request.acceptContentType(),
-                            request.terminalVendor(),
-                            request.terminalModel(),
-                            request.terminalSoftwareVersion());
+                            userAgent,
+                            additionalHeaders);
         } else {
             // Full Authentication flow
             Log.d(TAG, "Full Authentication");
@@ -200,16 +207,14 @@ public class EapAkaApi {
                                     postData,
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
-                                    request.terminalVendor(),
-                                    request.terminalModel(),
-                                    request.terminalSoftwareVersion())
+                                    userAgent,
+                                    additionalHeaders)
                             : httpGet(
                                     urlBuilder.toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
-                                    request.terminalVendor(),
-                                    request.terminalModel(),
-                                    request.terminalSoftwareVersion());
+                                    userAgent,
+                                    additionalHeaders);
             String eapAkaChallenge = getEapAkaChallenge(challengeResponse);
             if (eapAkaChallenge == null) {
                 throw new ServiceEntitlementException(
@@ -225,9 +230,8 @@ public class EapAkaApi {
                     cookies,
                     MAX_EAP_AKA_ATTEMPTS,
                     request.acceptContentType(),
-                    request.terminalVendor(),
-                    request.terminalModel(),
-                    request.terminalSoftwareVersion());
+                    userAgent,
+                    additionalHeaders);
         }
     }
 
@@ -257,9 +261,8 @@ public class EapAkaApi {
             ImmutableList<String> cookies,
             int remainingAttempts,
             String acceptContentType,
-            String terminalVendor,
-            String terminalModel,
-            String terminalSoftwareVersion)
+            String userAgent,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         if (!mBypassEapAkaResponse.isEmpty()) {
             return challengeResponse(
@@ -267,9 +270,8 @@ public class EapAkaApi {
                     carrierConfig,
                     cookies,
                     CONTENT_TYPE_EAP_RELAY_JSON + ", " + acceptContentType,
-                    terminalVendor,
-                    terminalModel,
-                    terminalSoftwareVersion);
+                    userAgent,
+                    additionalHeaders);
         }
 
         EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(eapAkaChallenge);
@@ -283,9 +285,8 @@ public class EapAkaApi {
                             carrierConfig,
                             cookies,
                             CONTENT_TYPE_EAP_RELAY_JSON + ", " + acceptContentType,
-                            terminalVendor,
-                            terminalModel,
-                            terminalSoftwareVersion);
+                            userAgent,
+                            additionalHeaders);
             String nextEapAkaChallenge = getEapAkaChallenge(response);
             // successful authentication
             if (nextEapAkaChallenge == null) {
@@ -300,9 +301,8 @@ public class EapAkaApi {
                         cookies,
                         remainingAttempts - 1,
                         acceptContentType,
-                        terminalVendor,
-                        terminalModel,
-                        terminalSoftwareVersion);
+                        userAgent,
+                        additionalHeaders);
             } else {
                 throw new ServiceEntitlementException(
                         ERROR_EAP_AKA_FAILURE, "Unable to EAP-AKA authenticate");
@@ -315,9 +315,8 @@ public class EapAkaApi {
                             carrierConfig,
                             cookies,
                             CONTENT_TYPE_EAP_RELAY_JSON,
-                            terminalVendor,
-                            terminalModel,
-                            terminalSoftwareVersion);
+                            userAgent,
+                            additionalHeaders);
             String nextEapAkaChallenge = getEapAkaChallenge(newChallenge);
             if (nextEapAkaChallenge == null) {
                 throw new ServiceEntitlementException(
@@ -331,9 +330,8 @@ public class EapAkaApi {
                         cookies,
                         remainingAttempts - 1,
                         acceptContentType,
-                        terminalVendor,
-                        terminalModel,
-                        terminalSoftwareVersion);
+                        userAgent,
+                        additionalHeaders);
             } else {
                 throw new ServiceEntitlementException(
                         ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE,
@@ -350,9 +348,8 @@ public class EapAkaApi {
             CarrierConfig carrierConfig,
             ImmutableList<String> cookies,
             String acceptContentType,
-            String terminalVendor,
-            String terminalModel,
-            String terminalSoftwareVersion)
+            String userAgent,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         JSONObject postData = new JSONObject();
         try {
@@ -365,11 +362,10 @@ public class EapAkaApi {
                 postData,
                 carrierConfig,
                 acceptContentType,
-                terminalVendor,
-                terminalModel,
-                terminalSoftwareVersion,
+                userAgent,
                 CONTENT_TYPE_EAP_RELAY_JSON,
-                cookies);
+                cookies,
+                additionalHeaders);
     }
 
     /**
@@ -383,7 +379,8 @@ public class EapAkaApi {
             String appId,
             CarrierConfig carrierConfig,
             ServiceEntitlementRequest request,
-            EsimOdsaOperation odsaOperation)
+            EsimOdsaOperation odsaOperation,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
@@ -400,7 +397,12 @@ public class EapAkaApi {
                     urlBuilder, ImmutableList.of(appId), request);
             appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
         }
-
+        String userAgent =
+                getUserAgent(
+                        carrierConfig.clientTs43(),
+                        request.terminalVendor(),
+                        request.terminalModel(),
+                        request.terminalSoftwareVersion());
         if (!TextUtils.isEmpty(request.authenticationToken())
                 || !TextUtils.isEmpty(request.temporaryToken())) {
             // Fast Re-Authentication flow with pre-existing auth token
@@ -410,16 +412,14 @@ public class EapAkaApi {
                             postData,
                             carrierConfig,
                             request.acceptContentType(),
-                            request.terminalVendor(),
-                            request.terminalModel(),
-                            request.terminalSoftwareVersion())
+                            userAgent,
+                            additionalHeaders)
                     : httpGet(
                             urlBuilder.toString(),
                             carrierConfig,
                             request.acceptContentType(),
-                            request.terminalVendor(),
-                            request.terminalModel(),
-                            request.terminalSoftwareVersion());
+                            userAgent,
+                            additionalHeaders);
         } else {
             // Full Authentication flow
             Log.d(TAG, "Full Authentication");
@@ -429,16 +429,14 @@ public class EapAkaApi {
                                     postData,
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
-                                    request.terminalVendor(),
-                                    request.terminalModel(),
-                                    request.terminalSoftwareVersion())
+                                    userAgent,
+                                    additionalHeaders)
                             : httpGet(
                                     urlBuilder.toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
-                                    request.terminalVendor(),
-                                    request.terminalModel(),
-                                    request.terminalSoftwareVersion());
+                                    userAgent,
+                                    additionalHeaders);
             String eapAkaChallenge = getEapAkaChallenge(challengeResponse);
             if (eapAkaChallenge == null) {
                 throw new ServiceEntitlementException(
@@ -454,9 +452,8 @@ public class EapAkaApi {
                     cookies,
                     MAX_EAP_AKA_ATTEMPTS,
                     request.acceptContentType(),
-                    request.terminalVendor(),
-                    request.terminalModel(),
-                    request.terminalSoftwareVersion());
+                    userAgent,
+                    additionalHeaders);
         }
     }
 
@@ -470,7 +467,10 @@ public class EapAkaApi {
      */
     @NonNull
     public String acquireOidcAuthenticationEndpoint(
-            String appId, CarrierConfig carrierConfig, ServiceEntitlementRequest request)
+            String appId,
+            CarrierConfig carrierConfig,
+            ServiceEntitlementRequest request,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
@@ -483,6 +483,12 @@ public class EapAkaApi {
             appendParametersForServiceEntitlementRequest(
                     urlBuilder, ImmutableList.of(appId), request);
         }
+        String userAgent =
+                getUserAgent(
+                        carrierConfig.clientTs43(),
+                        request.terminalVendor(),
+                        request.terminalModel(),
+                        request.terminalSoftwareVersion());
 
         HttpResponse response =
                 carrierConfig.useHttpPost()
@@ -490,16 +496,14 @@ public class EapAkaApi {
                                 postData,
                                 carrierConfig,
                                 request.acceptContentType(),
-                                request.terminalVendor(),
-                                request.terminalModel(),
-                                request.terminalSoftwareVersion())
+                                userAgent,
+                                additionalHeaders)
                         : httpGet(
                                 urlBuilder.toString(),
                                 carrierConfig,
                                 request.acceptContentType(),
-                                request.terminalVendor(),
-                                request.terminalModel(),
-                                request.terminalSoftwareVersion());
+                                userAgent,
+                                additionalHeaders);
         return response.location();
     }
 
@@ -513,16 +517,24 @@ public class EapAkaApi {
      */
     @NonNull
     public HttpResponse queryEntitlementStatusFromOidc(
-            String url, CarrierConfig carrierConfig, ServiceEntitlementRequest request)
+            String url,
+            CarrierConfig carrierConfig,
+            ServiceEntitlementRequest request,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(url).buildUpon();
+        String userAgent =
+                getUserAgent(
+                        carrierConfig.clientTs43(),
+                        request.terminalVendor(),
+                        request.terminalModel(),
+                        request.terminalSoftwareVersion());
         return httpGet(
                 urlBuilder.toString(),
                 carrierConfig,
                 request.acceptContentType(),
-                request.terminalVendor(),
-                request.terminalModel(),
-                request.terminalSoftwareVersion());
+                userAgent,
+                additionalHeaders);
     }
 
     @SuppressWarnings("HardwareIds")
@@ -822,26 +834,23 @@ public class EapAkaApi {
             String url,
             CarrierConfig carrierConfig,
             String acceptContentType,
-            String terminalVendor,
-            String terminalModel,
-            String terminalSoftwareVersion)
+            String userAgent,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         HttpRequest.Builder builder =
                 HttpRequest.builder()
                         .setUrl(url)
                         .setRequestMethod(RequestMethod.GET)
                         .addRequestProperty(HttpHeaders.ACCEPT, acceptContentType)
+                        .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network());
-        String userAgent =
-                getUserAgent(
-                        carrierConfig.clientTs43(),
-                        terminalVendor,
-                        terminalModel,
-                        terminalSoftwareVersion);
-        if (!TextUtils.isEmpty(userAgent)) {
-            builder.addRequestProperty(HttpHeaders.USER_AGENT, userAgent);
-        }
+        additionalHeaders.forEach(
+                (k, v) -> {
+                    if (!TextUtils.isEmpty(v)) {
+                        builder.addRequestProperty(k, v);
+                    }
+                });
         return mHttpClient.request(builder.build());
     }
 
@@ -850,19 +859,17 @@ public class EapAkaApi {
             JSONObject postData,
             CarrierConfig carrierConfig,
             String acceptContentType,
-            String terminalVendor,
-            String terminalModel,
-            String terminalSoftwareVersion)
+            String userAgent,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return httpPost(
                 postData,
                 carrierConfig,
                 acceptContentType,
-                terminalVendor,
-                terminalModel,
-                terminalSoftwareVersion,
+                userAgent,
                 ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON,
-                ImmutableList.of());
+                ImmutableList.of(),
+                additionalHeaders);
     }
 
     @NonNull
@@ -870,11 +877,10 @@ public class EapAkaApi {
             JSONObject postData,
             CarrierConfig carrierConfig,
             String acceptContentType,
-            String terminalVendor,
-            String terminalModel,
-            String terminalSoftwareVersion,
+            String userAgent,
             String contentType,
-            ImmutableList<String> cookies)
+            ImmutableList<String> cookies,
+            ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         HttpRequest.Builder builder =
                 HttpRequest.builder()
@@ -884,17 +890,15 @@ public class EapAkaApi {
                         .addRequestProperty(HttpHeaders.ACCEPT, acceptContentType)
                         .addRequestProperty(HttpHeaders.CONTENT_TYPE, contentType)
                         .addRequestProperty(HttpHeaders.COOKIE, cookies)
+                        .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network());
-        String userAgent =
-                getUserAgent(
-                        carrierConfig.clientTs43(),
-                        terminalVendor,
-                        terminalModel,
-                        terminalSoftwareVersion);
-        if (!TextUtils.isEmpty(userAgent)) {
-            builder.addRequestProperty(HttpHeaders.USER_AGENT, userAgent);
-        }
+        additionalHeaders.forEach(
+                (k, v) -> {
+                    if (!TextUtils.isEmpty(v)) {
+                        builder.addRequestProperty(k, v);
+                    }
+                });
         return mHttpClient.request(builder.build());
     }
 
@@ -938,22 +942,19 @@ public class EapAkaApi {
             String terminalVendor,
             String terminalModel,
             String terminalSoftwareVersion) {
-        if (!TextUtils.isEmpty(clientTs43)
-                && !TextUtils.isEmpty(terminalVendor)
-                && !TextUtils.isEmpty(terminalModel)
-                && !TextUtils.isEmpty(terminalSoftwareVersion)) {
-            return String.format(
-                    "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
-                    trimString(terminalVendor, MAX_TERMINAL_VENDOR_LENGTH),
-                    trimString(terminalModel, MAX_TERMINAL_MODEL_LENGTH),
-                    clientTs43,
-                    mAppVersion,
-                    trimString(terminalSoftwareVersion, MAX_TERMINAL_SOFTWARE_VERSION_LENGTH));
-        }
-        return "";
+        return String.format(
+                "PRD-TS43 term-%s/%s %s/%s OS-Android/%s",
+                trimString(terminalVendor, MAX_TERMINAL_VENDOR_LENGTH),
+                trimString(terminalModel, MAX_TERMINAL_MODEL_LENGTH),
+                clientTs43,
+                mAppVersion,
+                trimString(terminalSoftwareVersion, MAX_TERMINAL_SOFTWARE_VERSION_LENGTH));
     }
 
     private String trimString(String s, int maxLength) {
+        if (s == null) {
+            return null;
+        }
         return s.substring(0, Math.min(s.length(), maxLength));
     }
 
