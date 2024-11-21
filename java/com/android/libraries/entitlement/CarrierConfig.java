@@ -20,6 +20,7 @@ import android.net.Network;
 
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 import com.google.auto.value.AutoValue;
 
 /**
@@ -55,6 +56,10 @@ public abstract class CarrierConfig {
     /** The {@link Network} used for HTTP connection. See {@link Builder#setNetwork}. */
     @Nullable
     public abstract Network network();
+
+    /** The factory to create connections. See {@link Builder#setUrlConnectionFactory}. */
+    @Nullable
+    public abstract UrlConnectionFactory urlConnectionFactory();
 
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
@@ -96,5 +101,11 @@ public abstract class CarrierConfig {
          * is used.
          */
         public abstract Builder setNetwork(Network network);
+
+        /**
+         * If unset, the default Android API {@link java.net.URL#openConnection}
+         * would be used. This allows callers of the lib to choose the HTTP stack.
+         */
+        public abstract Builder setUrlConnectionFactory(UrlConnectionFactory urlConnectionFactory);
     }
 }

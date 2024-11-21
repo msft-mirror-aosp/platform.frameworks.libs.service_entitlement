@@ -849,7 +849,8 @@ public class EapAkaApi {
                         .addRequestProperty(HttpHeaders.ACCEPT, acceptContentType)
                         .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
-                        .setNetwork(carrierConfig.network());
+                        .setNetwork(carrierConfig.network())
+                        .setUrlConnectionFactory(carrierConfig.urlConnectionFactory());
         additionalHeaders.forEach(
                 (k, v) -> {
                     if (!TextUtils.isEmpty(v)) {
@@ -897,7 +898,8 @@ public class EapAkaApi {
                         .addRequestProperty(HttpHeaders.COOKIE, cookies)
                         .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
-                        .setNetwork(carrierConfig.network());
+                        .setNetwork(carrierConfig.network())
+                        .setUrlConnectionFactory(carrierConfig.urlConnectionFactory());
         additionalHeaders.forEach(
                 (k, v) -> {
                     if (!TextUtils.isEmpty(v)) {
