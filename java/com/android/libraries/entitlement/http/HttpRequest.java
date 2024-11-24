@@ -21,6 +21,7 @@ import android.net.Network;
 
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 import com.android.libraries.entitlement.CarrierConfig;
 
 import com.google.auto.value.AutoValue;
@@ -53,6 +54,13 @@ public abstract class HttpRequest {
     /** The network used for this HTTP connection. See {@link Builder#setNetwork}. */
     @Nullable
     public abstract Network network();
+
+    /**
+     * The {@link UrlConnectionFactory} used for this HTTP connection.
+     * See {@link Builder#setUrlConnectionFactory}.
+     */
+    @Nullable
+    public abstract UrlConnectionFactory urlConnectionFactory();
 
     /** Builder of {@link HttpRequest}. */
     @AutoValue.Builder
@@ -106,6 +114,13 @@ public abstract class HttpRequest {
          * is used.
          */
         public abstract Builder setNetwork(@Nullable Network network);
+
+        /**
+         * If unset, the default Android API {@link java.net.URL#openConnection}
+         * would be used. This allows callers of the lib to choose the HTTP stack.
+         */
+        public abstract Builder setUrlConnectionFactory(
+                @Nullable UrlConnectionFactory urlConnectionFactory);
     }
 
     public static Builder builder() {
