@@ -74,7 +74,6 @@ public class EapAkaApi {
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
-    private static final String GID1 = "gid1";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
@@ -604,8 +603,6 @@ public class EapAkaApi {
             urlBuilder.appendQueryParameter(TERMINAL_ID, request.terminalId());
         }
 
-        urlBuilder.appendQueryParameter(GID1, mTelephonyManager.getGroupIdLevel1());
-
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
@@ -648,8 +645,6 @@ public class EapAkaApi {
             } else {
                 postData.put(TERMINAL_ID, request.terminalId());
             }
-
-            postData.put(GID1, mTelephonyManager.getGroupIdLevel1());
 
             // Optional query parameters, append them if not empty
             appendOptionalQueryParameter(postData, APP_VERSION, request.appVersion());
