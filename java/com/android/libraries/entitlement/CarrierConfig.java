@@ -61,13 +61,17 @@ public abstract class CarrierConfig {
     @Nullable
     public abstract UrlConnectionFactory urlConnectionFactory();
 
+    /** The EAP-AKA realm. See {@link Builder#setEapAkaRealm}. */
+    public abstract String eapAkaRealm();
+
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
                 .setServerUrl("")
                 .setClientTs43("")
                 .setUseHttpPost(false)
-                .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC);
+                .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC)
+                .setEapAkaRealm("nai.epc");
     }
 
     /** Builder. */
@@ -107,5 +111,11 @@ public abstract class CarrierConfig {
          * would be used. This allows callers of the lib to choose the HTTP stack.
          */
         public abstract Builder setUrlConnectionFactory(UrlConnectionFactory urlConnectionFactory);
+
+        /**
+         * Sets the realm for EAP-AKA. If unset, uses the standard "nai.epc" defined in 3GPP TS
+         * 23.003 clause 19.3.2.
+         */
+        public abstract Builder setEapAkaRealm(String eapAkaRealm);
     }
 }
