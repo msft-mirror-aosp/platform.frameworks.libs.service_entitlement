@@ -68,7 +68,7 @@ public class EapAkaHelper {
                 mContext.getSystemService(TelephonyManager.class)
                         .createForSubscriptionId(mSimSubscriptionId);
         return EapAkaApi.getImsiEap(
-                telephonyManager.getSimOperator(), telephonyManager.getSubscriberId());
+                telephonyManager.getSimOperator(), telephonyManager.getSubscriberId(), "nai.epc");
     }
 
     /**
@@ -102,7 +102,8 @@ public class EapAkaHelper {
         try {
             EapAkaChallenge eapAkaChallenge = EapAkaChallenge.parseEapAkaChallenge(challenge);
             com.android.libraries.entitlement.eapaka.EapAkaResponse eapAkaResponse =
-                    respondToEapAkaChallenge(mContext, mSimSubscriptionId, eapAkaChallenge);
+                    respondToEapAkaChallenge(
+                            mContext, mSimSubscriptionId, eapAkaChallenge, "nai.epc");
             return new EapAkaResponse(
                     eapAkaResponse.response(), eapAkaResponse.synchronizationFailureResponse());
         } catch (ServiceEntitlementException e) {
