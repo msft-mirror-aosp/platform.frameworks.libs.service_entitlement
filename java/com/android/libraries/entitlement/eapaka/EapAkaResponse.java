@@ -81,7 +81,10 @@ public class EapAkaResponse {
      * with network provided EAP-AKA challenge request message.
      */
     public static EapAkaResponse respondToEapAkaChallenge(
-            Context context, int simSubscriptionId, EapAkaChallenge eapAkaChallenge)
+            Context context,
+            int simSubscriptionId,
+            EapAkaChallenge eapAkaChallenge,
+            String eapAkaRealm)
             throws ServiceEntitlementException {
         TelephonyManager telephonyManager =
                 context.getSystemService(TelephonyManager.class)
@@ -108,8 +111,10 @@ public class EapAkaResponse {
             // generate master key - refer to RFC 4187, section 7. Key Generation
             MasterKey mk =
                     MasterKey.create(
-                            EapAkaApi.getImsiEap(telephonyManager.getSimOperator(),
-                                    telephonyManager.getSubscriberId()),
+                            EapAkaApi.getImsiEap(
+                                    telephonyManager.getSimOperator(),
+                                    telephonyManager.getSubscriberId(),
+                                    eapAkaRealm),
                             securityContext.getIk(),
                             securityContext.getCk());
             // K_aut is the key used to calculate MAC
