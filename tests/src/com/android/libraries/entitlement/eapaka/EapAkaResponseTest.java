@@ -106,7 +106,7 @@ public class EapAkaResponseTest {
                         convertHexStringToBytes(EAP_AKA_CHALLENGE_RESPONSE), Base64.NO_WRAP);
 
         EapAkaResponse challengeResponse =
-                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge, "nai.epc");
 
         assertThat(challengeResponse.response()).isEqualTo(expectedResponse);
     }
@@ -124,7 +124,7 @@ public class EapAkaResponseTest {
                         convertHexStringToBytes(EAP_AKA_CHALLENGE_SYNC_FAILURE), Base64.NO_WRAP);
 
         EapAkaResponse challengeResponse =
-                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge, "nai.epc");
 
         assertThat(challengeResponse.synchronizationFailureResponse()).isEqualTo(expectedResponse);
     }
