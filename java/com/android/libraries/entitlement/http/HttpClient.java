@@ -36,6 +36,7 @@ import androidx.annotation.WorkerThread;
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.StreamUtils;
+import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
@@ -119,12 +120,16 @@ public class HttpClient {
     private void createConnection(HttpRequest request) throws ServiceEntitlementException {
         try {
             URL url = new URL(request.url());
+            UrlConnectionFactory urlConnectionFactory = request.urlConnectionFactory();
             Network network = request.network();
-            if (network == null) {
-                mConnection = (HttpURLConnection) url.openConnection();
-            } else {
+            if (network != null) {
                 mConnection = (HttpURLConnection) network.openConnection(url);
+            } else if (urlConnectionFactory != null) {
+                mConnection = (HttpURLConnection) urlConnectionFactory.openConnection(url);
+            } else  {
+                mConnection = (HttpURLConnection) url.openConnection();
             }
+
             mConnection.setInstanceFollowRedirects(false);
             // add HTTP headers
             for (Map.Entry<String, String> entry : request.requestProperties().entries()) {
@@ -174,7 +179,13 @@ public class HttpClient {
         }
         responseBuilder.setCookies(getCookies(connection));
         try {
-            String responseBody = readResponse(connection);
+            // {@code CronetHttpURLConnection.getInputStream()} throws if the
+            // caller tries to read the response body of a redirect when
+            // redirects are disabled.
+            String responseBody =
+                    connection.getResponseCode() == HttpURLConnection.HTTP_MOVED_TEMP
+                            ? ""
+                            : readResponse(connection);
             logPii("HttpClient.response body: " + responseBody);
             responseBuilder.setBody(responseBody);
         } catch (IOException e) {
