@@ -91,11 +91,16 @@ public class EapAkaResponse {
                         .createForSubscriptionId(simSubscriptionId);
 
         // process EAP-AKA authentication with SIM
-        String response =
-                telephonyManager.getIccAuthentication(
-                        TelephonyManager.APPTYPE_USIM,
-                        TelephonyManager.AUTHTYPE_EAP_AKA,
-                        eapAkaChallenge.getSimAuthenticationRequest());
+        String response = null;
+        try {
+            response = telephonyManager.getIccAuthentication(TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                eapAkaChallenge.getSimAuthenticationRequest());
+        } catch (UnsupportedOperationException e) {
+            throw new ServiceEntitlementException(
+                ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
+                "UnsupportedOperationException" + e.toString());
+        }
         if (response == null) {
             throw new ServiceEntitlementException(
                     ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "EAP-AKA response is null!");
