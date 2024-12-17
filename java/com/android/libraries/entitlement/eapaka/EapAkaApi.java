@@ -50,6 +50,7 @@ import com.google.common.net.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class EapAkaApi {
@@ -74,6 +75,7 @@ public class EapAkaApi {
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
+    private static final String GID1 = "gid1";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
@@ -611,6 +613,12 @@ public class EapAkaApi {
             urlBuilder.appendQueryParameter(TERMINAL_ID, request.terminalId());
         }
 
+        if (!TextUtils.isEmpty(request.gid1())) {
+            urlBuilder.appendQueryParameter(GID1, request.gid1());
+        } else if ((new BigDecimal(request.entitlementVersion())).intValue() >= 12) {
+            urlBuilder.appendQueryParameter(GID1, mTelephonyManager.getGroupIdLevel1());
+        }
+
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
@@ -654,6 +662,12 @@ public class EapAkaApi {
                 postData.put(TERMINAL_ID, mTelephonyManager.getImei());
             } else {
                 postData.put(TERMINAL_ID, request.terminalId());
+            }
+
+            if (!TextUtils.isEmpty(request.gid1())) {
+                postData.put(GID1, request.gid1());
+            } else if ((new BigDecimal(request.entitlementVersion())).intValue() >= 12) {
+                postData.put(GID1, mTelephonyManager.getGroupIdLevel1());
             }
 
             // Optional query parameters, append them if not empty
