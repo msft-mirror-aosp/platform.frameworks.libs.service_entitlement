@@ -47,12 +47,12 @@ public class EapAkaChallenge {
     // The identifier of Response must same as Request
     private byte mIdentifier = -1;
     // The value of AT_AUTN, network authentication token
-    private byte[] mAutn;
+    @Nullable private byte[] mAutn;
     // The value of AT_RAND, random challenge
-    private byte[] mRand;
+    @Nullable private byte[] mRand;
 
     // Base64 encoded 3G security context for SIM Authentication request
-    private String mSimAuthenticationRequest;
+    @Nullable private String mSimAuthenticationRequest;
 
     private EapAkaChallenge() {}
 

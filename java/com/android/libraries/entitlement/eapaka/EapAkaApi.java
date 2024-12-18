@@ -20,6 +20,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_JSON_COMPOSE_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -192,13 +193,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            postData,
+                            checkNotNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            urlBuilder.toString(),
+                            checkNotNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -209,13 +210,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    postData,
+                                    checkNotNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    urlBuilder.toString(),
+                                    checkNotNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -415,13 +416,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            postData,
+                            checkNotNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            urlBuilder.toString(),
+                            checkNotNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -432,13 +433,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    postData,
+                                    checkNotNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    urlBuilder.toString(),
+                                    checkNotNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -499,13 +500,13 @@ public class EapAkaApi {
         HttpResponse response =
                 carrierConfig.useHttpPost()
                         ? httpPost(
-                                postData,
+                                checkNotNull(postData),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
                                 additionalHeaders)
                         : httpGet(
-                                urlBuilder.toString(),
+                                checkNotNull(urlBuilder).toString(),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
@@ -828,7 +829,8 @@ public class EapAkaApi {
         }
     }
 
-    private void appendOptionalQueryParameter(JSONObject postData, String key, String value)
+    private void appendOptionalQueryParameter(
+            JSONObject postData, String key, @Nullable String value)
             throws JSONException {
         if (!TextUtils.isEmpty(value)) {
             postData.put(key, value);
@@ -978,9 +980,6 @@ public class EapAkaApi {
     }
 
     private String trimString(String s, int maxLength) {
-        if (s == null) {
-            return null;
-        }
         return s.substring(0, Math.min(s.length(), maxLength));
     }
 
