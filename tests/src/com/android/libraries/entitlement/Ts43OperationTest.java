@@ -307,8 +307,9 @@ public class Ts43OperationTest {
         CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
         ServiceEntitlement serviceEntitlement =
                 new ServiceEntitlement(carrierConfig, mMockEapAkaApi);
-        doReturn(mMockHttpResponse).when(mMockEapAkaApi)
-                .performEsimOdsaOperation(any(), any(), any(), any());
+        doReturn(mMockHttpResponse)
+                .when(mMockEapAkaApi)
+                .performEsimOdsaOperation(any(), any(), any(), any(), any());
 
         doReturn(2).when(mTelephonyManager).getActiveModemCount();
         doReturn(IMEI).when(mTelephonyManager).getImei(0);

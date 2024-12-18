@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertThrows;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
@@ -30,6 +31,8 @@ import android.util.Base64;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.libraries.entitlement.ServiceEntitlementException;
 
 import com.google.common.io.BaseEncoding;
 
@@ -106,9 +109,23 @@ public class EapAkaResponseTest {
                         convertHexStringToBytes(EAP_AKA_CHALLENGE_RESPONSE), Base64.NO_WRAP);
 
         EapAkaResponse challengeResponse =
-                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge, "nai.epc");
 
         assertThat(challengeResponse.response()).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    public void generateEapAkaChallengeResponse_throwException() throws Exception {
+        EapAkaChallenge challenge = EapAkaChallenge.parseEapAkaChallenge(EAP_AKA_CHALLENGE_REQUEST);
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenThrow(new UnsupportedOperationException());
+
+        assertThrows(ServiceEntitlementException.class,
+                () -> EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge,
+                    "nai.epc"));
     }
 
     @Test
@@ -124,7 +141,7 @@ public class EapAkaResponseTest {
                         convertHexStringToBytes(EAP_AKA_CHALLENGE_SYNC_FAILURE), Base64.NO_WRAP);
 
         EapAkaResponse challengeResponse =
-                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge);
+                EapAkaResponse.respondToEapAkaChallenge(mContext, SUB_ID, challenge, "nai.epc");
 
         assertThat(challengeResponse.synchronizationFailureResponse()).isEqualTo(expectedResponse);
     }
