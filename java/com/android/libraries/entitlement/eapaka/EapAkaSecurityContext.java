@@ -41,13 +41,13 @@ class EapAkaSecurityContext {
     private boolean mValid;
 
     // User response, populated on successful authentication
-    private byte[] mRes;
+    @Nullable private byte[] mRes;
     // Cipher Key, populated on successful authentication
-    private byte[] mCk;
+    @Nullable private byte[] mCk;
     // Integrity Key, populated on successful authentication
-    private byte[] mIk;
+    @Nullable private byte[] mIk;
     // AUTS, populated on synchronization failure
-    private byte[] mAuts;
+    @Nullable private byte[] mAuts;
 
     private EapAkaSecurityContext() {}
 
@@ -123,6 +123,7 @@ class EapAkaSecurityContext {
         }
     }
 
+    @Nullable
     private byte[] parseTag(int index, byte[] src) {
         // index at the length byte
         if (index >= src.length) {

@@ -56,7 +56,6 @@ import java.util.Map;
 public class HttpClient {
     private static final String TAG = "ServiceEntitlement";
 
-    private HttpURLConnection mConnection;
     private boolean mSaveHistory;
     private ArrayList<String> mHistory;
 
@@ -71,11 +70,11 @@ public class HttpClient {
             mHistory.add(request.toString());
         }
         logPii("HttpClient.request url: " + request.url());
-        createConnection(request);
-        logPii("HttpClient.request headers (partial): " + mConnection.getRequestProperties());
+        HttpURLConnection connection = createConnection(request);
+        logPii("HttpClient.request headers (partial): " + connection.getRequestProperties());
         try {
             if (POST.equals(request.requestMethod())) {
-                try (OutputStream out = new DataOutputStream(mConnection.getOutputStream())) {
+                try (OutputStream out = new DataOutputStream(connection.getOutputStream())) {
                     // Android JSON toString() escapes forward-slash with back-slash. It's not
                     // supported by some vendor and not mandatory in JSON spec. Undo escaping.
                     String postData = request.postData().toString().replace("\\/", "/");
@@ -83,8 +82,8 @@ public class HttpClient {
                     logPii("HttpClient.request post data: " + postData);
                 }
             }
-            mConnection.connect(); // This is to trigger SocketTimeoutException early
-            HttpResponse response = getHttpResponse(mConnection);
+            connection.connect(); // This is to trigger SocketTimeoutException early
+            HttpResponse response = getHttpResponse(connection);
             Log.d(TAG, "HttpClient.response : " + response.toShortDebugString());
             if (mSaveHistory) {
                 mHistory.add(response.toString());
@@ -94,12 +93,12 @@ public class HttpClient {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS,
                     "Connection error stream: "
-                            + StreamUtils.inputStreamToStringSafe(mConnection.getErrorStream())
+                            + StreamUtils.inputStreamToStringSafe(connection.getErrorStream())
                             + " IOException: "
                             + ioe.toString(),
                     ioe);
         } finally {
-            closeConnection();
+            connection.disconnect();
         }
     }
 
@@ -117,42 +116,38 @@ public class HttpClient {
         mHistory.clear();
     }
 
-    private void createConnection(HttpRequest request) throws ServiceEntitlementException {
+    private HttpURLConnection createConnection(HttpRequest request)
+            throws ServiceEntitlementException {
         try {
+            HttpURLConnection connection;
             URL url = new URL(request.url());
             UrlConnectionFactory urlConnectionFactory = request.urlConnectionFactory();
             Network network = request.network();
             if (network != null) {
-                mConnection = (HttpURLConnection) network.openConnection(url);
+                connection = (HttpURLConnection) network.openConnection(url);
             } else if (urlConnectionFactory != null) {
-                mConnection = (HttpURLConnection) urlConnectionFactory.openConnection(url);
-            } else  {
-                mConnection = (HttpURLConnection) url.openConnection();
+                connection = (HttpURLConnection) urlConnectionFactory.openConnection(url);
+            } else {
+                connection = (HttpURLConnection) url.openConnection();
             }
 
-            mConnection.setInstanceFollowRedirects(false);
+            connection.setInstanceFollowRedirects(false);
             // add HTTP headers
             for (Map.Entry<String, String> entry : request.requestProperties().entries()) {
-                mConnection.addRequestProperty(entry.getKey(), entry.getValue());
+                connection.addRequestProperty(entry.getKey(), entry.getValue());
             }
 
             // set parameters
-            mConnection.setRequestMethod(request.requestMethod());
-            mConnection.setConnectTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
-            mConnection.setReadTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
+            connection.setRequestMethod(request.requestMethod());
+            connection.setConnectTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
+            connection.setReadTimeout((int) SECONDS.toMillis(request.timeoutInSec()));
             if (POST.equals(request.requestMethod())) {
-                mConnection.setDoOutput(true);
+                connection.setDoOutput(true);
             }
+            return connection;
         } catch (IOException ioe) {
             throw new ServiceEntitlementException(
                     ERROR_SERVER_NOT_CONNECTABLE, "Configure connection failed!", ioe);
-        }
-    }
-
-    private void closeConnection() {
-        if (mConnection != null) {
-            mConnection.disconnect();
-            mConnection = null;
         }
     }
 
@@ -165,7 +160,9 @@ public class HttpClient {
             logPii("HttpClient.response headers: " + connection.getHeaderFields());
             if (responseCode != HttpURLConnection.HTTP_OK
                     && responseCode != HttpURLConnection.HTTP_MOVED_TEMP) {
-                throw new ServiceEntitlementException(ERROR_HTTP_STATUS_NOT_SUCCESS, responseCode,
+                throw new ServiceEntitlementException(
+                        ERROR_HTTP_STATUS_NOT_SUCCESS,
+                        responseCode,
                         connection.getHeaderField(HttpHeaders.RETRY_AFTER),
                         "Invalid connection response: " + responseCode);
             }

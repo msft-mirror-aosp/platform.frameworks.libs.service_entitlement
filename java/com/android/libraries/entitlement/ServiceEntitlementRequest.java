@@ -120,6 +120,11 @@ public abstract class ServiceEntitlementRequest {
     public abstract String boostType();
 
     /**
+     * Returns the GID1 (Group ID level 1) of the SIM card. Used by HTTP parameter "gid1".
+     */
+    public abstract String gid1();
+
+    /**
      * Returns a new {@link Builder} object.
      */
     public static Builder builder() {
@@ -137,7 +142,8 @@ public abstract class ServiceEntitlementRequest {
                 .setNotificationToken("")
                 .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM)
                 .setAcceptContentType(ACCEPT_CONTENT_TYPE_JSON_AND_XML)
-                .setBoostType("");
+                .setBoostType("")
+                .setGid1("");
     }
 
     /**
@@ -259,6 +265,15 @@ public abstract class ServiceEntitlementRequest {
          * <p>Optional.
          */
         public abstract Builder setBoostType(String value);
+
+        /**
+         * Sets the GID1 for the SIM Card. Used by HTTP parameter "gid1" for MVNO entitlement
+         * activation.
+         *
+         * <p>Required for TS.43 Versions beginning with v12.0. Will retrieve the value from
+         * {@link android.telephony.TelephonyManager} if not set.
+         */
+        public abstract Builder setGid1(String value);
 
         public abstract ServiceEntitlementRequest build();
     }

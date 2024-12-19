@@ -49,19 +49,21 @@ class MasterKey {
     private static final int LENGTH_TEKS = 160;
 
     /* Master Key */
-    private byte[] mMasterKey;
+    @Nullable private byte[] mMasterKey;
 
     /* Transient EAP Keys */
-    private byte[] mEncr;
-    private byte[] mAut;
-    private byte[] mMsk;
-    private byte[] mEmsk;
+    @Nullable private byte[] mEncr;
+    @Nullable private byte[] mAut;
+    @Nullable private byte[] mMsk;
+    @Nullable private byte[] mEmsk;
 
     private MasterKey() {
     }
 
     /** Create the {@code masterKey}. */
-    public static MasterKey create(String identity, @Nullable byte[] ik, @Nullable byte[] ck)
+    @Nullable
+    public static MasterKey create(
+            @Nullable String identity, @Nullable byte[] ik, @Nullable byte[] ck)
             throws ServiceEntitlementException {
         if (TextUtils.isEmpty(identity)
                 || ik == null
@@ -132,6 +134,7 @@ class MasterKey {
     }
 
     /** Returns {@code aut}. */
+    @Nullable
     public byte[] getAut() {
         return mAut;
     }
