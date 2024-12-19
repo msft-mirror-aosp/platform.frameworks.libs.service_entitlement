@@ -20,6 +20,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_JSON_COMPOSE_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -50,6 +51,7 @@ import com.google.common.net.HttpHeaders;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class EapAkaApi {
@@ -74,6 +76,7 @@ public class EapAkaApi {
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
+    private static final String GID1 = "gid1";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
@@ -190,13 +193,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            postData,
+                            checkNotNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            urlBuilder.toString(),
+                            checkNotNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -207,13 +210,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    postData,
+                                    checkNotNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    urlBuilder.toString(),
+                                    checkNotNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -413,13 +416,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            postData,
+                            checkNotNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            urlBuilder.toString(),
+                            checkNotNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -430,13 +433,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    postData,
+                                    checkNotNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    urlBuilder.toString(),
+                                    checkNotNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -497,13 +500,13 @@ public class EapAkaApi {
         HttpResponse response =
                 carrierConfig.useHttpPost()
                         ? httpPost(
-                                postData,
+                                checkNotNull(postData),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
                                 additionalHeaders)
                         : httpGet(
-                                urlBuilder.toString(),
+                                checkNotNull(urlBuilder).toString(),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
@@ -611,6 +614,12 @@ public class EapAkaApi {
             urlBuilder.appendQueryParameter(TERMINAL_ID, request.terminalId());
         }
 
+        if (!TextUtils.isEmpty(request.gid1())) {
+            urlBuilder.appendQueryParameter(GID1, request.gid1());
+        } else if ((new BigDecimal(request.entitlementVersion())).intValue() >= 12) {
+            urlBuilder.appendQueryParameter(GID1, mTelephonyManager.getGroupIdLevel1());
+        }
+
         // Optional query parameters, append them if not empty
         appendOptionalQueryParameter(urlBuilder, APP_VERSION, request.appVersion());
         appendOptionalQueryParameter(urlBuilder, APP_NAME, request.appName());
@@ -654,6 +663,12 @@ public class EapAkaApi {
                 postData.put(TERMINAL_ID, mTelephonyManager.getImei());
             } else {
                 postData.put(TERMINAL_ID, request.terminalId());
+            }
+
+            if (!TextUtils.isEmpty(request.gid1())) {
+                postData.put(GID1, request.gid1());
+            } else if ((new BigDecimal(request.entitlementVersion())).intValue() >= 12) {
+                postData.put(GID1, mTelephonyManager.getGroupIdLevel1());
             }
 
             // Optional query parameters, append them if not empty
@@ -814,7 +829,8 @@ public class EapAkaApi {
         }
     }
 
-    private void appendOptionalQueryParameter(JSONObject postData, String key, String value)
+    private void appendOptionalQueryParameter(
+            JSONObject postData, String key, @Nullable String value)
             throws JSONException {
         if (!TextUtils.isEmpty(value)) {
             postData.put(key, value);
@@ -964,9 +980,6 @@ public class EapAkaApi {
     }
 
     private String trimString(String s, int maxLength) {
-        if (s == null) {
-            return null;
-        }
         return s.substring(0, Math.min(s.length(), maxLength));
     }
 
