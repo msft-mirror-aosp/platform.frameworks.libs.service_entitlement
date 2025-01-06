@@ -19,6 +19,8 @@ package com.android.libraries.entitlement.eapaka;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE;
 import static com.android.libraries.entitlement.eapaka.EapAkaChallenge.SUBTYPE_AKA_CHALLENGE;
 import static com.android.libraries.entitlement.eapaka.EapAkaChallenge.TYPE_EAP_AKA;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.nullToEmpty;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
@@ -55,9 +57,9 @@ public class EapAkaResponse {
     private static final int MAC_LENGTH = 16;
 
     // RFC 4187 Section 9.4 EAP-Response/AKA-Challenge
-    private String mResponse;
+    @Nullable private String mResponse;
     // RFC 4187 Section 9.6 EAP-Response/AKA-Synchronization-Failure
-    private String mSynchronizationFailureResponse;
+    @Nullable private String mSynchronizationFailureResponse;
 
     private EapAkaResponse() {}
 
@@ -81,18 +83,26 @@ public class EapAkaResponse {
      * with network provided EAP-AKA challenge request message.
      */
     public static EapAkaResponse respondToEapAkaChallenge(
-            Context context, int simSubscriptionId, EapAkaChallenge eapAkaChallenge)
+            Context context,
+            int simSubscriptionId,
+            EapAkaChallenge eapAkaChallenge,
+            String eapAkaRealm)
             throws ServiceEntitlementException {
         TelephonyManager telephonyManager =
                 context.getSystemService(TelephonyManager.class)
                         .createForSubscriptionId(simSubscriptionId);
 
         // process EAP-AKA authentication with SIM
-        String response =
-                telephonyManager.getIccAuthentication(
-                        TelephonyManager.APPTYPE_USIM,
-                        TelephonyManager.AUTHTYPE_EAP_AKA,
-                        eapAkaChallenge.getSimAuthenticationRequest());
+        String response = null;
+        try {
+            response = telephonyManager.getIccAuthentication(TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                eapAkaChallenge.getSimAuthenticationRequest());
+        } catch (UnsupportedOperationException e) {
+            throw new ServiceEntitlementException(
+                ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
+                "UnsupportedOperationException" + e.toString());
+        }
         if (response == null) {
             throw new ServiceEntitlementException(
                     ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "EAP-AKA response is null!");
@@ -101,17 +111,21 @@ public class EapAkaResponse {
         EapAkaSecurityContext securityContext = EapAkaSecurityContext.from(response);
         EapAkaResponse result = new EapAkaResponse();
 
-        if (securityContext.getRes() != null
-                && securityContext.getIk() != null
-                && securityContext.getCk() != null) { // Success authentication
+        byte[] res = securityContext.getRes();
+        byte[] ik = securityContext.getIk();
+        byte[] ck = securityContext.getCk();
+        byte[] auts = securityContext.getAuts();
 
+        if (res != null && ik != null && ck != null) { // Success authentication
             // generate master key - refer to RFC 4187, section 7. Key Generation
             MasterKey mk =
                     MasterKey.create(
-                            EapAkaApi.getImsiEap(telephonyManager.getSimOperator(),
-                                    telephonyManager.getSubscriberId()),
-                            securityContext.getIk(),
-                            securityContext.getCk());
+                            EapAkaApi.getImsiEap(
+                                    telephonyManager.getSimOperator(),
+                                    telephonyManager.getSubscriberId(),
+                                    eapAkaRealm),
+                            ik,
+                            ck);
             // K_aut is the key used to calculate MAC
             if (mk == null || mk.getAut() == null) {
                 throw new ServiceEntitlementException(
@@ -121,7 +135,7 @@ public class EapAkaResponse {
             // generate EAP-AKA challenge response message
             byte[] challengeResponse =
                     generateEapAkaChallengeResponse(
-                            securityContext.getRes(), eapAkaChallenge.getIdentifier(), mk.getAut());
+                            res, eapAkaChallenge.getIdentifier(), mk.getAut());
             if (challengeResponse == null) {
                 throw new ServiceEntitlementException(
                         ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
@@ -130,11 +144,10 @@ public class EapAkaResponse {
             // base64 encoding
             result.mResponse = Base64.encodeToString(challengeResponse, Base64.NO_WRAP).trim();
 
-        } else if (securityContext.getAuts() != null) {
-
+        } else if (auts != null) {
             byte[] syncFailure =
                     generateEapAkaSynchronizationFailureResponse(
-                            securityContext.getAuts(), eapAkaChallenge.getIdentifier());
+                            auts, eapAkaChallenge.getIdentifier());
             result.mSynchronizationFailureResponse =
                     Base64.encodeToString(syncFailure, Base64.NO_WRAP).trim();
 
@@ -180,9 +193,8 @@ public class EapAkaResponse {
      * Refer to RFC 4187 section 9.6 EAP-Response/AKA-Synchronization-Failure.
      */
     @VisibleForTesting
-    @Nullable
     static byte[] generateEapAkaSynchronizationFailureResponse(
-            @Nullable byte[] auts, byte identifier) {
+            byte[] auts, byte identifier) {
         // size = 8 (header) + 2 (attribute & length) + AUTS
         byte[] message = new byte[10 + auts.length];
 

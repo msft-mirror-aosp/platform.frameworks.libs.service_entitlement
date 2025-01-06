@@ -47,6 +47,15 @@ java_library {
         "//apex_available:platform",
         "com.android.wifi",
     ],
+    errorprone: {
+        extra_check_modules: ["//external/nullaway:nullaway_plugin"],
+        javacflags: [
+            "-XepOpt:NullAway:AnnotatedPackages=com.android.libraries.entitlement",
+            "-Xep:NullAway:ERROR",
+            // Exclude @AutoValue generated code.
+            "-XepExcludedPaths:.*/entitlement/http/AutoValue_.*",
+        ],
+    },
 }
 
 java_library {

@@ -114,6 +114,8 @@ public class EapAkaApiTest {
     private static final String LONG_MODEL_TRIMMED = "aaaaaaaaaa";
     private static final String LONG_SW_VERSION_TRIMMED = "aaaaaaaaaaaaaaaaaaaa";
     private static final String APP_VERSION = "APP_VERSION";
+    private static final String GID1 = "GID1";
+
 
     @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
@@ -141,6 +143,7 @@ public class EapAkaApiTest {
                 .thenReturn(mMockTelephonyManagerForSubId);
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(IMSI);
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn(MCCMNC);
+        when(mMockTelephonyManagerForSubId.getGroupIdLevel1()).thenReturn(GID1);
         mEapAkaApi = new EapAkaApi(mContext, SUB_ID, mMockHttpClient, "");
         mEapAkaApiBypassAuthentication =
                 new EapAkaApi(mContext, SUB_ID, mMockHttpClient, BYPASS_EAP_AKA_RESPONSE);
@@ -257,6 +260,66 @@ public class EapAkaApiTest {
                         .get(1)
                         .requestProperties())
                         .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
+                .contains("EAP_ID=0234107813240779%40nai.epc.mnc010.mcc234.3gppnetwork.org");
+        // Verify that the 2nd request has cookies set by the 1st response
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
+    }
+
+    @Test
+    public void queryEntitlementStatus_noAuthenticationToken_altenateEapAkaRealm()
+            throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                        TelephonyManager.APPTYPE_USIM,
+                        TelephonyManager.AUTHTYPE_EAP_AKA,
+                        EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        HttpResponse eapChallengeResponse =
+                HttpResponse.builder()
+                        .setContentType(ContentType.JSON)
+                        .setBody(EAP_AKA_CHALLENGE)
+                        .setCookies(ImmutableList.of(COOKIE_VALUE, COOKIE_VALUE_1))
+                        .build();
+        HttpResponse xmlResponse =
+                HttpResponse.builder()
+                        .setContentType(ContentType.XML)
+                        .setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(eapChallengeResponse)
+                .thenReturn(xmlResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder().setServerUrl(TEST_URL).setEapAkaRealm("wlan").build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        HttpResponse response =
+                mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        carrierConfig,
+                        request,
+                        ImmutableMap.of("Key", "Value"));
+
+        assertThat(response).isEqualTo(xmlResponse);
+        verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).requestMethod())
+                .isEqualTo(RequestMethod.GET);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
+                .isEqualTo(RequestMethod.POST);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
+                .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
+                .contains("EAP_ID=0234107813240779%40wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
                 .containsAtLeast(
@@ -320,6 +383,70 @@ public class EapAkaApiTest {
                         .get(1)
                         .requestProperties())
                         .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
+                .isEqualTo("0234107813240779@nai.epc.mnc010.mcc234.3gppnetwork.org");
+        // Verify that the 2nd request has cookies set by the 1st response
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
+                .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
+    }
+
+    @Test
+    public void queryEntitlementStatus_noAuthenticationToken_useHttpPost_altenateEapAkaRealm()
+            throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                        TelephonyManager.APPTYPE_USIM,
+                        TelephonyManager.AUTHTYPE_EAP_AKA,
+                        EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        HttpResponse eapChallengeResponse =
+                HttpResponse.builder()
+                        .setContentType(ContentType.JSON)
+                        .setBody(EAP_AKA_CHALLENGE)
+                        .setCookies(ImmutableList.of(COOKIE_VALUE, COOKIE_VALUE_1))
+                        .build();
+        HttpResponse xmlResponse =
+                HttpResponse.builder()
+                        .setContentType(ContentType.XML)
+                        .setBody(RESPONSE_XML)
+                        .build();
+        when(mMockHttpClient.request(any()))
+                .thenReturn(eapChallengeResponse)
+                .thenReturn(xmlResponse);
+        CarrierConfig carrierConfig =
+                CarrierConfig.builder()
+                        .setServerUrl(TEST_URL)
+                        .setUseHttpPost(true)
+                        .setEapAkaRealm("wlan")
+                        .build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        HttpResponse response =
+                mEapAkaApi.queryEntitlementStatus(
+                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                        carrierConfig,
+                        request,
+                        ImmutableMap.of("Key", "Value"));
+
+        assertThat(response).isEqualTo(xmlResponse);
+        verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).requestMethod())
+                .isEqualTo(RequestMethod.POST);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
+                .isEqualTo(RequestMethod.POST);
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
+                .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
+                .isEqualTo("0234107813240779@wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
                 .containsAtLeast(
@@ -1021,6 +1148,82 @@ public class EapAkaApiTest {
                                 .get(HttpHeaders.USER_AGENT)
                                 .get(0))
                 .isEqualTo(userAgent);
+    }
+
+    @Test
+    public void queryEntitlementStatus_gid1Set_sendsGid1() throws Exception {
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(LONG_VENDOR)
+                        .setTerminalModel(LONG_MODEL)
+                        .setTerminalSoftwareVersion(LONG_SW_VERSION)
+                        .setEntitlementVersion("12.0")
+                        .setGid1(GID1)
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_PHONE_NUMBER_INFORMATION),
+                carrierConfig,
+                request,
+                ImmutableMap.of());
+
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        verify(mMockTelephonyManagerForSubId, times(0)).getGroupIdLevel1();
+        String urlParams = String.format("gid1=%s", GID1);
+        assertThat(mHttpRequestCaptor.getValue().url()).contains(urlParams);
+    }
+
+    @Test
+    public void queryEntitlementStatus_gid1NotSpecified_ts43Version12_getsGid1FromTelephonyManager()
+            throws Exception {
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(LONG_VENDOR)
+                        .setTerminalModel(LONG_MODEL)
+                        .setTerminalSoftwareVersion(LONG_SW_VERSION)
+                        .setEntitlementVersion("12.0")
+                        .setGid1("")
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_PHONE_NUMBER_INFORMATION),
+                carrierConfig,
+                request,
+                ImmutableMap.of());
+
+        verify(mMockTelephonyManagerForSubId).getGroupIdLevel1();
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        String urlParams = String.format("gid1=%s", GID1);
+        assertThat(mHttpRequestCaptor.getValue().url()).contains(urlParams);
+    }
+
+    @Test
+    public void queryEntitlementStatus_gid1NotSpecified_ts43VersionLessThan12_noGid1Sent()
+            throws Exception {
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request =
+                ServiceEntitlementRequest.builder()
+                        .setAuthenticationToken(TOKEN)
+                        .setTerminalVendor(LONG_VENDOR)
+                        .setTerminalModel(LONG_MODEL)
+                        .setTerminalSoftwareVersion(LONG_SW_VERSION)
+                        .setEntitlementVersion("11.0")
+                        .setGid1("")
+                        .build();
+
+        mEapAkaApi.queryEntitlementStatus(
+                ImmutableList.of(ServiceEntitlement.APP_PHONE_NUMBER_INFORMATION),
+                carrierConfig,
+                request,
+                ImmutableMap.of());
+
+        verify(mMockTelephonyManagerForSubId, times(0)).getGroupIdLevel1();
+        verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
+        assertThat(mHttpRequestCaptor.getValue().url()).doesNotContain("gid1");
     }
 
     @Test

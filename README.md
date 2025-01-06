@@ -5,20 +5,31 @@ spec.
 
 ## How to debug
 
-###  Log TAG to filter:
-* ServiceEntitlement
+This lib produces logcat with log tag `ServiceEntitlement`.
 
+###  Enable logging the raw HTTP request / response / headers
 
-###  Enable logging the PII data:
-Grand the permission:
+Such log is not enabled by default since it contains sensitive device identifiers.
+
+To enable, set the system property below, with **ROOT**:
+
+NOTE This is only supported on devices of userdebug builds.
 
 ```shell
 adb root
-```
-
-Enable by system property:
-
-```shell
 adb shell setprop dbg.se.pii_loggable true
 ```
-NOTE Debug option only available on devices which is built as userdebug.
+
+### EAP-AKA auth test
+
+For testing purpose, it may be helpful to make the device under test return a specified
+response to EAP-AKA challenge.
+
+To do so, set the system property below, with **ROOT**:
+
+NOTE This is only supported on devices of userdebug builds.
+
+```shell
+adb root
+adb shell setprop persist.entitlement.fake_eap_aka_response <response>
+```
