@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
@@ -48,6 +49,7 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -85,6 +87,7 @@ public class Ts43OperationTest {
     private static final String MSISDN = "+16502530000";
 
     private static final String GENERAL_ERROR_TEXT = "error text";
+    private static final String APP_NAME = "Ts43OperationTest.class";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -319,7 +322,7 @@ public class Ts43OperationTest {
         doReturn(mTelephonyManager).when(mContext).getSystemService(Context.TELEPHONY_SERVICE);
 
         mTs43Operation = new Ts43Operation(mContext, 0, new URL(TEST_URL),
-                ENTITLEMENT_VERSION, TOKEN, Ts43Operation.TOKEN_TYPE_NORMAL);
+                ENTITLEMENT_VERSION, TOKEN, Ts43Operation.TOKEN_TYPE_NORMAL, APP_NAME);
 
         Field field = Ts43Operation.class.getDeclaredField("mServiceEntitlement");
         field.setAccessible(true);
@@ -345,6 +348,12 @@ public class Ts43OperationTest {
         assertThat(response.subscriptionServiceUrl()).isEqualTo(new URL(SUBSCRIPTION_SERVICE_URL));
         assertThat(response.subscriptionServiceUserData())
                 .isEqualTo(SUBSCRIPTION_SERVICE_USER_DATA);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -366,6 +375,12 @@ public class Ts43OperationTest {
         assertThat(response.downloadInfo().profileIccid()).isEqualTo(ICCID);
         assertThat(response.downloadInfo().profileSmdpAddresses())
                 .isEqualTo(ImmutableList.of(PROFILE_SMDP_ADDRESS));
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -387,6 +402,12 @@ public class Ts43OperationTest {
         assertThat(response.subscriptionResult()).isEqualTo(
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT);
         assertThat(response.generalErrorText()).isEqualTo(GENERAL_ERROR_TEXT);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -407,6 +428,12 @@ public class Ts43OperationTest {
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
                 EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
                 EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -426,6 +453,12 @@ public class Ts43OperationTest {
         assertThat(config.downloadInfo().profileSmdpAddresses()).isEqualTo(
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
         assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -448,6 +481,12 @@ public class Ts43OperationTest {
         assertThat(config.messageInfo().rejectButtonLabel()).isEqualTo(REJECT_BUTTON_LABEL);
         assertThat(config.messageInfo().acceptFreetext()).isEqualTo(MESSAGE_ACCEPT_PRESENT);
         assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -466,6 +505,12 @@ public class Ts43OperationTest {
                 EsimOdsaOperation.COMPANION_SERVICE_SHARED_NUMBER);
         assertThat(response.notEnabledUrl()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -480,6 +525,12 @@ public class Ts43OperationTest {
                 EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.serviceStatus()).isEqualTo(
                 EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 
     @Test
@@ -494,5 +545,11 @@ public class Ts43OperationTest {
         assertThat(response.operationResult()).isEqualTo(
                 EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
         assertThat(response.msisdn()).isEqualTo(MSISDN);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
+                any());
+        assertThat(captor.getValue().appName()).contains(APP_NAME);
     }
 }

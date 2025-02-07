@@ -56,6 +56,9 @@ public abstract class EsimOdsaOperation {
     /** ODSA operation: AcquirePlan */
     public static final String OPERATION_ACQUIRE_PLAN = "AcquirePlan";
 
+    /** ODSA operation: VerifyPhoneNumber */
+    public static final String OPERATION_VERIFY_PHONE_NUMBER = "VerifyPhoneNumber";
+
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
             OPERATION_UNKNOWN,
@@ -65,7 +68,8 @@ public abstract class EsimOdsaOperation {
             OPERATION_ACQUIRE_CONFIGURATION,
             OPERATION_ACQUIRE_PLAN,
             OPERATION_ACQUIRE_TEMPORARY_TOKEN,
-            OPERATION_GET_PHONE_NUMBER
+            OPERATION_GET_PHONE_NUMBER,
+            OPERATION_VERIFY_PHONE_NUMBER
     })
     public @interface OdsaOperation {
     }
@@ -399,6 +403,7 @@ public abstract class EsimOdsaOperation {
          * @see #OPERATION_ACQUIRE_TEMPORARY_TOKEN
          * @see #OPERATION_GET_PHONE_NUMBER
          * @see #OPERATION_ACQUIRE_PLAN
+         * @see #OPERATION_VERIFY_PHONE_NUMBER
          */
         @NonNull
         public abstract Builder setOperation(@NonNull @OdsaOperation String operation);
