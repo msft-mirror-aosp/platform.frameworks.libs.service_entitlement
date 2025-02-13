@@ -133,7 +133,8 @@ public class Ts43AuthenticationTest {
     public void testGetAuthToken_receivedValidToken() throws Exception {
         doReturn(HTTP_RESPONSE_WITH_TOKEN).when(mMockHttpResponse).body();
         Ts43AuthToken mToken = mTs43Authentication.getAuthToken(
-                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
+                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
         assertThat(mToken.token()).isEqualTo(TOKEN);
         assertThat(mToken.validity()).isEqualTo(VALIDITY);
     }
@@ -150,15 +151,18 @@ public class Ts43AuthenticationTest {
     @Test
     public void testGetAuthToken_invalidAppId_throwException() {
         assertThrows(NullPointerException.class, () -> mTs43Authentication.getAuthToken(
-                0, null, APP_NAME, APP_VERSION));
+                0, null, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML));
         assertThrows(IllegalArgumentException.class, () -> mTs43Authentication.getAuthToken(
-                0, "invalid_app_id", APP_NAME, APP_VERSION));
+                0, "invalid_app_id", APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML));
     }
 
     @Test
     public void testGetAuthToken_invalidSlotIndex_throwException() {
         assertThrows(IllegalArgumentException.class, () -> mTs43Authentication.getAuthToken(
-                5, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION));
+                5, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML));
     }
 
     @Test
@@ -167,7 +171,8 @@ public class Ts43AuthenticationTest {
 
         try {
             mTs43Authentication.getAuthToken(
-                    0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
+                    0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                    ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
             fail("Expected to get exception.");
         } catch (ServiceEntitlementException e) {
             assertThat(e.getErrorCode()).isEqualTo(
@@ -179,7 +184,8 @@ public class Ts43AuthenticationTest {
     public void testGetAuthToken_validityNotAvailable() throws Exception {
         doReturn(HTTP_RESPONSE_WITHOUT_VALIDITY).when(mMockHttpResponse).body();
         Ts43AuthToken mToken = mTs43Authentication.getAuthToken(
-                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
+                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
         assertThat(mToken.token()).isEqualTo(TOKEN);
         assertThat(mToken.validity()).isEqualTo(Ts43AuthToken.VALIDITY_NOT_AVAILABLE);
     }
@@ -195,7 +201,8 @@ public class Ts43AuthenticationTest {
                 .queryEntitlementStatus(any(), any(), any(), any());
         try {
             mTs43Authentication.getAuthToken(
-                    0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION);
+                    0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                    ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
             fail("Expected to get exception.");
         } catch (ServiceEntitlementException e) {
             assertThat(e.getErrorCode()).isEqualTo(
