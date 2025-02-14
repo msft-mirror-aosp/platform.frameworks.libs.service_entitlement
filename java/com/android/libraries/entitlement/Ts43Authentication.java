@@ -16,6 +16,7 @@
 
 package com.android.libraries.entitlement;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.nullToEmpty;
 
 import android.content.Context;
@@ -39,7 +40,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
 import java.net.URL;
-import java.util.Objects;
 
 /**
  * The class responsible for TS.43 authentication process.
@@ -113,6 +113,7 @@ public class Ts43Authentication {
      * For test mocking only.
      */
     @VisibleForTesting
+    @Nullable
     private ServiceEntitlement mServiceEntitlement;
 
     /**
@@ -128,11 +129,8 @@ public class Ts43Authentication {
      */
     public Ts43Authentication(@NonNull Context context, @NonNull URL entitlementServerAddress,
             @Nullable String entitlementVersion) {
-        Objects.requireNonNull(context, "context is null");
-        Objects.requireNonNull(entitlementServerAddress, "entitlementServerAddress is null.");
-
-        mContext = context;
-        mEntitlementServerAddress = entitlementServerAddress;
+        mContext = checkNotNull(context);
+        mEntitlementServerAddress = checkNotNull(entitlementServerAddress);
 
         if (entitlementVersion != null) {
             mEntitlementVersion = entitlementVersion;
@@ -169,8 +167,7 @@ public class Ts43Authentication {
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(appId, "appId is null");
-
+        checkNotNull(appId);
         if (!Ts43Constants.isValidAppId(appId)) {
             throw new IllegalArgumentException("getAuthToken: invalid app id " + appId);
         }
@@ -189,9 +186,9 @@ public class Ts43Authentication {
         ServiceEntitlementRequest request =
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(imei)
-                        .setAppName(appName)
-                        .setAppVersion(appVersion)
+                        .setTerminalId(nullToEmpty(imei))
+                        .setAppName(nullToEmpty(appName))
+                        .setAppVersion(nullToEmpty(appVersion))
                         .build();
         CarrierConfig carrierConfig = CarrierConfig.builder()
                 .setServerUrl(mEntitlementServerAddress.toString())
@@ -218,7 +215,7 @@ public class Ts43Authentication {
         try {
             response = mServiceEntitlement.getEntitlementStatusResponse(
                     ImmutableList.of(appId), request);
-            rawXml = response == null ? null : response.body();
+            rawXml = response == null ? "" : response.body();
             Log.d(TAG, "getAuthToken: rawXml=" + rawXml);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "Failed to get authentication token. e=" + e);
@@ -281,7 +278,7 @@ public class Ts43Authentication {
             @NonNull URL entitlementServerAddress, @Nullable String entitlementVersion,
             @NonNull @AppId String appId, @Nullable String appName, @Nullable String appVersion)
             throws ServiceEntitlementException {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -300,6 +297,6 @@ public class Ts43Authentication {
     @NonNull
     public Ts43AuthToken getAuthToken(@NonNull URL aesUrl)
             throws ServiceEntitlementException {
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

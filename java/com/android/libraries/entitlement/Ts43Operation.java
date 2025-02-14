@@ -16,6 +16,8 @@
 
 package com.android.libraries.entitlement;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import android.content.Context;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -211,9 +213,9 @@ public class Ts43Operation {
                         .setAppName(mAppName);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(mAuthToken);
+            builder.setAuthenticationToken(checkNotNull(mAuthToken));
         } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(mTemporaryToken);
+            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
         }
 
         String notificationToken = checkEligibilityRequest.notificationToken();
@@ -375,9 +377,9 @@ public class Ts43Operation {
                         .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(mAuthToken);
+            builder.setAuthenticationToken(checkNotNull(mAuthToken));
         } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(mTemporaryToken);
+            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
         }
 
         String notificationToken = manageSubscriptionRequest.notificationToken();
@@ -572,9 +574,9 @@ public class Ts43Operation {
                         .setAppName(mAppName);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(mAuthToken);
+            builder.setAuthenticationToken(checkNotNull(mAuthToken));
         } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(mTemporaryToken);
+            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
         }
 
         ServiceEntitlementRequest request = builder.build();
@@ -652,7 +654,7 @@ public class Ts43Operation {
                 .setEntitlementVersion(mEntitlementVersion)
                 .setTerminalId(mImei)
                 .setAppName(mAppName)
-                .setAuthenticationToken(mAuthToken);
+                .setAuthenticationToken(checkNotNull(mAuthToken));
 
         String notificationToken = acquireConfigurationRequest.notificationToken();
         if (!TextUtils.isEmpty(notificationToken)) {
@@ -813,7 +815,7 @@ public class Ts43Operation {
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
                         .setTerminalId(mImei)
-                        .setAuthenticationToken(mAuthToken)
+                        .setAuthenticationToken(checkNotNull(mAuthToken))
                         .setAppName(mAppName)
                         .build();
 
@@ -914,9 +916,9 @@ public class Ts43Operation {
         }
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(mAuthToken);
+            builder.setAuthenticationToken(checkNotNull(mAuthToken));
         } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(mTemporaryToken);
+            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
         }
 
         ServiceEntitlementRequest request = builder.setAppName(mAppName).build();

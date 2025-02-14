@@ -204,10 +204,17 @@ public class ServiceEntitlementTest {
 
     @Test
     public void queryEntitlementStatusFromOidc_returnResult() throws Exception {
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+        when(mMockEapAkaApi.acquireOidcAuthenticationEndpoint(
+                        eq(ServiceEntitlement.APP_ODSA_PRIMARY),
+                        eq(mCarrierConfig),
+                        eq(request),
+                        any()))
+                .thenReturn(QUERY_OIDC_RESULT);
         when(mMockEapAkaApi.queryEntitlementStatusFromOidc(
                         eq(ServiceEntitlement.APP_ODSA_PRIMARY),
                         eq(mCarrierConfig),
-                        eq(null),
+                        eq(request),
                         any()))
                 .thenAnswer(
                         invocation -> {
@@ -215,6 +222,9 @@ public class ServiceEntitlementTest {
                                     .thenReturn(QUERY_ENTITLEMENT_STATUS_FROM_OIDC);
                             return mMockHttpResponse;
                         });
+
+        mServiceEntitlement.acquireOidcAuthenticationEndpoint(
+                                ServiceEntitlement.APP_ODSA_PRIMARY, request);
 
         assertThat(
                         mServiceEntitlement.queryEntitlementStatusFromOidc(

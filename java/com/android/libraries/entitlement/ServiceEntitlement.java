@@ -19,6 +19,7 @@ package com.android.libraries.entitlement;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.eapaka.EapAkaApi;
@@ -96,6 +97,7 @@ public class ServiceEntitlement {
 
     private final CarrierConfig carrierConfig;
     private final EapAkaApi eapAkaApi;
+    @Nullable
     private ServiceEntitlementRequest mOidcRequest;
     /**
      * Creates an instance for service entitlement configuration query and operation for the
@@ -432,6 +434,10 @@ public class ServiceEntitlement {
     public HttpResponse getEntitlementStatusResponseFromOidc(
             String url, ImmutableMap<String, String> additionalHeaders)
             throws ServiceEntitlementException {
+        if (mOidcRequest == null) {
+            throw new IllegalStateException(
+                    "acquireOidcAuthenticationEndpoint must be called before calling this method.");
+        }
         return eapAkaApi.queryEntitlementStatusFromOidc(
                 url, carrierConfig, mOidcRequest, additionalHeaders);
     }
