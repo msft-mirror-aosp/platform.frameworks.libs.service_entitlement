@@ -153,6 +153,8 @@ public class Ts43Authentication {
      * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
      * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
      * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param acceptContentType The accepted content type of the HTTP response, or {@code null} to
+     *                          use the default.
      *
      * @return The authentication token.
      *
@@ -165,7 +167,8 @@ public class Ts43Authentication {
      */
     @NonNull
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
-            @Nullable String appName, @Nullable String appVersion)
+            @Nullable String appName, @Nullable String appVersion,
+            @Nullable String acceptContentType)
             throws ServiceEntitlementException {
         checkNotNull(appId);
         if (!Ts43Constants.isValidAppId(appId)) {
@@ -183,13 +186,16 @@ public class Ts43Authentication {
 
         // Build the HTTP request. The default params are specified in
         // ServiceEntitlementRequest.builder() already.
-        ServiceEntitlementRequest request =
+        ServiceEntitlementRequest.Builder builder =
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
                         .setTerminalId(nullToEmpty(imei))
                         .setAppName(nullToEmpty(appName))
-                        .setAppVersion(nullToEmpty(appVersion))
-                        .build();
+                        .setAppVersion(nullToEmpty(appVersion));
+        if (acceptContentType != null) {
+            builder.setAcceptContentType(acceptContentType);
+        }
+        ServiceEntitlementRequest request = builder.build();
         CarrierConfig carrierConfig = CarrierConfig.builder()
                 .setServerUrl(mEntitlementServerAddress.toString())
                 .build();
@@ -264,6 +270,8 @@ public class Ts43Authentication {
      * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
      * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
      * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param acceptContentType The accepted content type of the HTTP response, or {@code null} to
+     *                          use the default.
      *
      * @return The URL of OIDC server with all the required parameters for client to launch a
      * user interface for users to interact with the authentication process. The parameters in URL
@@ -276,8 +284,8 @@ public class Ts43Authentication {
     @NonNull
     public URL getOidcAuthServer(@NonNull Context context, int slotIndex,
             @NonNull URL entitlementServerAddress, @Nullable String entitlementVersion,
-            @NonNull @AppId String appId, @Nullable String appName, @Nullable String appVersion)
-            throws ServiceEntitlementException {
+            @NonNull @AppId String appId, @Nullable String appName, @Nullable String appVersion,
+            @Nullable String acceptContentType) throws ServiceEntitlementException {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
