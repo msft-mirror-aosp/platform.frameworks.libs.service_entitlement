@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.EntitlementProtocol;
 import com.android.libraries.entitlement.EsimOdsaOperation.MessageButton;
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperationType;
 import com.android.libraries.entitlement.utils.HttpConstants;
@@ -196,6 +197,16 @@ public final class ManageSubscriptionOperation {
         public abstract String oldTerminalIccid();
 
         /**
+         * Returns whether the subscription transfer is for cross-TS.43 platform. Used by HTTP
+         * parameter {@code old_terminal_entitlement_protocol}.
+         *
+         * <p>This is an optional param for cross-platform.
+         */
+        @NonNull
+        @EntitlementProtocol
+        public abstract String oldTerminalEntitlementProtocol();
+
+        /**
          * Returns the identifier of the specific plan offered by an MNO. Used by HTTP parameter
          * {@code plan_id}.
          */
@@ -255,6 +266,7 @@ public final class ManageSubscriptionOperation {
                     .setTargetTerminalModel("")
                     .setOldTerminalId("")
                     .setOldTerminalIccid("")
+                    .setOldTerminalEntitlementProtocol("")
                     .setPlanId("")
                     .setNotificationToken("")
                     .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM)
@@ -520,6 +532,19 @@ public final class ManageSubscriptionOperation {
              */
             @NonNull
             public abstract Builder setOldTerminalIccid(@NonNull String oldTerminalIccid);
+
+            /**
+             * Sets the entitlement protocol of the old device. Used by HTTP parameter
+             * {@code old_terminal_entitlement_protocol}.
+             *
+             * <p>This is an optional param for cross-platform.
+             *
+             * @param oldTerminalEntitlementProtocol The entitlement protocol of the old device.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setOldTerminalEntitlementProtocol(
+                    @NonNull @EntitlementProtocol String oldTerminalEntitlementProtocol);
 
             /**
              * Sets the identifier of the specific plan offered by an MNO. Used by HTTP parameter

@@ -213,6 +213,20 @@ public abstract class EsimOdsaOperation {
     public @interface MessageButton {
     }
 
+    /** Device supports TS.43 entitlement protocol. */
+    public static final String ENTITLEMENT_PROTOCOL_TS43 = "0";
+
+    /** Device does not support TS.43 entitlement protocol. */
+    public static final String ENTITLEMENT_PROTOCOL_OTHER = "1";
+
+    @Retention(RetentionPolicy.SOURCE)
+    @StringDef({
+            ENTITLEMENT_PROTOCOL_TS43,
+            ENTITLEMENT_PROTOCOL_OTHER
+    })
+    public @interface EntitlementProtocol {
+    }
+
     /** Returns the ODSA operation. Used by HTTP parameter {@code operation}. */
     public abstract String operation();
 
@@ -332,6 +346,16 @@ public abstract class EsimOdsaOperation {
     public abstract String targetTerminalModel();
 
     /**
+     * Returns whether the subscription transfer is for cross-TS.43 platform. Used by HTTP parameter
+     * {@code target_terminal_entitlement_protocol}.
+     *
+     * <p>This is an optional param for cross-platform.
+     */
+    @NonNull
+    @EntitlementProtocol
+    public abstract String targetTerminalEntitlementProtocol();
+
+    /**
      * Returns the unique identifier of the old device eSIM, like the IMEI associated with the eSIM.
      * Used by HTTP parameter {@code old_terminal_id}.
      */
@@ -339,6 +363,16 @@ public abstract class EsimOdsaOperation {
 
     /** Returns the ICCID of old device eSIM. Used by HTTP parameter {@code old_terminal_iccid}. */
     public abstract String oldTerminalIccid();
+
+    /**
+     * Returns whether the subscription transfer is for cross-TS.43 platform. Used by HTTP parameter
+     * {@code old_terminal_entitlement_protocol}.
+     *
+     * <p>This is an optional param for cross-platform.
+     */
+    @NonNull
+    @EntitlementProtocol
+    public abstract String oldTerminalEntitlementProtocol();
 
     /**
      * Returns the user response to the MSG content. Used by HTTP parameter {@code MSG_response}.
@@ -374,8 +408,10 @@ public abstract class EsimOdsaOperation {
                 .setTargetTerminalEid("")
                 .setTargetTerminalSerialNumber("")
                 .setTargetTerminalModel("")
+                .setTargetTerminalEntitlementProtocol("")
                 .setOldTerminalId("")
                 .setOldTerminalIccid("")
+                .setOldTerminalEntitlementProtocol("")
                 .setMessageResponse("")
                 .setMessageButton("");
     }
@@ -644,6 +680,18 @@ public abstract class EsimOdsaOperation {
         public abstract Builder setTargetTerminalModel(@NonNull String targetTerminalModel);
 
         /**
+         * Sets the entitlement protocol of primary device. Used by HTTP parameter
+         * {@code target_terminal_entitlement_protocol}.
+         *
+         * @param targetTerminalEntitlementProtocol The entitlement protocol of primary device.
+         *                                          <p>This is an optional param for cross-platform.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setTargetTerminalEntitlementProtocol(
+                @NonNull @EntitlementProtocol String targetTerminalEntitlementProtocol);
+
+        /**
          * Sets the unique identifier of the old device eSIM, like the IMEI associated with the
          * eSIM.
          * Used by HTTP parameter {@code old_terminal_id} if set.
@@ -666,6 +714,18 @@ public abstract class EsimOdsaOperation {
          */
         @NonNull
         public abstract Builder setOldTerminalIccid(@NonNull String oldTerminalIccid);
+
+        /**
+         * Sets the entitlement protocol of the old device. Used by HTTP parameter
+         * {@code old_terminal_entitlement_protocol}.
+         *
+         * @param oldTerminalEntitlementProtocol The entitlement protocol of the old device.
+         *                                       <p>This is an optional param for cross-platform.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setOldTerminalEntitlementProtocol(
+                @NonNull @EntitlementProtocol String oldTerminalEntitlementProtocol);
 
         /**
          * Sets the user response to the MSG content. Used by HTTP parameter {@code MSG_response}
