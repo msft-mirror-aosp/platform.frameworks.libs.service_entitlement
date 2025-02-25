@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
+import com.android.libraries.entitlement.EsimOdsaOperation.EntitlementProtocol;
 import com.android.libraries.entitlement.utils.HttpConstants;
 import com.android.libraries.entitlement.utils.HttpConstants.ContentType;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -108,6 +109,16 @@ public final class CheckEligibilityOperation {
         public abstract String companionTerminalFriendlyName();
 
         /**
+         * Returns whether the subscription transfer is for cross-TS.43 platform. Used by HTTP
+         * parameter {@code old_terminal_entitlement_protocol}.
+         *
+         * <p>This is an optional param for cross-platform.
+         */
+        @NonNull
+        @EntitlementProtocol
+        public abstract String targetTerminalEntitlementProtocol();
+
+        /**
          * Returns the notification token used to register for entitlement configuration request
          * from network. Used by HTTP parameter {@code notif_token}.
          */
@@ -131,6 +142,7 @@ public final class CheckEligibilityOperation {
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
                     .setCompanionTerminalFriendlyName("")
+                    .setTargetTerminalEntitlementProtocol("")
                     .setNotificationToken("")
                     .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }
@@ -214,6 +226,19 @@ public final class CheckEligibilityOperation {
             @NonNull
             public abstract Builder setCompanionTerminalFriendlyName(
                     @NonNull String companionTerminalFriendlyName);
+
+            /**
+             * Sets the entitlement protocol of primary device. Used by HTTP parameter
+             * {@code target_terminal_entitlement_protocol}.
+             *
+             * <p>This is an optional param for cross-platform.
+             *
+             * @param targetTerminalEntitlementProtocol The entitlement protocol of primary device.
+             * @return The builder.
+             */
+            @NonNull
+            public abstract Builder setTargetTerminalEntitlementProtocol(
+                    @NonNull @EntitlementProtocol String targetTerminalEntitlementProtocol);
 
             /**
              * Sets the notification token used to register for entitlement configuration request
