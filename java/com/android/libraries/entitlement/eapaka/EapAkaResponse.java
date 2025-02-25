@@ -81,18 +81,26 @@ public class EapAkaResponse {
      * with network provided EAP-AKA challenge request message.
      */
     public static EapAkaResponse respondToEapAkaChallenge(
-            Context context, int simSubscriptionId, EapAkaChallenge eapAkaChallenge)
+            Context context,
+            int simSubscriptionId,
+            EapAkaChallenge eapAkaChallenge,
+            String eapAkaRealm)
             throws ServiceEntitlementException {
         TelephonyManager telephonyManager =
                 context.getSystemService(TelephonyManager.class)
                         .createForSubscriptionId(simSubscriptionId);
 
         // process EAP-AKA authentication with SIM
-        String response =
-                telephonyManager.getIccAuthentication(
-                        TelephonyManager.APPTYPE_USIM,
-                        TelephonyManager.AUTHTYPE_EAP_AKA,
-                        eapAkaChallenge.getSimAuthenticationRequest());
+        String response = null;
+        try {
+            response = telephonyManager.getIccAuthentication(TelephonyManager.APPTYPE_USIM,
+                TelephonyManager.AUTHTYPE_EAP_AKA,
+                eapAkaChallenge.getSimAuthenticationRequest());
+        } catch (UnsupportedOperationException e) {
+            throw new ServiceEntitlementException(
+                ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE,
+                "UnsupportedOperationException" + e.toString());
+        }
         if (response == null) {
             throw new ServiceEntitlementException(
                     ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE, "EAP-AKA response is null!");
@@ -108,8 +116,10 @@ public class EapAkaResponse {
             // generate master key - refer to RFC 4187, section 7. Key Generation
             MasterKey mk =
                     MasterKey.create(
-                            EapAkaApi.getImsiEap(telephonyManager.getSimOperator(),
-                                    telephonyManager.getSubscriberId()),
+                            EapAkaApi.getImsiEap(
+                                    telephonyManager.getSimOperator(),
+                                    telephonyManager.getSubscriberId(),
+                                    eapAkaRealm),
                             securityContext.getIk(),
                             securityContext.getCk());
             // K_aut is the key used to calculate MAC
