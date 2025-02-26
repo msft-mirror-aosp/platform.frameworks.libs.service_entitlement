@@ -20,6 +20,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.EsimOdsaOperation.CompanionService;
 import com.android.libraries.entitlement.EsimOdsaOperation.EntitlementProtocol;
 import com.android.libraries.entitlement.utils.HttpConstants;
@@ -142,7 +143,8 @@ public final class CheckEligibilityOperation {
                     .setCompanionTerminalModel("")
                     .setCompanionTerminalSoftwareVersion("")
                     .setCompanionTerminalFriendlyName("")
-                    .setTargetTerminalEntitlementProtocol("")
+                    .setTargetTerminalEntitlementProtocol(
+                            EsimOdsaOperation.ENTITLEMENT_PROTOCOL_UNKNOWN)
                     .setNotificationToken("")
                     .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }

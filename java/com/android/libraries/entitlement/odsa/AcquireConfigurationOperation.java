@@ -148,7 +148,8 @@ public final class AcquireConfigurationOperation {
                     .setTargetTerminalId("")
                     .setTargetTerminalIccid("")
                     .setTargetTerminalEid("")
-                    .setOldTerminalEntitlementProtocol("")
+                    .setOldTerminalEntitlementProtocol(
+                            EsimOdsaOperation.ENTITLEMENT_PROTOCOL_UNKNOWN)
                     .setNotificationToken("")
                     .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM);
         }

@@ -67,6 +67,7 @@ public final class Ts43Constants {
      * @deprecated use {@code target_terminal_entitlement_protocol} and
      * {@code old_terminal_entitlement_protocol} in the request instead.
      */
+    @Deprecated
     public static final String APP_ODSA_CROSS_TS43 = "ap2017";
 
     @Retention(RetentionPolicy.SOURCE)

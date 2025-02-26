@@ -213,6 +213,9 @@ public abstract class EsimOdsaOperation {
     public @interface MessageButton {
     }
 
+    /** Unknown entitlement protocol. This will not be appended to the request. */
+    public static final String ENTITLEMENT_PROTOCOL_UNKNOWN = "";
+
     /** Device supports TS.43 entitlement protocol. */
     public static final String ENTITLEMENT_PROTOCOL_TS43 = "0";
 
@@ -221,6 +224,7 @@ public abstract class EsimOdsaOperation {
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
+            ENTITLEMENT_PROTOCOL_UNKNOWN,
             ENTITLEMENT_PROTOCOL_TS43,
             ENTITLEMENT_PROTOCOL_OTHER
     })
@@ -408,10 +412,10 @@ public abstract class EsimOdsaOperation {
                 .setTargetTerminalEid("")
                 .setTargetTerminalSerialNumber("")
                 .setTargetTerminalModel("")
-                .setTargetTerminalEntitlementProtocol("")
+                .setTargetTerminalEntitlementProtocol(ENTITLEMENT_PROTOCOL_UNKNOWN)
                 .setOldTerminalId("")
                 .setOldTerminalIccid("")
-                .setOldTerminalEntitlementProtocol("")
+                .setOldTerminalEntitlementProtocol(ENTITLEMENT_PROTOCOL_UNKNOWN)
                 .setMessageResponse("")
                 .setMessageButton("");
     }

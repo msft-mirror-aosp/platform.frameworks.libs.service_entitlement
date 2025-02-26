@@ -19,6 +19,7 @@ package com.android.libraries.entitlement.odsa;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.EsimOdsaOperation;
 import com.android.libraries.entitlement.EsimOdsaOperation.EntitlementProtocol;
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaOperation;
 import com.android.libraries.entitlement.utils.Ts43Constants;
@@ -82,7 +83,8 @@ public final class AcquireTemporaryTokenOperation {
                     .setAppId(Ts43Constants.APP_UNKNOWN)
                     .setOperationTargets(ImmutableList.of())
                     .setCompanionTerminalId("")
-                    .setTargetTerminalEntitlementProtocol("");
+                    .setTargetTerminalEntitlementProtocol(
+                            EsimOdsaOperation.ENTITLEMENT_PROTOCOL_UNKNOWN);
         }
 
         /** Builder. */

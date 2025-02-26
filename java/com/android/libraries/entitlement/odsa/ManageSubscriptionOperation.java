@@ -266,7 +266,8 @@ public final class ManageSubscriptionOperation {
                     .setTargetTerminalModel("")
                     .setOldTerminalId("")
                     .setOldTerminalIccid("")
-                    .setOldTerminalEntitlementProtocol("")
+                    .setOldTerminalEntitlementProtocol(
+                            EsimOdsaOperation.ENTITLEMENT_PROTOCOL_UNKNOWN)
                     .setPlanId("")
                     .setNotificationToken("")
                     .setNotificationAction(Ts43Constants.NOTIFICATION_ACTION_ENABLE_FCM)
