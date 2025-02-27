@@ -20,6 +20,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_JSON_COMPOSE_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.content.Context;
@@ -103,9 +104,13 @@ public class EapAkaApi {
     private static final String TARGET_TERMINAL_SERIAL_NUMBER = "target_terminal_sn";
     // Non-standard params for Korean carriers
     private static final String TARGET_TERMINAL_MODEL = "target_terminal_model";
+    private static final String TARGET_TERMINAL_ENTITLEMENT_PROTOCOL =
+            "target_terminal_entitlement_protocol";
 
     private static final String OLD_TERMINAL_ID = "old_terminal_id";
     private static final String OLD_TERMINAL_ICCID = "old_terminal_iccid";
+    private static final String OLD_TERMINAL_ENTITLEMENT_PROTOCOL =
+            "old_terminal_entitlement_protocol";
 
     private static final String BOOST_TYPE = "boost_type";
 
@@ -756,8 +761,16 @@ public class EapAkaApi {
         appendOptionalQueryParameter(
                 urlBuilder, TARGET_TERMINAL_MODEL, odsaOperation.targetTerminalModel());
         appendOptionalQueryParameter(
+                urlBuilder,
+                TARGET_TERMINAL_ENTITLEMENT_PROTOCOL,
+                odsaOperation.targetTerminalEntitlementProtocol());
+        appendOptionalQueryParameter(
                 urlBuilder, OLD_TERMINAL_ICCID, odsaOperation.oldTerminalIccid());
         appendOptionalQueryParameter(urlBuilder, OLD_TERMINAL_ID, odsaOperation.oldTerminalId());
+        appendOptionalQueryParameter(
+                urlBuilder,
+                OLD_TERMINAL_ENTITLEMENT_PROTOCOL,
+                odsaOperation.oldTerminalEntitlementProtocol());
         appendOptionalQueryParameter(urlBuilder, MESSAGE_RESPONSE, odsaOperation.messageResponse());
         appendOptionalQueryParameter(urlBuilder, MESSAGE_BUTTON, odsaOperation.messageButton());
     }
@@ -811,8 +824,16 @@ public class EapAkaApi {
             appendOptionalQueryParameter(
                     postData, TARGET_TERMINAL_MODEL, odsaOperation.targetTerminalModel());
             appendOptionalQueryParameter(
+                    postData,
+                    TARGET_TERMINAL_ENTITLEMENT_PROTOCOL,
+                    odsaOperation.targetTerminalEntitlementProtocol());
+            appendOptionalQueryParameter(
                     postData, OLD_TERMINAL_ICCID, odsaOperation.oldTerminalIccid());
             appendOptionalQueryParameter(postData, OLD_TERMINAL_ID, odsaOperation.oldTerminalId());
+            appendOptionalQueryParameter(
+                    postData,
+                    OLD_TERMINAL_ENTITLEMENT_PROTOCOL,
+                    odsaOperation.oldTerminalEntitlementProtocol());
             appendOptionalQueryParameter(
                     postData, MESSAGE_RESPONSE, odsaOperation.messageResponse());
             appendOptionalQueryParameter(postData, MESSAGE_BUTTON, odsaOperation.messageButton());
