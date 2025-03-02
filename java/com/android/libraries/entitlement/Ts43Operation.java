@@ -127,6 +127,10 @@ public class Ts43Operation {
     /** IMEI of the device. */
     private final String mImei;
 
+    /** used to identify the requesting application. Optional */
+    @NonNull
+    private final String mAppName;
+
     /**
      * Constructor of Ts43Operation.
      *
@@ -138,6 +142,8 @@ public class Ts43Operation {
      * @param authToken The authentication token.
      * @param tokenType The token type. Can be {@link #TOKEN_TYPE_NORMAL} or
      *                  {@link #TOKEN_TYPE_TEMPORARY}.
+     * @param appName The name of the device application making the request or empty string
+     *                if unspecified.
      */
     public Ts43Operation(
             @NonNull Context context,
@@ -145,7 +151,8 @@ public class Ts43Operation {
             @NonNull URL entitlementServerAddress,
             @Nullable String entitlementVersion,
             @NonNull String authToken,
-            @TokenType int tokenType) {
+            @TokenType int tokenType,
+            @NonNull String appName) {
         mContext = context;
         mEntitlementServerAddress = entitlementServerAddress;
         if (entitlementVersion != null) {
@@ -179,6 +186,7 @@ public class Ts43Operation {
             imei = telephonyManager.getImei(slotIndex);
         }
         mImei = Strings.nullToEmpty(imei);
+        mAppName = appName;
     }
 
     /**
@@ -199,7 +207,8 @@ public class Ts43Operation {
         ServiceEntitlementRequest.Builder builder =
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei);
+                        .setTerminalId(mImei)
+                        .setAppName(mAppName);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
             builder.setAuthenticationToken(mAuthToken);
@@ -362,6 +371,7 @@ public class Ts43Operation {
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
                         .setTerminalId(mImei)
+                        .setAppName(mAppName)
                         .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
@@ -558,7 +568,8 @@ public class Ts43Operation {
         ServiceEntitlementRequest.Builder builder =
                 ServiceEntitlementRequest.builder()
                         .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei);
+                        .setTerminalId(mImei)
+                        .setAppName(mAppName);
 
         if (mTokenType == TOKEN_TYPE_NORMAL) {
             builder.setAuthenticationToken(mAuthToken);
@@ -640,6 +651,7 @@ public class Ts43Operation {
         ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
                 .setEntitlementVersion(mEntitlementVersion)
                 .setTerminalId(mImei)
+                .setAppName(mAppName)
                 .setAuthenticationToken(mAuthToken);
 
         String notificationToken = acquireConfigurationRequest.notificationToken();
@@ -802,6 +814,7 @@ public class Ts43Operation {
                         .setEntitlementVersion(mEntitlementVersion)
                         .setTerminalId(mImei)
                         .setAuthenticationToken(mAuthToken)
+                        .setAppName(mAppName)
                         .build();
 
         EsimOdsaOperation operation =
@@ -906,7 +919,7 @@ public class Ts43Operation {
             builder.setTemporaryToken(mTemporaryToken);
         }
 
-        ServiceEntitlementRequest request = builder.build();
+        ServiceEntitlementRequest request = builder.setAppName(mAppName).build();
 
         EsimOdsaOperation operation =
                 EsimOdsaOperation.builder()
