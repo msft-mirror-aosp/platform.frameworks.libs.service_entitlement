@@ -27,6 +27,15 @@ java_defaults {
     plugins: ["auto_value_plugin"],
     sdk_version: "system_current",
     min_sdk_version: "29",
+    errorprone: {
+        extra_check_modules: ["//external/nullaway:nullaway_plugin"],
+        javacflags: [
+            "-XepOpt:NullAway:AnnotatedPackages=com.android.libraries.entitlement",
+            "-Xep:NullAway:ERROR",
+            // Exclude @AutoValue generated code.
+            "-XepExcludedPaths:.*/entitlement/.*AutoValue_.*",
+        ],
+    },
 }
 
 java_library {
@@ -47,15 +56,6 @@ java_library {
         "//apex_available:platform",
         "com.android.wifi",
     ],
-    errorprone: {
-        extra_check_modules: ["//external/nullaway:nullaway_plugin"],
-        javacflags: [
-            "-XepOpt:NullAway:AnnotatedPackages=com.android.libraries.entitlement",
-            "-Xep:NullAway:ERROR",
-            // Exclude @AutoValue generated code.
-            "-XepExcludedPaths:.*/entitlement/http/AutoValue_.*",
-        ],
-    },
 }
 
 java_library {
@@ -95,13 +95,6 @@ java_library {
     ],
     lint: {
         baseline_filename: "lint-baseline.xml",
-    },
-    errorprone: {
-        extra_check_modules: ["//external/nullaway:nullaway_plugin"],
-        javacflags: [
-            "-XepOpt:NullAway:AnnotatedPackages=com.android.libraries.entitlement",
-            "-Xep:NullAway:ERROR",
-        ],
     },
 }
 
