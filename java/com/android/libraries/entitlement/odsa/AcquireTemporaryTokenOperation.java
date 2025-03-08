@@ -176,7 +176,7 @@ public final class AcquireTemporaryTokenOperation {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenResponse
                     .Builder()
                     .setTemporaryToken("")
-                    .setTemporaryTokenExpiry(null)
+                    .setTemporaryTokenExpiry(Instant.EPOCH)
                     .setOperationTargets(ImmutableList.of());
         }
 
