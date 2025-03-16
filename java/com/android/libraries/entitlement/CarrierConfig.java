@@ -20,6 +20,7 @@ import android.net.Network;
 
 import androidx.annotation.Nullable;
 
+import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 import com.google.auto.value.AutoValue;
 
 /**
@@ -32,10 +33,10 @@ public abstract class CarrierConfig {
     /** Default value of {@link #timeoutInSec} if not set. */
     public static final int DEFAULT_TIMEOUT_IN_SEC = 30;
 
-    public static final String CLIENT_TS_43_IMS_ENTITLEMENT = "IMS-Entitlement";
-    public static final String CLIENT_TS_43_COMPANION_ODSA = "Companion-ODSA";
-    public static final String CLIENT_TS_43_PRIMARY_ODSA = "Primary-ODSA";
-    public static final String CLIENT_TS_43_SERVER_ODSA = "Server-ODSA";
+    public static final String CLIENT_TS_43_IMS_ENTITLEMENT = "client-IMS-Entitlement";
+    public static final String CLIENT_TS_43_COMPANION_ODSA = "client-Companion-ODSA";
+    public static final String CLIENT_TS_43_PRIMARY_ODSA = "client-Primary-ODSA";
+    public static final String CLIENT_TS_43_SERVER_ODSA = "client-Server-ODSA";
 
     /** The carrier's entitlement server URL. See {@link Builder#setServerUrl}. */
     public abstract String serverUrl();
@@ -56,13 +57,21 @@ public abstract class CarrierConfig {
     @Nullable
     public abstract Network network();
 
+    /** The factory to create connections. See {@link Builder#setUrlConnectionFactory}. */
+    @Nullable
+    public abstract UrlConnectionFactory urlConnectionFactory();
+
+    /** The EAP-AKA realm. See {@link Builder#setEapAkaRealm}. */
+    public abstract String eapAkaRealm();
+
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
                 .setServerUrl("")
                 .setClientTs43("")
                 .setUseHttpPost(false)
-                .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC);
+                .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC)
+                .setEapAkaRealm("nai.epc");
     }
 
     /** Builder. */
@@ -96,5 +105,17 @@ public abstract class CarrierConfig {
          * is used.
          */
         public abstract Builder setNetwork(Network network);
+
+        /**
+         * If unset, the default Android API {@link java.net.URL#openConnection}
+         * would be used. This allows callers of the lib to choose the HTTP stack.
+         */
+        public abstract Builder setUrlConnectionFactory(UrlConnectionFactory urlConnectionFactory);
+
+        /**
+         * Sets the realm for EAP-AKA. If unset, uses the standard "nai.epc" defined in 3GPP TS
+         * 23.003 clause 19.3.2.
+         */
+        public abstract Builder setEapAkaRealm(String eapAkaRealm);
     }
 }
