@@ -18,11 +18,13 @@ package com.android.libraries.entitlement;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
+import android.annotation.NonNull;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import android.testing.AndroidTestingRunner;
@@ -53,7 +55,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.lang.reflect.Field;
 import java.net.URL;
 
 @RunWith(AndroidTestingRunner.class)
@@ -88,6 +89,7 @@ public class Ts43OperationTest {
 
     private static final String GENERAL_ERROR_TEXT = "error text";
     private static final String APP_NAME = "Ts43OperationTest.class";
+    private static final String APP_VERSION = "1.0";
 
     private static final String MANAGE_SUBSCRIPTION_RESPONSE_CONTINUE_TO_WEBSHEET =
             "<?xml version=\"1.0\"?>"
@@ -321,12 +323,72 @@ public class Ts43OperationTest {
                 .getSystemServiceName(TelephonyManager.class);
         doReturn(mTelephonyManager).when(mContext).getSystemService(Context.TELEPHONY_SERVICE);
 
-        mTs43Operation = new Ts43Operation(mContext, 0, new URL(TEST_URL),
-                ENTITLEMENT_VERSION, TOKEN, Ts43Operation.TOKEN_TYPE_NORMAL, APP_NAME);
+        mTs43Operation = Ts43Operation.builder()
+                .setContext(mContext)
+                .setSlotIndex(0)
+                .setEntitlementServerAddress(new URL(TEST_URL))
+                .setEntitlementVersion(ENTITLEMENT_VERSION)
+                .setInitialAuthToken(TOKEN)
+                .setAppName(APP_NAME)
+                .setAppVersion(APP_VERSION)
+                .setCarrierConfig(carrierConfig)
+                .setServiceEntitlement(serviceEntitlement)
+                .build();
+    }
 
-        Field field = Ts43Operation.class.getDeclaredField("mServiceEntitlement");
-        field.setAccessible(true);
-        field.set(mTs43Operation, serviceEntitlement);
+    @Test
+    public void testBuilder() throws Exception {
+        assertThat(Ts43Operation.builder()).isNotNull();
+
+        // Exception should be thrown if required fields are missing
+        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder().build());
+        // Exception should be thrown if required fields are missing
+        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
+                .setContext(mContext).build());
+
+        // Exception should be thrown if required fields are missing
+        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
+                .setEntitlementServerAddress(new URL(TEST_URL)).build());
+
+        // Exception should be thrown if required fields are missing
+        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
+                .setContext(mContext)
+                .setEntitlementServerAddress(new URL(TEST_URL)).build());
+
+        assertThat(Ts43Operation.builder()
+                .setContext(mContext)
+                .setEntitlementServerAddress(new URL(TEST_URL))
+                .setInitialAuthToken("token")
+                .build()).isNotNull();
+
+        assertThat(Ts43Operation.builder()
+                .setContext(mContext)
+                .setEntitlementServerAddress(new URL(TEST_URL))
+                .setTemporaryToken("temp token")
+                .build()).isNotNull();
+
+        // Exception should be thrown if slot index is invalid
+        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
+                .setContext(mContext)
+                .setSlotIndex(3)
+                .setEntitlementServerAddress(new URL(TEST_URL))
+                .setInitialAuthToken("token")
+                .build());
+    }
+
+    private void verifyOdsaOperation(@NonNull String expectedOperation) throws Exception {
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        ArgumentCaptor<EsimOdsaOperation> operationCaptor =
+                ArgumentCaptor.forClass(EsimOdsaOperation.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(),
+                operationCaptor.capture(), any());
+        assertThat(captor.getValue().appName()).isEqualTo(APP_NAME);
+        assertThat(captor.getValue().appVersion()).isEqualTo(APP_VERSION);
+        assertThat(captor.getValue().entitlementVersion()).isEqualTo(ENTITLEMENT_VERSION);
+        assertThat(captor.getValue().terminalId()).isEqualTo(IMEI);
+
+        assertThat(operationCaptor.getValue().operation()).isEqualTo(expectedOperation);
     }
 
     @Test
@@ -350,11 +412,7 @@ public class Ts43OperationTest {
         assertThat(response.subscriptionServiceUserData())
                 .isEqualTo(SUBSCRIPTION_SERVICE_USER_DATA);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION);
     }
 
     @Test
@@ -378,11 +436,7 @@ public class Ts43OperationTest {
         assertThat(response.downloadInfo().profileSmdpAddresses())
                 .isEqualTo(ImmutableList.of(PROFILE_SMDP_ADDRESS));
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION);
     }
 
     @Test
@@ -406,11 +460,7 @@ public class Ts43OperationTest {
                 ManageSubscriptionResponse.SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT);
         assertThat(response.generalErrorText()).isEqualTo(GENERAL_ERROR_TEXT);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION);
     }
 
     @Test
@@ -433,11 +483,7 @@ public class Ts43OperationTest {
                 EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
                 EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN);
     }
 
     @Test
@@ -459,11 +505,7 @@ public class Ts43OperationTest {
                 ImmutableList.of(PROFILE_SMDP_ADDRESS));
         assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION);
     }
 
     @Test
@@ -488,11 +530,7 @@ public class Ts43OperationTest {
         assertThat(config.messageInfo().acceptFreetext()).isEqualTo(MESSAGE_ACCEPT_PRESENT);
         assertThat(config.serviceStatus()).isEqualTo(EsimOdsaOperation.SERVICE_STATUS_ACTIVATED);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION);
     }
 
     @Test
@@ -513,11 +551,7 @@ public class Ts43OperationTest {
         assertThat(response.notEnabledUrl()).isEqualTo(new URL(NOT_ENABLED_URL));
         assertThat(response.notEnabledUserData()).isEqualTo(NOT_ENABLED_USER_DATA);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_CHECK_ELIGIBILITY);
     }
 
     @Test
@@ -533,11 +567,7 @@ public class Ts43OperationTest {
         assertThat(response.serviceStatus()).isEqualTo(
                 EsimOdsaOperation.SERVICE_STATUS_DEACTIVATED);
 
-        ArgumentCaptor<ServiceEntitlementRequest> captor =
-                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_MANAGE_SERVICE);
     }
 
     @Test
@@ -555,8 +585,16 @@ public class Ts43OperationTest {
 
         ArgumentCaptor<ServiceEntitlementRequest> captor =
                 ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
-        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(), any(),
-                any());
-        assertThat(captor.getValue().appName()).contains(APP_NAME);
+        ArgumentCaptor<EsimOdsaOperation> operationCaptor =
+                ArgumentCaptor.forClass(EsimOdsaOperation.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(),
+                operationCaptor.capture(), any());
+        assertThat(captor.getValue().appName()).isEqualTo(APP_NAME);
+        assertThat(captor.getValue().appVersion()).isEqualTo(APP_VERSION);
+        assertThat(captor.getValue().entitlementVersion()).isEqualTo(ENTITLEMENT_VERSION);
+        assertThat(captor.getValue().terminalId()).isEqualTo(TERMINAL_ID);
+
+        assertThat(operationCaptor.getValue().operation()).isEqualTo(
+                EsimOdsaOperation.OPERATION_GET_PHONE_NUMBER);
     }
 }

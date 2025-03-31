@@ -24,9 +24,9 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
 import com.android.libraries.entitlement.http.HttpConstants;
@@ -50,11 +50,10 @@ import com.android.libraries.entitlement.odsa.PlanOffer;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43XmlDoc;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
@@ -67,128 +66,329 @@ import java.util.List;
 import java.util.Objects;
 
 /** TS43 operations described in GSMA Service Entitlement Configuration spec. */
-public class Ts43Operation {
+@AutoValue
+public abstract class Ts43Operation {
     private static final String TAG = "Ts43";
-
-    /**
-     * The normal token retrieved via {@link Ts43Authentication#getAuthToken(int, String, String,
-     * String)} or {@link Ts43Authentication#getAuthToken(URL)}.
-     */
-    public static final int TOKEN_TYPE_NORMAL = 1;
-
-    /**
-     * The temporary token retrieved via {@link
-     * Ts43Operation#acquireTemporaryToken(AcquireTemporaryTokenRequest)}.
-     */
-    public static final int TOKEN_TYPE_TEMPORARY = 2;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({TOKEN_TYPE_NORMAL, TOKEN_TYPE_TEMPORARY})
-    public @interface TokenType {
-    }
 
     /** The application context. */
     @NonNull
-    private final Context mContext;
+    protected abstract Context context();
 
     /**
      * The TS.43 entitlement version to use. For example, {@code "9.0"}. If {@code null}, version
      * {@code "2.0"} will be used by default.
      */
     @NonNull
-    private final String mEntitlementVersion;
+    protected abstract String entitlementVersion();
 
     /** The entitlement server address. */
     @NonNull
-    private final URL mEntitlementServerAddress;
+    protected abstract URL entitlementServerAddress();
 
     /**
-     * The authentication token used for TS.43 operation. This token could be automatically updated
-     * after each TS.43 operation if the server provides the new token in the operation's HTTP
-     * response.
+     * The initial authentication token used for TS.43 operation. This token might be only used for
+     * the first time. Later if the server provides a new token in the operation's HTTP response,
+     * the new token will be saved into {@link #mAuthToken}. Empty string if the initial token is
+     * not available.
      */
-    @Nullable
-    private String mAuthToken;
+    @NonNull
+    protected abstract String initialAuthToken();
 
     /**
      * The temporary token retrieved from {@link
-     * #acquireTemporaryToken(AcquireTemporaryTokenRequest)}.
+     * #acquireTemporaryToken(AcquireTemporaryTokenRequest)}. Empty string if it's not available.
      */
+    @NonNull
+    protected abstract String temporaryToken();
+
+    /** The logical SIM slot index involved in ODSA operation. */
+    protected abstract int slotIndex();
+
+    /** The requesting application name. Empty string if it's not available. */
+    @NonNull
+    protected abstract String appName();
+
+    /** The requesting application version. Empty string if it's not available. */
+    @NonNull
+    protected abstract String appVersion();
+
+    /** Carrier configuration. */
     @Nullable
-    private String mTemporaryToken;
-
-    /**
-     * Token type. When token type is {@link #TOKEN_TYPE_NORMAL}, {@link #mAuthToken} is used. When
-     * toke type is {@link #TOKEN_TYPE_TEMPORARY}, {@link #mTemporaryToken} is used.
-     */
-    @TokenType
-    private int mTokenType;
-
-    private final ServiceEntitlement mServiceEntitlement;
+    protected abstract CarrierConfig carrierConfig();
 
     /** IMEI of the device. */
-    private final String mImei;
-
-    /** used to identify the requesting application. Optional */
     @NonNull
-    private final String mAppName;
+    protected abstract String imei();
+
+    @Nullable
+    protected abstract ServiceEntitlement serviceEntitlement();
 
     /**
-     * Constructor of Ts43Operation.
-     *
-     * @param slotIndex The logical SIM slot index involved in ODSA operation.
-     * @param entitlementServerAddress The entitlement server address.
-     * @param entitlementVersion The TS.43 entitlement version to use. For example,
-     *                           {@code "9.0"}. If {@code null}, version {@code "2.0"} will be used
-     *                           by default.
-     * @param authToken The authentication token.
-     * @param tokenType The token type. Can be {@link #TOKEN_TYPE_NORMAL} or
-     *                  {@link #TOKEN_TYPE_TEMPORARY}.
-     * @param appName The name of the device application making the request or empty string
-     *                if unspecified.
+     * The auto token provided by the server in the operation's HTTP response. Empty string if it's
+     * not available.
      */
-    public Ts43Operation(
-            @NonNull Context context,
-            int slotIndex,
-            @NonNull URL entitlementServerAddress,
-            @Nullable String entitlementVersion,
-            @NonNull String authToken,
-            @TokenType int tokenType,
-            @NonNull String appName) {
-        mContext = context;
-        mEntitlementServerAddress = entitlementServerAddress;
-        if (entitlementVersion != null) {
-            mEntitlementVersion = entitlementVersion;
-        } else {
-            mEntitlementVersion = Ts43Constants.DEFAULT_ENTITLEMENT_VERSION;
-        }
+    @NonNull
+    private String mAuthToken = "";
 
-        if (tokenType == TOKEN_TYPE_NORMAL) {
-            mAuthToken = authToken;
-        } else if (tokenType == TOKEN_TYPE_TEMPORARY) {
-            mTemporaryToken = authToken;
-        } else {
-            throw new IllegalArgumentException("Invalid token type " + tokenType);
-        }
-        mTokenType = tokenType;
+    /**
+     * Builder for {@link Ts43Operation}.
+     *
+     * <p>This class provides a fluent interface for constructing instances of
+     * {@link Ts43Operation}. In order to build the {@link Ts43Operation} object,the following
+     * mandatory methods must be called: {@link #setContext(Context)},
+     * {@link #setEntitlementServerAddress(URL)}, and either {@link #setInitialAuthToken(String)}}
+     * or {@link #setTemporaryToken(String)} must be called.
+     */
+    @AutoValue.Builder
+    public abstract static class Builder {
+        /**
+         * Sets the application context to be used by the built object.
+         * <p>
+         * This context will be used for various operations, such as accessing resources,
+         * starting activities, and interacting with system services.
+         * </p>
+         * <p>
+         * It is crucial to provide a valid and appropriate context here. Typically,
+         * this should be an {@link android.app.Application} context or an {@link Context}
+         * associated with an activity that outlives the built object. Using an activity
+         * context that might be destroyed before the built object can lead to memory
+         * leaks or unexpected behavior.
+         * </p>
+         *
+         * @param context The application context to use. Must not be null.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setContext(@NonNull Context context);
 
-        CarrierConfig carrierConfig =
-                CarrierConfig.builder().setServerUrl(mEntitlementServerAddress.toString()).build();
+        /**
+         * Sets the TS.43 entitlement version to use.
+         *
+         * @param version The TS.43 entitlement version to use. For example, {@code "9.0"}.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setEntitlementVersion(@NonNull String version);
 
-        mServiceEntitlement =
-                new ServiceEntitlement(
-                        mContext, carrierConfig, SubscriptionManager.getSubscriptionId(slotIndex));
+        /**
+         * Sets the entitlement server address.
+         *
+         * @param url The entitlement server address.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setEntitlementServerAddress(@NonNull URL url);
 
-        String imei = null;
-        TelephonyManager telephonyManager = mContext.getSystemService(TelephonyManager.class);
-        if (telephonyManager != null) {
-            if (slotIndex < 0 || slotIndex >= telephonyManager.getActiveModemCount()) {
-                throw new IllegalArgumentException("getAuthToken: invalid slot index " + slotIndex);
+        /**
+         * Sets the initial authentication token used for TS.43 operation. This token might be only
+         * used for the first time. Later if the server provides a new token in the operation's HTTP
+         * response, the new token will be saved into {@link #mAuthToken}.
+         *
+         * @param token The initial authentication token.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setInitialAuthToken(@NonNull String token);
+
+        /**
+         * Sets the temporary token retrieved from
+         * {@link #acquireTemporaryToken(AcquireTemporaryTokenRequest)}
+         *
+         * @param token The temporary token.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setTemporaryToken(@NonNull String token);
+
+        /**
+         * Sets the logical SIM slot index involved in ODSA operation.
+         *
+         * @param index The logical SIM slot index.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setSlotIndex(int index);
+
+        /**
+         * Sets the name of the requesting application.
+         *
+         * @param name The name of the requesting application.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setAppName(@NonNull String name);
+
+        /**
+         * Sets the version of the requesting application.
+         *
+         * @param version The version of the requesting application.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setAppVersion(@NonNull String version);
+
+        /**
+         * Sets the carrier configuration.
+         *
+         * @param carrierConfig The carrier configuration.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setCarrierConfig(@Nullable CarrierConfig carrierConfig);
+
+        /**
+         * Sets the IMEI of the device.
+         *
+         * @param imei The IMEI of the device.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        protected abstract Builder setImei(@NonNull String imei);
+
+        /**
+         * Sets the service entitlement. This method is for testing only.
+         *
+         * @param serviceEntitlement The service entitlement.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @VisibleForTesting
+        @NonNull
+        abstract Builder setServiceEntitlement(
+                @Nullable ServiceEntitlement serviceEntitlement);
+
+        /**
+         * @return The application context to use.
+         */
+        @NonNull
+        protected abstract Context context();
+
+        /**
+         * @return The initial authentication token.
+         */
+        @NonNull
+        protected abstract String initialAuthToken();
+
+        /**
+         * @return the temporary token retrieved from
+         * {@link #acquireTemporaryToken(AcquireTemporaryTokenRequest)}.
+         */
+        @NonNull
+        protected abstract String temporaryToken();
+
+        /**
+         * @return The carrier config.
+         */
+        @Nullable
+        protected abstract CarrierConfig carrierConfig();
+
+        /**
+         * @return The logical SIM slot index involved in ODSA operation.
+         */
+        protected abstract int slotIndex();
+
+        /**
+         * @return The service entitlement.
+         */
+        @Nullable
+        protected abstract ServiceEntitlement serviceEntitlement();
+
+        /** The entitlement server address. */
+        @NonNull
+        protected abstract URL entitlementServerAddress();
+
+        /**
+         * Builds the {@link Ts43Operation} object. (AutoValue generates its implementation).
+         *
+         * @return The built {@link Ts43Operation} object.
+         */
+        @NonNull
+        protected abstract Ts43Operation autoBuild();
+
+        /**
+         * Builds the {@link Ts43Operation} object.
+         *
+         * @return The built {@link Ts43Operation} object.
+         */
+        @NonNull
+        public Ts43Operation build() {
+            if (TextUtils.isEmpty(initialAuthToken()) && TextUtils.isEmpty(temporaryToken())) {
+                throw new IllegalArgumentException("Either initialAuthToken or temporaryToken "
+                        + "must be set.");
             }
-            imei = telephonyManager.getImei(slotIndex);
+
+            CarrierConfig carrierConfig = carrierConfig();
+            if (carrierConfig == null) {
+                carrierConfig = CarrierConfig.builder()
+                        .setServerUrl(entitlementServerAddress().toString())
+                        .build();
+                setCarrierConfig(carrierConfig);
+            }
+
+            if (serviceEntitlement() == null) {
+                setServiceEntitlement(new ServiceEntitlement(context(),
+                        carrierConfig, SubscriptionManager.getSubscriptionId(slotIndex())));
+            }
+
+            String imei = null;
+            TelephonyManager telephonyManager = context().getSystemService(TelephonyManager.class);
+            if (telephonyManager != null) {
+                if (slotIndex() < 0 || slotIndex() >= telephonyManager.getActiveModemCount()) {
+                    throw new IllegalArgumentException("Ts43Operation: invalid slot index "
+                            + slotIndex());
+                }
+                imei = telephonyManager.getImei(slotIndex());
+            }
+            setImei(Strings.nullToEmpty(imei));
+
+            // Auto generate the rest of the fields
+            return autoBuild();
         }
-        mImei = Strings.nullToEmpty(imei);
-        mAppName = appName;
+    }
+
+    /** Returns a new {@link Ts43Operation.Builder} object. */
+    public static Ts43Operation.Builder builder() {
+        return new AutoValue_Ts43Operation.Builder()
+                .setEntitlementVersion(Ts43Constants.DEFAULT_ENTITLEMENT_VERSION)
+                .setInitialAuthToken("")
+                .setTemporaryToken("")
+                .setSlotIndex(SubscriptionManager.getDefaultSubscriptionId())
+                .setAppName("")
+                .setAppVersion("")
+                .setServiceEntitlement(null)
+                .setCarrierConfig(null);
+    }
+
+    /**
+     * @return The initial service entitlement request builder.
+     */
+    @NonNull
+    private ServiceEntitlementRequest.Builder getServiceEntitlementRequestBuilder() {
+        ServiceEntitlementRequest.Builder builder =
+                ServiceEntitlementRequest.builder()
+                        .setEntitlementVersion(entitlementVersion())
+                        .setTerminalId(imei())
+                        .setAppName(appName())
+                        .setAppVersion(appVersion());
+        if (!TextUtils.isEmpty(temporaryToken())) {
+            builder.setTemporaryToken(temporaryToken());
+        } else if (!TextUtils.isEmpty(mAuthToken)) {
+            builder.setAuthenticationToken(mAuthToken);
+        } else if (!TextUtils.isEmpty(initialAuthToken())) {
+            builder.setAuthenticationToken(initialAuthToken());
+        }
+
+        return builder;
     }
 
     /**
@@ -206,17 +406,7 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(checkEligibilityRequest);
 
-        ServiceEntitlementRequest.Builder builder =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei)
-                        .setAppName(mAppName);
-
-        if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(checkNotNull(mAuthToken));
-        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
-        }
+        ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder();
 
         String notificationToken = checkEligibilityRequest.notificationToken();
         if (!TextUtils.isEmpty(notificationToken)) {
@@ -244,9 +434,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(checkEligibilityRequest.appId(), request,
-                            operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    checkEligibilityRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
             throw e;
@@ -308,7 +497,7 @@ public class Ts43Operation {
         }
 
         // Parse notEnabledURL
-        URL notEnabledURL = null;
+        URL notEnabledURL;
         String notEnabledURLString =
                 ts43XmlDoc.get(
                         ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
@@ -369,18 +558,8 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(manageSubscriptionRequest);
 
-        ServiceEntitlementRequest.Builder builder =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei)
-                        .setAppName(mAppName)
-                        .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
-
-        if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(checkNotNull(mAuthToken));
-        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
-        }
+        ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder()
+                .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
 
         String notificationToken = manageSubscriptionRequest.notificationToken();
         if (!TextUtils.isEmpty(notificationToken)) {
@@ -431,9 +610,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(
-                            manageSubscriptionRequest.appId(), request, operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    manageSubscriptionRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
             throw e;
@@ -567,19 +745,7 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(manageServiceRequest);
 
-        ServiceEntitlementRequest.Builder builder =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei)
-                        .setAppName(mAppName);
-
-        if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(checkNotNull(mAuthToken));
-        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
-        }
-
-        ServiceEntitlementRequest request = builder.build();
+        ServiceEntitlementRequest request = getServiceEntitlementRequestBuilder().build();
 
         EsimOdsaOperation operation =
                 EsimOdsaOperation.builder()
@@ -599,9 +765,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(manageServiceRequest.appId(), request,
-                            operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    manageServiceRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageService: Failed to perform ODSA operation. e=" + e);
             throw e;
@@ -650,11 +815,7 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(acquireConfigurationRequest);
 
-        ServiceEntitlementRequest.Builder builder = ServiceEntitlementRequest.builder()
-                .setEntitlementVersion(mEntitlementVersion)
-                .setTerminalId(mImei)
-                .setAppName(mAppName)
-                .setAuthenticationToken(checkNotNull(mAuthToken));
+        ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder();
 
         String notificationToken = acquireConfigurationRequest.notificationToken();
         if (!TextUtils.isEmpty(notificationToken)) {
@@ -683,9 +844,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(
-                            acquireConfigurationRequest.appId(), request, operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    acquireConfigurationRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "acquireConfiguration: Failed to perform ODSA operation. e=" + e);
             throw e;
@@ -811,13 +971,7 @@ public class Ts43Operation {
             throws ServiceEntitlementException {
         Objects.requireNonNull(acquireTemporaryTokenRequest);
 
-        ServiceEntitlementRequest request =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(mImei)
-                        .setAuthenticationToken(checkNotNull(mAuthToken))
-                        .setAppName(mAppName)
-                        .build();
+        ServiceEntitlementRequest request = getServiceEntitlementRequestBuilder().build();
 
         EsimOdsaOperation operation =
                 EsimOdsaOperation.builder()
@@ -828,9 +982,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(
-                            acquireTemporaryTokenRequest.appId(), request, operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    acquireTemporaryTokenRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "acquireTemporaryToken: Failed to perform ODSA operation. e=" + e);
             throw e;
@@ -855,10 +1008,8 @@ public class Ts43Operation {
                                 ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
                                 Ts43XmlDoc.Parm.OPERATION_TARGETS));
 
-        if (operationTargets != null) {
-            List<String> operationTargetsList = Arrays.asList(operationTargets.split("\\s*,\\s*"));
-            responseBuilder.setOperationTargets(ImmutableList.copyOf(operationTargetsList));
-        }
+        List<String> operationTargetsList = Arrays.asList(operationTargets.split("\\s*,\\s*"));
+        responseBuilder.setOperationTargets(ImmutableList.copyOf(operationTargetsList));
 
         // Parse the temporary token
         String temporaryToken =
@@ -905,23 +1056,14 @@ public class Ts43Operation {
     public GetPhoneNumberResponse getPhoneNumber(
             @NonNull GetPhoneNumberRequest getPhoneNumberRequest)
             throws ServiceEntitlementException {
-        ServiceEntitlementRequest.Builder builder =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion);
+
+        ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder();
 
         if (!TextUtils.isEmpty(getPhoneNumberRequest.terminalId())) {
             builder.setTerminalId(getPhoneNumberRequest.terminalId());
-        } else {
-            builder.setTerminalId(mImei);
         }
 
-        if (mTokenType == TOKEN_TYPE_NORMAL) {
-            builder.setAuthenticationToken(checkNotNull(mAuthToken));
-        } else if (mTokenType == TOKEN_TYPE_TEMPORARY) {
-            builder.setTemporaryToken(checkNotNull(mTemporaryToken));
-        }
-
-        ServiceEntitlementRequest request = builder.setAppName(mAppName).build();
+        ServiceEntitlementRequest request = builder.build();
 
         EsimOdsaOperation operation =
                 EsimOdsaOperation.builder()
@@ -930,9 +1072,8 @@ public class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml =
-                    mServiceEntitlement.performEsimOdsa(
-                        Ts43Constants.APP_PHONE_NUMBER_INFORMATION, request, operation);
+            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+                    Ts43Constants.APP_PHONE_NUMBER_INFORMATION, request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "getPhoneNumber: Failed to perform ODSA operation. e=" + e);
             throw e;
