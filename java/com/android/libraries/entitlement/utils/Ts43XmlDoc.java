@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -58,6 +57,7 @@ public final class Ts43XmlDoc {
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
+        public static final String PRIMARY_CONFIGURATIONS = "PrimaryConfigurations";
         public static final String COMPANION_CONFIGURATIONS = "CompanionConfigurations";
         public static final String COMPANION_CONFIGURATION = "CompanionConfiguration";
         public static final String ENTERPRISE_CONFIGURATION = "EnterpriseConfiguration";
@@ -148,26 +148,75 @@ public final class Ts43XmlDoc {
      * "APPLICATION|PrimaryConfiguration" -> {"ICCID" -> "123", "ServiceStatus" -> "2",
      * "PollingInterval" -> "1"} }
      */
-    private final Map<String, Map<String, String>> mCharacteristicsMap = new ArrayMap<>();
+    private final Map<String, Map<String, List<String>>> mCharacteristicsMap = new ArrayMap<>();
 
     public Ts43XmlDoc(String responseBody) {
         parseXmlResponse(responseBody);
     }
 
-    /** Returns {@code true} if a node structure exists for a given characteristicTypes. */
+    /**
+     * Returns {@code true} if a node structure exists for a given characteristicTypes. If checking
+     * for {@code PrimaryConfiguration}, this will also check for {@code PrimaryConfigurations} if
+     * the former doesn't exist.
+     */
     public boolean contains(ImmutableList<String> characteristicTypes) {
-        return mCharacteristicsMap.containsKey(TextUtils.join("|", characteristicTypes));
+        boolean contains =
+                mCharacteristicsMap.containsKey(TextUtils.join("|", characteristicTypes));
+        if (!contains
+                && characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATION)
+                && !characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATIONS)) {
+            contains =
+                    mCharacteristicsMap.containsKey(
+                            TextUtils.join(
+                                    "|",
+                                    getPrimaryConfigurationsCharacteristicTypes(
+                                            characteristicTypes)));
+        }
+        return contains;
     }
 
     /**
      * Returns param value for given characteristicType and parameterName, or {@code null} if not
-     * found.
+     * found. If there are multiple parameterNames, returns the first one. Per CR 1095 6.5.5, if the
+     * {@code PrimaryConfigurations} characteristic exists, there can be multiple {@code
+     * PrimaryConfiguration}s under it. The first parameter is designated as the primary ICCID or
+     * eSIM profile, and subsequent parameters are designated as the secondary ICCID(s) or eSIM
+     * profile(s).
      */
     @Nullable
     public String get(ImmutableList<String> characteristicTypes, String parameterName) {
-        Map<String, String> parmMap = mCharacteristicsMap.get(
-                TextUtils.join("|", characteristicTypes));
-        return parmMap == null ? null : parmMap.get(parameterName.toLowerCase(Locale.ROOT));
+        String get = getHelper(characteristicTypes, parameterName);
+        if (TextUtils.isEmpty(get)
+                && characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATION)
+                && !characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATIONS)) {
+            get =
+                    getHelper(
+                            getPrimaryConfigurationsCharacteristicTypes(characteristicTypes),
+                            parameterName);
+        }
+        return get;
+    }
+
+    @Nullable
+    private String getHelper(ImmutableList<String> characteristicTypes, String parameterName) {
+        Map<String, List<String>> parmMap =
+                mCharacteristicsMap.get(TextUtils.join("|", characteristicTypes));
+        if (parmMap == null) {
+            return null;
+        }
+        List<String> parmValues = parmMap.get(parameterName);
+        return parmValues == null ? null : parmValues.get(0);
+    }
+
+    private static ImmutableList<String> getPrimaryConfigurationsCharacteristicTypes(
+            ImmutableList<String> characteristicTypes) {
+        int index = characteristicTypes.indexOf(CharacteristicType.PRIMARY_CONFIGURATION);
+        // Insert PrimaryConfigurations right before PrimaryConfiguration to get the nested value
+        return ImmutableList.<String>builder()
+                .addAll(characteristicTypes.subList(0, index))
+                .add(CharacteristicType.PRIMARY_CONFIGURATIONS)
+                .addAll(characteristicTypes.subList(index, characteristicTypes.size()))
+                .build();
     }
 
     /**
@@ -224,11 +273,13 @@ public final class Ts43XmlDoc {
                 return;
             }
             String characteristicKey = TextUtils.join("|", characteristics);
-            Map<String, String> parmMap =
+            Map<String, List<String>> parmMap =
                     mCharacteristicsMap.getOrDefault(characteristicKey, new ArrayMap<>());
-            parmMap.put(
-                    Objects.requireNonNull(parmNameNode.getNodeValue().toLowerCase(Locale.ROOT)),
-                    Objects.requireNonNull(parmValueNode.getNodeValue()));
+            List<String> parmValues =
+                    parmMap.getOrDefault(
+                            Objects.requireNonNull(parmNameNode.getNodeValue()), new ArrayList<>());
+            parmValues.add(Objects.requireNonNull(parmValueNode.getNodeValue()));
+            parmMap.put(Objects.requireNonNull(parmNameNode.getNodeValue()), parmValues);
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }
     }
