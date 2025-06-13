@@ -49,11 +49,11 @@ public final class Ts43XmlDoc {
     private static final String NODE_PARM = "parm";
     private static final String PARM_NAME = "name";
     private static final String PARM_VALUE = "value";
+    private static final String NEW_LINE_PLACEHOLDER = "[NEW----LINE]";
 
     /** Type names of characteristics. */
     public static final class CharacteristicType {
-        private CharacteristicType() {
-        }
+        private CharacteristicType() {}
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
@@ -69,8 +69,7 @@ public final class Ts43XmlDoc {
 
     /** Names of parameters. */
     public static final class Parm {
-        private Parm() {
-        }
+        private Parm() {}
 
         public static final String TOKEN = "token";
         public static final String APP_ID = "AppID";
@@ -93,6 +92,7 @@ public final class Ts43XmlDoc {
         public static final String ICCID = "ICCID";
         public static final String SERVICE_STATUS = "ServiceStatus";
         public static final String POLLING_INTERVAL = "PollingInterval";
+        public static final String POLLING_INTERVAL_UNIT = "PollingIntervalUnit";
         public static final String SUBSCRIPTION_RESULT = "SubscriptionResult";
         public static final String SUBSCRIPTION_SERVICE_URL = "SubscriptionServiceURL";
         public static final String SUBSCRIPTION_SERVICE_USER_DATA = "SubscriptionServiceUserData";
@@ -108,12 +108,16 @@ public final class Ts43XmlDoc {
         public static final String REJECT_BUTTON = "Reject_btn";
         public static final String REJECT_BUTTON_LABEL = "Reject_btn_label";
         public static final String ACCEPT_FREETEXT = "Accept_freetext";
+        public static final String TITLE = "Title";
+        public static final String ACCEPT_FREETEXT_HINT = "Accept_freetext_hint";
+        public static final String ACCEPT_FREETEXT_VALIDATION = "Accept_freetext_validation";
+        public static final String ACCEPT_FREETEXT_VALIDATION_FAILED_ERROR_TEXT =
+                "Accept_freetext_validation_failed_error_text";
     }
 
     /** Parameter values of XML response content. */
     public static final class ParmValues {
-        private ParmValues() {
-        }
+        private ParmValues() {}
 
         public static final String OPERATION_RESULT_SUCCESS = "1";
         public static final String OPERATION_RESULT_ERROR_GENERAL = "100";
@@ -134,6 +138,11 @@ public final class Ts43XmlDoc {
         public static final String SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = "6";
         public static final String SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY = "7";
         public static final String SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT = "8";
+        public static final String MESSAGE_ABSENT = "0";
+        public static final String MESSAGE_PRESENT = "1";
+        public static final String POLLING_INTERVAL_UNIT_MINUTES = "0";
+        public static final String POLLING_INTERVAL_UNIT_SECONDS = "1";
+        public static final String POLLING_INTERVAL_UNIT_DECISECONDS = "2";
         public static final String CONTENTS_TYPE_XML = "xml";
         public static final String CONTENTS_TYPE_JSON = "json";
         public static final String DISABLED = "0";
@@ -142,11 +151,14 @@ public final class Ts43XmlDoc {
     }
 
     /**
-     * Maps characteristics to a map of parameters. Key is the characteristic type. Value is
-     * parameter
-     * name and value. Example: {"APPLICATION" -> {"AppId" -> "ap2009", "OperationResult" -> "1"},
-     * "APPLICATION|PrimaryConfiguration" -> {"ICCID" -> "123", "ServiceStatus" -> "2",
-     * "PollingInterval" -> "1"} }
+     * Maps characteristics to a map of a list of parameters. Key is the characteristic type.
+     * Value is parameter name and list of values.
+     * For example:
+     * {
+     *     "APPLICATION" -> {"AppId" -> ["ap2009"], "OperationResult" -> ["1"]},
+     *     "APPLICATION|PrimaryConfiguration" ->
+     *         {"ICCID" -> ["123"], "ServiceStatus" -> ["2"], "PollingInterval" -> ["1"]}
+     * }
      */
     private final Map<String, Map<String, List<String>>> mCharacteristicsMap = new ArrayMap<>();
 
@@ -230,12 +242,20 @@ public final class Ts43XmlDoc {
         // Workaround: some server doesn't escape "&" in XML response and that will cause XML parser
         // failure later.
         // This is a quick impl of escaping w/o introducing a ton of new dependencies.
-        responseBody = responseBody.replace("&", "&amp;").replace("&amp;amp;", "&amp;");
+        // Workaround: \r\n is treated as whitespace and removed by normalize().
+        // To prevent this, replace \r\n with [NEW----LINE], then after normalize(),
+        // replace [NEW----LINE] back with \n.
+        responseBody = responseBody
+                .replace("&", "&amp;")
+                .replace("&amp;amp;", "&amp;")
+                .replace("\r\n", NEW_LINE_PLACEHOLDER);
+
         try {
             InputSource inputSource = new InputSource(new StringReader(responseBody));
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = builderFactory.newDocumentBuilder();
             Document doc = docBuilder.parse(inputSource);
+
             doc.getDocumentElement().normalize();
             NodeList nodeList = doc.getDocumentElement().getChildNodes();
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -255,11 +275,13 @@ public final class Ts43XmlDoc {
         if (attributes == null) {
             return;
         }
+
         if (nodeName.equals(NODE_CHARACTERISTIC)) {
             Node typeNode = attributes.getNamedItem("type");
             if (typeNode == null) {
                 return;
             }
+
             characteristics.add(Objects.requireNonNull(typeNode.getNodeValue()));
             NodeList children = node.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
@@ -272,13 +294,17 @@ public final class Ts43XmlDoc {
             if (parmNameNode == null || parmValueNode == null) {
                 return;
             }
+
             String characteristicKey = TextUtils.join("|", characteristics);
             Map<String, List<String>> parmMap =
                     mCharacteristicsMap.getOrDefault(characteristicKey, new ArrayMap<>());
             List<String> parmValues =
                     parmMap.getOrDefault(
                             Objects.requireNonNull(parmNameNode.getNodeValue()), new ArrayList<>());
-            parmValues.add(Objects.requireNonNull(parmValueNode.getNodeValue()));
+            String replacedValue =
+                    Objects.requireNonNull(parmValueNode.getNodeValue())
+                            .replace(NEW_LINE_PLACEHOLDER, "\n");
+            parmValues.add(replacedValue);
             parmMap.put(Objects.requireNonNull(parmNameNode.getNodeValue()), parmValues);
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }

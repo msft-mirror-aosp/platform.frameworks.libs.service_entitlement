@@ -288,7 +288,7 @@ public class Ts43OperationTest {
                     + "<characteristic type=\"APPLICATION\">\n"
                     + "    <parm name=\"AppID\" value=\"ap2014\"/>\n"
                     + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
-                    + "    <parm name=\"MSISDN\" value=\"" + MSISDN + "\"/>\n"
+                    + "    <parm name=\"msisdn\" value=\"" + MSISDN + "\"/>\n"
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
