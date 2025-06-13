@@ -1171,7 +1171,7 @@ public class EapAkaApiTest {
 
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
         verify(mMockTelephonyManagerForSubId, times(0)).getGroupIdLevel1();
-        String urlParams = String.format("gid1=%s", GID1);
+        String urlParams = String.format("GID1=%s", GID1);
         assertThat(mHttpRequestCaptor.getValue().url()).contains(urlParams);
     }
 
@@ -1197,7 +1197,7 @@ public class EapAkaApiTest {
 
         verify(mMockTelephonyManagerForSubId).getGroupIdLevel1();
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
-        String urlParams = String.format("gid1=%s", GID1);
+        String urlParams = String.format("GID1=%s", GID1);
         assertThat(mHttpRequestCaptor.getValue().url()).contains(urlParams);
     }
 
@@ -1223,7 +1223,7 @@ public class EapAkaApiTest {
 
         verify(mMockTelephonyManagerForSubId, times(0)).getGroupIdLevel1();
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor.getValue().url()).doesNotContain("gid1");
+        assertThat(mHttpRequestCaptor.getValue().url()).doesNotContain("GID1");
     }
 
     @Test
