@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -50,14 +49,15 @@ public final class Ts43XmlDoc {
     private static final String NODE_PARM = "parm";
     private static final String PARM_NAME = "name";
     private static final String PARM_VALUE = "value";
+    private static final String NEW_LINE_PLACEHOLDER = "[NEW----LINE]";
 
     /** Type names of characteristics. */
     public static final class CharacteristicType {
-        private CharacteristicType() {
-        }
+        private CharacteristicType() {}
 
         public static final String APPLICATION = "APPLICATION";
         public static final String PRIMARY_CONFIGURATION = "PrimaryConfiguration";
+        public static final String PRIMARY_CONFIGURATIONS = "PrimaryConfigurations";
         public static final String COMPANION_CONFIGURATIONS = "CompanionConfigurations";
         public static final String COMPANION_CONFIGURATION = "CompanionConfiguration";
         public static final String ENTERPRISE_CONFIGURATION = "EnterpriseConfiguration";
@@ -69,8 +69,7 @@ public final class Ts43XmlDoc {
 
     /** Names of parameters. */
     public static final class Parm {
-        private Parm() {
-        }
+        private Parm() {}
 
         public static final String TOKEN = "token";
         public static final String APP_ID = "AppID";
@@ -93,6 +92,7 @@ public final class Ts43XmlDoc {
         public static final String ICCID = "ICCID";
         public static final String SERVICE_STATUS = "ServiceStatus";
         public static final String POLLING_INTERVAL = "PollingInterval";
+        public static final String POLLING_INTERVAL_UNIT = "PollingIntervalUnit";
         public static final String SUBSCRIPTION_RESULT = "SubscriptionResult";
         public static final String SUBSCRIPTION_SERVICE_URL = "SubscriptionServiceURL";
         public static final String SUBSCRIPTION_SERVICE_USER_DATA = "SubscriptionServiceUserData";
@@ -108,12 +108,16 @@ public final class Ts43XmlDoc {
         public static final String REJECT_BUTTON = "Reject_btn";
         public static final String REJECT_BUTTON_LABEL = "Reject_btn_label";
         public static final String ACCEPT_FREETEXT = "Accept_freetext";
+        public static final String TITLE = "Title";
+        public static final String ACCEPT_FREETEXT_HINT = "Accept_freetext_hint";
+        public static final String ACCEPT_FREETEXT_VALIDATION = "Accept_freetext_validation";
+        public static final String ACCEPT_FREETEXT_VALIDATION_FAILED_ERROR_TEXT =
+                "Accept_freetext_validation_failed_error_text";
     }
 
     /** Parameter values of XML response content. */
     public static final class ParmValues {
-        private ParmValues() {
-        }
+        private ParmValues() {}
 
         public static final String OPERATION_RESULT_SUCCESS = "1";
         public static final String OPERATION_RESULT_ERROR_GENERAL = "100";
@@ -134,6 +138,11 @@ public final class Ts43XmlDoc {
         public static final String SUBSCRIPTION_RESULT_DELETE_PROFILE_IN_USE = "6";
         public static final String SUBSCRIPTION_RESULT_REDOWNLOADABLE_PROFILE_IS_MANDATORY = "7";
         public static final String SUBSCRIPTION_RESULT_REQUIRES_USER_INPUT = "8";
+        public static final String MESSAGE_ABSENT = "0";
+        public static final String MESSAGE_PRESENT = "1";
+        public static final String POLLING_INTERVAL_UNIT_MINUTES = "0";
+        public static final String POLLING_INTERVAL_UNIT_SECONDS = "1";
+        public static final String POLLING_INTERVAL_UNIT_DECISECONDS = "2";
         public static final String CONTENTS_TYPE_XML = "xml";
         public static final String CONTENTS_TYPE_JSON = "json";
         public static final String DISABLED = "0";
@@ -142,32 +151,84 @@ public final class Ts43XmlDoc {
     }
 
     /**
-     * Maps characteristics to a map of parameters. Key is the characteristic type. Value is
-     * parameter
-     * name and value. Example: {"APPLICATION" -> {"AppId" -> "ap2009", "OperationResult" -> "1"},
-     * "APPLICATION|PrimaryConfiguration" -> {"ICCID" -> "123", "ServiceStatus" -> "2",
-     * "PollingInterval" -> "1"} }
+     * Maps characteristics to a map of a list of parameters. Key is the characteristic type.
+     * Value is parameter name and list of values.
+     * For example:
+     * {
+     *     "APPLICATION" -> {"AppId" -> ["ap2009"], "OperationResult" -> ["1"]},
+     *     "APPLICATION|PrimaryConfiguration" ->
+     *         {"ICCID" -> ["123"], "ServiceStatus" -> ["2"], "PollingInterval" -> ["1"]}
+     * }
      */
-    private final Map<String, Map<String, String>> mCharacteristicsMap = new ArrayMap<>();
+    private final Map<String, Map<String, List<String>>> mCharacteristicsMap = new ArrayMap<>();
 
     public Ts43XmlDoc(String responseBody) {
         parseXmlResponse(responseBody);
     }
 
-    /** Returns {@code true} if a node structure exists for a given characteristicTypes. */
+    /**
+     * Returns {@code true} if a node structure exists for a given characteristicTypes. If checking
+     * for {@code PrimaryConfiguration}, this will also check for {@code PrimaryConfigurations} if
+     * the former doesn't exist.
+     */
     public boolean contains(ImmutableList<String> characteristicTypes) {
-        return mCharacteristicsMap.containsKey(TextUtils.join("|", characteristicTypes));
+        boolean contains =
+                mCharacteristicsMap.containsKey(TextUtils.join("|", characteristicTypes));
+        if (!contains
+                && characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATION)
+                && !characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATIONS)) {
+            contains =
+                    mCharacteristicsMap.containsKey(
+                            TextUtils.join(
+                                    "|",
+                                    getPrimaryConfigurationsCharacteristicTypes(
+                                            characteristicTypes)));
+        }
+        return contains;
     }
 
     /**
      * Returns param value for given characteristicType and parameterName, or {@code null} if not
-     * found.
+     * found. If there are multiple parameterNames, returns the first one. Per CR 1095 6.5.5, if the
+     * {@code PrimaryConfigurations} characteristic exists, there can be multiple {@code
+     * PrimaryConfiguration}s under it. The first parameter is designated as the primary ICCID or
+     * eSIM profile, and subsequent parameters are designated as the secondary ICCID(s) or eSIM
+     * profile(s).
      */
     @Nullable
     public String get(ImmutableList<String> characteristicTypes, String parameterName) {
-        Map<String, String> parmMap = mCharacteristicsMap.get(
-                TextUtils.join("|", characteristicTypes));
-        return parmMap == null ? null : parmMap.get(parameterName.toLowerCase(Locale.ROOT));
+        String get = getHelper(characteristicTypes, parameterName);
+        if (TextUtils.isEmpty(get)
+                && characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATION)
+                && !characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATIONS)) {
+            get =
+                    getHelper(
+                            getPrimaryConfigurationsCharacteristicTypes(characteristicTypes),
+                            parameterName);
+        }
+        return get;
+    }
+
+    @Nullable
+    private String getHelper(ImmutableList<String> characteristicTypes, String parameterName) {
+        Map<String, List<String>> parmMap =
+                mCharacteristicsMap.get(TextUtils.join("|", characteristicTypes));
+        if (parmMap == null) {
+            return null;
+        }
+        List<String> parmValues = parmMap.get(parameterName);
+        return parmValues == null ? null : parmValues.get(0);
+    }
+
+    private static ImmutableList<String> getPrimaryConfigurationsCharacteristicTypes(
+            ImmutableList<String> characteristicTypes) {
+        int index = characteristicTypes.indexOf(CharacteristicType.PRIMARY_CONFIGURATION);
+        // Insert PrimaryConfigurations right before PrimaryConfiguration to get the nested value
+        return ImmutableList.<String>builder()
+                .addAll(characteristicTypes.subList(0, index))
+                .add(CharacteristicType.PRIMARY_CONFIGURATIONS)
+                .addAll(characteristicTypes.subList(index, characteristicTypes.size()))
+                .build();
     }
 
     /**
@@ -181,12 +242,20 @@ public final class Ts43XmlDoc {
         // Workaround: some server doesn't escape "&" in XML response and that will cause XML parser
         // failure later.
         // This is a quick impl of escaping w/o introducing a ton of new dependencies.
-        responseBody = responseBody.replace("&", "&amp;").replace("&amp;amp;", "&amp;");
+        // Workaround: \r\n is treated as whitespace and removed by normalize().
+        // To prevent this, replace \r\n with [NEW----LINE], then after normalize(),
+        // replace [NEW----LINE] back with \n.
+        responseBody = responseBody
+                .replace("&", "&amp;")
+                .replace("&amp;amp;", "&amp;")
+                .replace("\r\n", NEW_LINE_PLACEHOLDER);
+
         try {
             InputSource inputSource = new InputSource(new StringReader(responseBody));
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = builderFactory.newDocumentBuilder();
             Document doc = docBuilder.parse(inputSource);
+
             doc.getDocumentElement().normalize();
             NodeList nodeList = doc.getDocumentElement().getChildNodes();
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -206,11 +275,13 @@ public final class Ts43XmlDoc {
         if (attributes == null) {
             return;
         }
+
         if (nodeName.equals(NODE_CHARACTERISTIC)) {
             Node typeNode = attributes.getNamedItem("type");
             if (typeNode == null) {
                 return;
             }
+
             characteristics.add(Objects.requireNonNull(typeNode.getNodeValue()));
             NodeList children = node.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
@@ -223,12 +294,18 @@ public final class Ts43XmlDoc {
             if (parmNameNode == null || parmValueNode == null) {
                 return;
             }
+
             String characteristicKey = TextUtils.join("|", characteristics);
-            Map<String, String> parmMap =
+            Map<String, List<String>> parmMap =
                     mCharacteristicsMap.getOrDefault(characteristicKey, new ArrayMap<>());
-            parmMap.put(
-                    Objects.requireNonNull(parmNameNode.getNodeValue().toLowerCase(Locale.ROOT)),
-                    Objects.requireNonNull(parmValueNode.getNodeValue()));
+            List<String> parmValues =
+                    parmMap.getOrDefault(
+                            Objects.requireNonNull(parmNameNode.getNodeValue()), new ArrayList<>());
+            String replacedValue =
+                    Objects.requireNonNull(parmValueNode.getNodeValue())
+                            .replace(NEW_LINE_PLACEHOLDER, "\n");
+            parmValues.add(replacedValue);
+            parmMap.put(Objects.requireNonNull(parmNameNode.getNodeValue()), parmValues);
             mCharacteristicsMap.put(characteristicKey, parmMap);
         }
     }

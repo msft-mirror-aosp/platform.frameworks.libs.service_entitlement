@@ -77,7 +77,7 @@ public class EapAkaApi {
     private static final String NOTIF_TOKEN = "notif_token";
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
-    private static final String GID1 = "gid1";
+    private static final String GID1 = "GID1";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
