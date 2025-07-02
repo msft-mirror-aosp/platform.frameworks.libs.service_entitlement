@@ -276,6 +276,33 @@ public class EapAkaApiTest {
     }
 
     @Test
+    public void queryEntitlementStatus_invalidImsi() throws Exception {
+        when(mMockTelephonyManagerForSubId.getIccAuthentication(
+                        TelephonyManager.APPTYPE_USIM,
+                        TelephonyManager.AUTHTYPE_EAP_AKA,
+                        EAP_AKA_SECURITY_CONTEXT_REQUEST_EXPECTED))
+                .thenReturn(EAP_AKA_SECURITY_CONTEXT_RESPONSE_SUCCESS);
+        when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn(null);
+        CarrierConfig carrierConfig = CarrierConfig.builder().setServerUrl(TEST_URL).build();
+        ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
+
+        ServiceEntitlementException exception =
+                expectThrows(
+                        ServiceEntitlementException.class,
+                        () ->
+                                mEapAkaApi.queryEntitlementStatus(
+                                        ImmutableList.of(ServiceEntitlement.APP_VOWIFI),
+                                        carrierConfig,
+                                        request,
+                                        ImmutableMap.of()));
+
+        assertThat(exception.getErrorCode())
+                .isEqualTo(ServiceEntitlementException.ERROR_INVALID_MCC_MNC_IMSI);
+        assertThat(exception.getMessage())
+                .isEqualTo("Invalid imsi or mccmnc. imsi: null, mccmnc: " + MCCMNC);
+    }
+
+    @Test
     public void queryEntitlementStatus_noAuthenticationToken_altenateEapAkaRealm()
             throws Exception {
         when(mMockTelephonyManagerForSubId.getIccAuthentication(

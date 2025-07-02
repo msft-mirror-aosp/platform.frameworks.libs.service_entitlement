@@ -20,6 +20,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_EAP_AKA_SYNCHRONIZATION_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_JSON_COMPOSE_FAILURE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
+import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_INVALID_MCC_MNC_IMSI;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -551,9 +552,8 @@ public class EapAkaApi {
 
     @SuppressWarnings("HardwareIds")
     private void appendParametersForAuthentication(
-            Uri.Builder urlBuilder,
-            ServiceEntitlementRequest request,
-            CarrierConfig carrierConfig) {
+            Uri.Builder urlBuilder, ServiceEntitlementRequest request, CarrierConfig carrierConfig)
+            throws ServiceEntitlementException {
         if (!TextUtils.isEmpty(request.authenticationToken())) {
             // IMSI and token required for fast AuthN.
             urlBuilder
@@ -1009,11 +1009,12 @@ public class EapAkaApi {
      *
      * <p>{@code 0<IMSI>@<realm>.mnc<MNC>.mcc<MCC>.3gppnetwork.org}
      */
-    @Nullable
-    public static String getImsiEap(
-            @Nullable String mccmnc, @Nullable String imsi, String realm) {
+    public static String getImsiEap(@Nullable String mccmnc, @Nullable String imsi, String realm)
+            throws ServiceEntitlementException {
         if (mccmnc == null || mccmnc.length() < 5 || imsi == null) {
-            return null;
+            throw new ServiceEntitlementException(
+                    ERROR_INVALID_MCC_MNC_IMSI,
+                    String.format("Invalid imsi or mccmnc. imsi: %s, mccmnc: %s", imsi, mccmnc));
         }
 
         String mcc = mccmnc.substring(0, 3);

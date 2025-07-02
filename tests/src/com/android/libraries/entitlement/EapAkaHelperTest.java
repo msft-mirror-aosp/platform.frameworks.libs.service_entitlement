@@ -17,6 +17,7 @@
 package com.android.libraries.entitlement;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.testng.Assert.expectThrows;
 
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -59,7 +60,7 @@ public class EapAkaHelperTest {
     }
 
     @Test
-    public void getEapAkaRootNai_twoDigitMnc() {
+    public void getEapAkaRootNai_twoDigitMnc() throws ServiceEntitlementException {
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("123457813240779");
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("12345");
 
@@ -69,7 +70,7 @@ public class EapAkaHelperTest {
     }
 
     @Test
-    public void getEapAkaRootNai_threeDigitMnc() {
+    public void getEapAkaRootNai_threeDigitMnc() throws ServiceEntitlementException {
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("123457813240779");
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("123457");
 
@@ -79,13 +80,18 @@ public class EapAkaHelperTest {
     }
 
     @Test
-    public void getEapAkaRootNai_invalidMccMnc_returnNull() {
+    public void getEapAkaRootNai_invalidMccMnc_throws() throws ServiceEntitlementException {
         when(mMockTelephonyManagerForSubId.getSubscriberId()).thenReturn("123457813240779");
         when(mMockTelephonyManagerForSubId.getSimOperator()).thenReturn("");
 
-        String result = mEapAkaHelper.getEapAkaRootNai();
+        ServiceEntitlementException exception =
+                expectThrows(
+                        ServiceEntitlementException.class, () -> mEapAkaHelper.getEapAkaRootNai());
 
-        assertThat(result).isNull();
+        assertThat(exception.getErrorCode())
+                .isEqualTo(ServiceEntitlementException.ERROR_INVALID_MCC_MNC_IMSI);
+        assertThat(exception.getMessage())
+                .isEqualTo("Invalid imsi or mccmnc. imsi: 123457813240779, mccmnc: ");
     }
 
     @Test

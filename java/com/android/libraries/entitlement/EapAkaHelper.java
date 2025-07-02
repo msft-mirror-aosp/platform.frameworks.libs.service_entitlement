@@ -57,13 +57,13 @@ public class EapAkaHelper {
     }
 
     /**
-     * Returns the root NAI for EAP-AKA authentication as per 3GPP TS 23.003 19.3.2, or
-     * {@code null} if failed. The result will be in the form:
+     * Returns the root NAI for EAP-AKA authentication as per 3GPP TS 23.003 19.3.2, or {@code null}
+     * if failed. The result will be in the form:
      *
      * <p>{@code 0<IMSI>@nai.epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org}
      */
     @Nullable
-    public String getEapAkaRootNai() {
+    public String getEapAkaRootNai() throws ServiceEntitlementException {
         TelephonyManager telephonyManager =
                 mContext.getSystemService(TelephonyManager.class)
                         .createForSubscriptionId(mSimSubscriptionId);
