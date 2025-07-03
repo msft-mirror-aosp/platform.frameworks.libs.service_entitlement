@@ -41,6 +41,9 @@ public class ServiceEntitlementException extends Exception {
      */
     public static final int ERROR_PHONE_NOT_AVAILABLE = 10;
 
+    /** IMSI, MCC, MNC are invalid. */
+    public static final int ERROR_INVALID_MCC_MNC_IMSI = 11;
+
     // EAP-AKA authentication related failures
     /**
      * SIM not returning a response to the EAP-AKA challenge, e.g. when the challenge is invalid.
