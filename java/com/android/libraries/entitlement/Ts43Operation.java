@@ -104,6 +104,9 @@ public abstract class Ts43Operation {
     /** The logical SIM slot index involved in ODSA operation. */
     protected abstract int slotIndex();
 
+    /** The version of configuration currently stored on the client. */
+    protected abstract int configurationVersion();
+
     /** The requesting application name. Empty string if it's not available. */
     @NonNull
     protected abstract String appName();
@@ -122,6 +125,9 @@ public abstract class Ts43Operation {
 
     @Nullable
     protected abstract ServiceEntitlement serviceEntitlement();
+
+    @NonNull
+    protected abstract String acceptContentType();
 
     /**
      * The auto token provided by the server in the operation's HTTP response. Empty string if it's
@@ -216,6 +222,14 @@ public abstract class Ts43Operation {
         public abstract Builder setSlotIndex(int index);
 
         /**
+         * Sets the version of configuration currently stored on the client.
+         *
+         * @return This {@code Builder} object for method chaining.
+         */
+        @NonNull
+        public abstract Builder setConfigurationVersion(int configurationVersion);
+
+        /**
          * Sets the name of the requesting application.
          *
          * @param name The name of the requesting application.
@@ -268,6 +282,22 @@ public abstract class Ts43Operation {
                 @Nullable ServiceEntitlement serviceEntitlement);
 
         /**
+         * Sets the configuration document format the caller accepts, e.g. XML or JSON. Used by HTTP
+         * request header "Accept".
+         *
+         * <p>If not set,
+         * will use {@link ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_JSON_AND_XML}
+         *
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_XML
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_JSON
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_JSON_AND_XML
+         */
+        @NonNull
+        public abstract Builder setAcceptContentType(
+                @NonNull @ServiceEntitlementRequest.ContentType String acceptContentType);
+
+
+        /**
          * @return The application context to use.
          */
         @NonNull
@@ -298,6 +328,11 @@ public abstract class Ts43Operation {
         protected abstract int slotIndex();
 
         /**
+         * @return The version of configuration currently stored on the client.
+         */
+        protected abstract int configurationVersion();
+
+        /**
          * @return The service entitlement.
          */
         @Nullable
@@ -306,6 +341,18 @@ public abstract class Ts43Operation {
         /** The entitlement server address. */
         @NonNull
         protected abstract URL entitlementServerAddress();
+
+        /**
+         * Returns the accepted content type of http response.
+         *
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_XML
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_JSON
+         * @see ServiceEntitlementRequest#ACCEPT_CONTENT_TYPE_JSON_AND_XML
+         */
+        @NonNull
+        protected abstract String acceptContentType();
+
+
 
         /**
          * Builds the {@link Ts43Operation} object. (AutoValue generates its implementation).
@@ -366,7 +413,9 @@ public abstract class Ts43Operation {
                 .setAppName("")
                 .setAppVersion("")
                 .setServiceEntitlement(null)
-                .setCarrierConfig(null);
+                .setCarrierConfig(null)
+                .setAcceptContentType("")
+                .setConfigurationVersion(ServiceEntitlementRequest.DEFAULT_CONFIGURATION_VERSION);
     }
 
     /**
@@ -379,7 +428,12 @@ public abstract class Ts43Operation {
                         .setEntitlementVersion(entitlementVersion())
                         .setTerminalId(imei())
                         .setAppName(appName())
-                        .setAppVersion(appVersion());
+                        .setAppVersion(appVersion())
+                        .setConfigurationVersion(configurationVersion());
+
+        if (!TextUtils.isEmpty(acceptContentType())) {
+            builder.setAcceptContentType(acceptContentType());
+        }
         if (!TextUtils.isEmpty(temporaryToken())) {
             builder.setTemporaryToken(temporaryToken());
         } else if (!TextUtils.isEmpty(mAuthToken)) {

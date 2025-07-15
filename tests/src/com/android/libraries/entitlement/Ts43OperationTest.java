@@ -60,6 +60,9 @@ import java.net.URL;
 @RunWith(AndroidTestingRunner.class)
 public class Ts43OperationTest {
     private static final String TEST_URL = "https://test.url";
+    private static final String TEST_ACCEPT_CONTENT_TYPE =
+            ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML;
+    private static final int TEST_CONFIGURATION_VERSION = 1;
     private static final String ENTITLEMENT_VERSION = "9.0";
     private static final String TOKEN = "ASH127AHHA88SF";
     private static final String NEW_TOKEN = "ES7WLERXJH";
@@ -332,6 +335,8 @@ public class Ts43OperationTest {
                 .setAppName(APP_NAME)
                 .setAppVersion(APP_VERSION)
                 .setCarrierConfig(carrierConfig)
+                .setAcceptContentType(TEST_ACCEPT_CONTENT_TYPE)
+                .setConfigurationVersion(TEST_CONFIGURATION_VERSION)
                 .setServiceEntitlement(serviceEntitlement)
                 .build();
     }
@@ -387,6 +392,8 @@ public class Ts43OperationTest {
         assertThat(captor.getValue().appVersion()).isEqualTo(APP_VERSION);
         assertThat(captor.getValue().entitlementVersion()).isEqualTo(ENTITLEMENT_VERSION);
         assertThat(captor.getValue().terminalId()).isEqualTo(IMEI);
+        assertThat(captor.getValue().configurationVersion()).isEqualTo(TEST_CONFIGURATION_VERSION);
+        assertThat(captor.getValue().acceptContentType()).isEqualTo(TEST_ACCEPT_CONTENT_TYPE);
 
         assertThat(operationCaptor.getValue().operation()).isEqualTo(expectedOperation);
     }
