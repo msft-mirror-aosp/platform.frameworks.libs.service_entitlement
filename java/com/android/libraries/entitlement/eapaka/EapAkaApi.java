@@ -79,6 +79,8 @@ public class EapAkaApi {
     private static final String APP_VERSION = "app_version";
     private static final String APP_NAME = "app_name";
     private static final String GID1 = "GID1";
+    private static final String IPV6_ADDRESS_KEY = "ipv6_addr";
+    private static final String IPV4_ADDRESS_KEY = "ipv4_addr";
 
     private static final String OPERATION = "operation";
     private static final String OPERATION_TYPE = "operation_type";
@@ -837,6 +839,8 @@ public class EapAkaApi {
             appendOptionalQueryParameter(
                     postData, MESSAGE_RESPONSE, odsaOperation.messageResponse());
             appendOptionalQueryParameter(postData, MESSAGE_BUTTON, odsaOperation.messageButton());
+            appendOptionalQueryParameter(postData, IPV6_ADDRESS_KEY, odsaOperation.ipv6Address());
+            appendOptionalQueryParameter(postData, IPV4_ADDRESS_KEY, odsaOperation.ipv4Address());
         } catch (JSONException jsonException) {
             // Should never happen
             throw new ServiceEntitlementException(
