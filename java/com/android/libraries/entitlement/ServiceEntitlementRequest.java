@@ -19,9 +19,14 @@ package com.android.libraries.entitlement;
 import android.os.Build;
 import android.os.Build.VERSION;
 
+import androidx.annotation.StringDef;
+
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
 import com.google.auto.value.AutoValue;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * Service entitlement HTTP request parameters, as defined in GSMA spec TS.43 section 2.2.
@@ -35,6 +40,13 @@ public abstract class ServiceEntitlementRequest {
             "application/json";
     public static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/json, text/vnd.wap.connectivity-xml";
+
+    @StringDef({ACCEPT_CONTENT_TYPE_JSON, ACCEPT_CONTENT_TYPE_JSON,
+            ACCEPT_CONTENT_TYPE_JSON_AND_XML})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ContentType {
+    }
+
     /** Default value of configuration version. */
     public static final int DEFAULT_CONFIGURATION_VERSION = 0;
 
