@@ -41,7 +41,7 @@ public abstract class ServiceEntitlementRequest {
     public static final String ACCEPT_CONTENT_TYPE_JSON_AND_XML =
             "application/json, text/vnd.wap.connectivity-xml";
 
-    @StringDef({ACCEPT_CONTENT_TYPE_JSON, ACCEPT_CONTENT_TYPE_JSON,
+    @StringDef({ACCEPT_CONTENT_TYPE_XML, ACCEPT_CONTENT_TYPE_JSON,
             ACCEPT_CONTENT_TYPE_JSON_AND_XML})
     @Retention(RetentionPolicy.SOURCE)
     public @interface ContentType {
