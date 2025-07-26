@@ -240,6 +240,12 @@ public abstract class EsimOdsaOperation {
      */
     public abstract int operationType();
 
+    /** Returns the IPv6 address of the device. Used by HTTP parameter {@code ipv6_addr}. */
+    public abstract String ipv6Address();
+
+    /** Returns the IPv4 address of the device. Used by HTTP parameter {@code ipv4_addr}. */
+    public abstract String ipv4Address();
+
     /**
      * Returns the comma separated list of operation targets used with temporary token from
      * AcquireTemporaryToken operation. Used by HTTP parameter {@code operation_targets}.
@@ -394,6 +400,8 @@ public abstract class EsimOdsaOperation {
     public static Builder builder() {
         return new AutoValue_EsimOdsaOperation.Builder()
                 .setOperation(OPERATION_UNKNOWN)
+                .setIpv6Address("")
+                .setIpv4Address("")
                 .setOperationType(OPERATION_TYPE_NOT_SET)
                 .setOperationTargets(ImmutableList.of())
                 .setCompanionTerminalId("")
@@ -754,6 +762,24 @@ public abstract class EsimOdsaOperation {
          */
         @NonNull
         public abstract Builder setMessageButton(@NonNull String messageButton);
+
+        /**
+         * Sets the IPv6 address of the device. Used by HTTP parameter {@code ipv6_addr}.
+         *
+         * @param ipv6Address The IPv6 address.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setIpv6Address(@NonNull String ipv6Address);
+
+        /**
+         * Sets the IPv4 address of the device. Used by HTTP parameter {@code ipv4_addr}.
+         *
+         * @param ipv4Address The IPv4 address.
+         * @return The builder.
+         */
+        @NonNull
+        public abstract Builder setIpv4Address(@NonNull String ipv4Address);
 
         /** Returns the {@link EsimOdsaOperation} object. */
         @NonNull
