@@ -58,6 +58,11 @@ public final class Ts43Constants {
     /** App ID for phone number information. */
     public static final String APP_PHONE_NUMBER_INFORMATION = "ap2014";
 
+    /** App ID for app authentication.
+     * NOTE that Android will not support Operator Tokens or App Tokens, but some carriers still
+     * want ap2015 even in temp-token use */
+    public static final String APP_APPLICATION_AUTHENTICATION = "ap2015";
+
     /** App ID for satellite entitlement. */
     public static final String APP_SATELLITE_ENTITLEMENT = "ap2016";
 
@@ -83,6 +88,7 @@ public final class Ts43Constants {
             APP_DIRECT_CARRIER_BILLING,
             APP_PRIVATE_USER_IDENTITY,
             APP_PHONE_NUMBER_INFORMATION,
+            APP_APPLICATION_AUTHENTICATION,
             APP_SATELLITE_ENTITLEMENT,
             APP_ODSA_CROSS_TS43
     })
@@ -107,6 +113,7 @@ public final class Ts43Constants {
             case APP_DIRECT_CARRIER_BILLING:
             case APP_PRIVATE_USER_IDENTITY:
             case APP_PHONE_NUMBER_INFORMATION:
+            case APP_APPLICATION_AUTHENTICATION:
             case APP_SATELLITE_ENTITLEMENT:
             case APP_ODSA_CROSS_TS43:
                 return true;

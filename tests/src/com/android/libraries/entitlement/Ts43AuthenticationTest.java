@@ -159,6 +159,16 @@ public class Ts43AuthenticationTest {
     }
 
     @Test
+    public void testGetAuthToken_2015() throws Exception {
+        doReturn(HTTP_RESPONSE_WITH_TOKEN).when(mMockHttpResponse).body();
+        Ts43AuthToken mToken = mTs43Authentication.getAuthToken(
+                0, Ts43Constants.APP_APPLICATION_AUTHENTICATION, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
+        assertThat(mToken.token()).isEqualTo(TOKEN);
+        assertThat(mToken.validity()).isEqualTo(VALIDITY);
+    }
+
+    @Test
     public void testGetAuthToken_invalidSlotIndex_throwException() {
         assertThrows(IllegalArgumentException.class, () -> mTs43Authentication.getAuthToken(
                 5, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
