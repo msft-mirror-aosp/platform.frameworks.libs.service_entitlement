@@ -182,6 +182,25 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
+    private static final String ACQUIRE_TEMPORARY_BAD_TOKEN_RESPONSE_NO_EXPIRY =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2009\"/>\n"
+                    + "    <parm name=\"TemporaryToken\" value=\"" + TEMPORARY_TOKEN + "\"/>\n"
+                    + "    <parm name=\"OperationTargets\"\n"
+                    + "        value=\"ManageSubscription,AcquireConfiguration\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
     private static final String ACQUIRE_CONFIGURATION_RESPONSE =
             "<?xml version=\"1.0\"?>\n"
                     + "<wap-provisioningdoc version=\"1.1\">\n"
@@ -489,6 +508,23 @@ public class Ts43OperationTest {
         assertThat(response.operationTargets()).isEqualTo(ImmutableList.of(
                 EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
                 EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION));
+
+        verifyOdsaOperation(EsimOdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN);
+    }
+
+    @Test
+    public void testAcquireTemporaryTokenNoExpiry() throws Exception {
+        doReturn(ACQUIRE_TEMPORARY_BAD_TOKEN_RESPONSE_NO_EXPIRY).when(mMockHttpResponse).body();
+
+        AcquireTemporaryTokenRequest request = AcquireTemporaryTokenRequest.builder()
+                .setAppId(Ts43Constants.APP_ODSA_PRIMARY)
+                .setTargetTerminalEntitlementProtocol(EsimOdsaOperation.ENTITLEMENT_PROTOCOL_TS43)
+                .setOperationTargets(ImmutableList.of(
+                        EsimOdsaOperation.OPERATION_MANAGE_SUBSCRIPTION,
+                        EsimOdsaOperation.OPERATION_ACQUIRE_CONFIGURATION))
+                .build();
+        assertThrows(ServiceEntitlementException.class, () ->
+                mTs43Operation.acquireTemporaryToken(request));
 
         verifyOdsaOperation(EsimOdsaOperation.OPERATION_ACQUIRE_TEMPORARY_TOKEN);
     }
