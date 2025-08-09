@@ -1084,6 +1084,14 @@ public abstract class Ts43Operation {
                         ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.TEMPORARY_TOKEN_EXPIRY);
 
+        if (temporaryTokenExpiry == null) {
+            // safe to throw here as this was an uncaught NPE in the previous code
+            Log.w(TAG, "Failed to find a temporaryTokenExpiry");
+            throw new ServiceEntitlementException(
+                    ServiceEntitlementException.ERROR_TOKEN_NOT_AVAILABLE,
+                    "temporary token didn't have required expiry.");
+        }
+
         // Parse the token expiration time.
         Instant expiry;
         try {
@@ -1091,6 +1099,10 @@ public abstract class Ts43Operation {
             responseBuilder.setTemporaryTokenExpiry(expiry);
         } catch (DateTimeParseException e) {
             Log.w(TAG, "Failed to parse temporaryTokenExpiry: " + temporaryTokenExpiry);
+            // this should likely throw an exception as well - the expiry is required
+            // however, that may be a breaking change for production services so we'll
+            // leave this just logging and returning the default EPOC (1970 date) expiry value
+            // and anybody checking that should know this is not valid
         }
 
         return responseBuilder.build();
