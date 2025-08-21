@@ -86,6 +86,13 @@ public class ServiceEntitlement {
             Ts43Constants.APP_PHONE_NUMBER_INFORMATION;
 
     /**
+     * App ID for app authentication. Note that Android will not support Operator Tokens or App
+     * Tokens, but some carriers still want ap2015 even in temp-token use
+     */
+    public static final String APP_APPLICATION_AUTHENTICATION =
+            Ts43Constants.APP_APPLICATION_AUTHENTICATION;
+
+    /**
      * App ID for satellite entitlement.
      */
     public static final String APP_SATELLITE_ENTITLEMENT = Ts43Constants.APP_SATELLITE_ENTITLEMENT;
