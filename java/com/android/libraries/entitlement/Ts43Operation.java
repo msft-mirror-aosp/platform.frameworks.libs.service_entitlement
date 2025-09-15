@@ -19,6 +19,7 @@ package com.android.libraries.entitlement;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.content.Context;
+import android.os.Build;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -26,6 +27,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.EsimOdsaOperation.OdsaServiceStatus;
@@ -368,6 +370,7 @@ public abstract class Ts43Operation {
          * @return The built {@link Ts43Operation} object.
          */
         @NonNull
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         public Ts43Operation build() {
             if (TextUtils.isEmpty(initialAuthToken()) && TextUtils.isEmpty(temporaryToken())) {
                 throw new IllegalArgumentException("Either initialAuthToken or temporaryToken "
