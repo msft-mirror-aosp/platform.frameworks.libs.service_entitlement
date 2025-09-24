@@ -21,6 +21,7 @@ import android.net.Network;
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.utils.UrlConnectionFactory;
+
 import com.google.auto.value.AutoValue;
 
 /**
@@ -64,6 +65,17 @@ public abstract class CarrierConfig {
     /** The EAP-AKA realm. See {@link Builder#setEapAkaRealm}. */
     public abstract String eapAkaRealm();
 
+    /**
+     * Use the official semicolon instead of our legacy commas to separate cookies
+     * in outoing http.
+     *
+     * If set to {@code true}, instead of:
+     * "cookie=[cookie1=foo, cookie2=bar]"
+     * we would produce
+     * "cookie=[cookie1=foo; cookie2=bar]"
+     */
+    public abstract boolean useOutgoingSemicolonCookieDelimiter();
+
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
@@ -71,7 +83,8 @@ public abstract class CarrierConfig {
                 .setClientTs43("")
                 .setUseHttpPost(false)
                 .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC)
-                .setEapAkaRealm("nai.epc");
+                .setEapAkaRealm("nai.epc")
+                .setUseOutgoingSemicolonCookieDelimiter(false);
     }
 
     /** Builder. */
@@ -117,5 +130,16 @@ public abstract class CarrierConfig {
          * 23.003 clause 19.3.2.
          */
         public abstract Builder setEapAkaRealm(String eapAkaRealm);
+
+        /**
+         * Use the official semicolong instead of our legacy commas to separate cookies
+         * in outoing http.
+         *
+         * If set to {@code true}, instead of:
+         * "cookie=[cookie1=foo, cookie2=bar]"
+         * we would produce
+         * "cookie=[cookie1=foo; cookie2=bar]"
+         */
+        public abstract Builder setUseOutgoingSemicolonCookieDelimiter(boolean useSemicolon);
     }
 }

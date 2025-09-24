@@ -241,7 +241,9 @@ public class EapAkaApi {
             ImmutableList<String> cookieList =
                     HttpCookieJar.parseSetCookieHeaders(
                             challengeResponse.cookies()).toCookieHeaders();
-            String flatCookie = String.join(", ", cookieList);
+            String cookieDelimiter =
+                    (carrierConfig.useOutgoingSemicolonCookieDelimiter()) ? "; " : ", ";
+            String flatCookie = String.join(cookieDelimiter, cookieList);
             ImmutableList<String> flatCookies = ImmutableList.of(flatCookie);
 
             return respondToEapAkaChallenge(
