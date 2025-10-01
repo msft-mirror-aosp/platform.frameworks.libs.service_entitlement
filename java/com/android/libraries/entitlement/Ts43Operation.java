@@ -1164,6 +1164,12 @@ public abstract class Ts43Operation {
                 ts43XmlDoc.get(
                         ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.MSISDN);
+        if (TextUtils.isEmpty(msisdn)) {
+            // Retry with uppercase
+            msisdn = ts43XmlDoc.get(
+                    ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                    Ts43XmlDoc.Parm.MSISDN.toUpperCase());
+        }
 
         if (!TextUtils.isEmpty(msisdn)) {
             responseBuilder.setMsisdn(msisdn);
