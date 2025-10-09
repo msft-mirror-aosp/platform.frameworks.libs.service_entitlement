@@ -263,12 +263,10 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
                 .contains("EAP_ID=0234107813240779%40nai.epc.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -350,12 +348,10 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
                 .contains("EAP_ID=0234107813240779%40wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -417,12 +413,10 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
                 .isEqualTo("0234107813240779@nai.epc.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -481,12 +475,10 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
                 .isEqualTo("0234107813240779@wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -496,7 +488,7 @@ public class EapAkaApiTest {
     }
 
     @Test
-    public void queryEntitlementStatus_noAuthenticationToken_useSemicolonDelimiter()
+    public void queryEntitlementStatus_noAuthenticationToken_preflattenCookies()
             throws Exception {
         when(mMockTelephonyManagerForSubId.getIccAuthentication(
                         TelephonyManager.APPTYPE_USIM,
@@ -520,7 +512,7 @@ public class EapAkaApiTest {
         CarrierConfig carrierConfig =
                 CarrierConfig.builder()
                         .setServerUrl(TEST_URL)
-                        .setUseOutgoingSemicolonCookieDelimiter(true)
+                        .setPreflattenCookies(true)
                         .build();
         ServiceEntitlementRequest request = ServiceEntitlementRequest.builder().build();
 
@@ -645,12 +637,10 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -716,12 +706,10 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(4)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -1019,12 +1007,10 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the 2nd request has cookies set by the 1st response
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor
-                .getAllValues()
-                .get(1)
-                .requestProperties()
-                .get(HTTP_HEADER_COOKIE))
-                    .contains(COOKIE_VALUE + ", " + COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
+                .containsAtLeast(
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
+                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();

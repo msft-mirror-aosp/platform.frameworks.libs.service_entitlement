@@ -66,15 +66,15 @@ public abstract class CarrierConfig {
     public abstract String eapAkaRealm();
 
     /**
-     * Use the official semicolon instead of our legacy commas to separate cookies
-     * in outoing http.
+     * Pre-flatten cookies rather than pass several cookie headers to the http stack.
      *
-     * If set to {@code true}, instead of:
-     * "cookie=[cookie1=foo, cookie2=bar]"
-     * we would produce
-     * "cookie=[cookie1=foo; cookie2=bar]"
+     * Some stacks can't handle duplicate cookies being added individually.  This
+     * Option will combine the cookies into a single "cookie=[cookie1=foo; cookie2=bar]".
+     * See {@link Builder#setPreflattenCookies}.
+     *
+     * Defaults to {@code false}
      */
-    public abstract boolean useOutgoingSemicolonCookieDelimiter();
+    public abstract boolean preflattenCookies();
 
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
@@ -84,7 +84,7 @@ public abstract class CarrierConfig {
                 .setUseHttpPost(false)
                 .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC)
                 .setEapAkaRealm("nai.epc")
-                .setUseOutgoingSemicolonCookieDelimiter(false);
+                .setPreflattenCookies(false);
     }
 
     /** Builder. */
@@ -132,14 +132,13 @@ public abstract class CarrierConfig {
         public abstract Builder setEapAkaRealm(String eapAkaRealm);
 
         /**
-         * Use the official semicolong instead of our legacy commas to separate cookies
-         * in outoing http.
+         * Pre-flatten cookies rather than pass several cookie headers to the http stack.
          *
-         * If set to {@code true}, instead of:
-         * "cookie=[cookie1=foo, cookie2=bar]"
-         * we would produce
-         * "cookie=[cookie1=foo; cookie2=bar]"
+         * Some stacks can't handle duplicate cookies being added individually.  This
+         * Option will combine the cookies into a single "cookie=[cookie1=foo; cookie2=bar]"
+         *
+         * Defaults to {@code false}
          */
-        public abstract Builder setUseOutgoingSemicolonCookieDelimiter(boolean useSemicolon);
+        public abstract Builder setPreflattenCookies(boolean preflattenCookies);
     }
 }
