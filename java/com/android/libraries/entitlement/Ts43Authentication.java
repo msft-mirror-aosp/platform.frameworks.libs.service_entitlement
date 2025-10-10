@@ -35,7 +35,6 @@ import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43XmlDoc;
-import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -191,8 +190,8 @@ public class Ts43Authentication {
      * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
      * @param acceptContentType The accepted content type of the HTTP response, or {@code null} to
      *                          use the default.
-     * @param urlConnFactory A UrlConnectionFactory to inject an http stack or {@code null} to
-     *                       use the default.
+     * @param carrierConfig An optional CarrierConfig with configuration options.  Must include
+     *                      the server URL at a minimum.
      *
      * @return The authentication token.
      *
@@ -207,7 +206,7 @@ public class Ts43Authentication {
     @NonNull
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion,
-            @Nullable String acceptContentType, @Nullable UrlConnectionFactory urlConnFactory)
+            @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)
             throws ServiceEntitlementException {
         checkNotNull(appId);
         if (!Ts43Constants.isValidAppId(appId)) {
@@ -235,12 +234,16 @@ public class Ts43Authentication {
             builder.setAcceptContentType(acceptContentType);
         }
         ServiceEntitlementRequest request = builder.build();
-        CarrierConfig.Builder ccBuilder = CarrierConfig.builder()
-                .setServerUrl(mEntitlementServerAddress.toString());
-        if (urlConnFactory != null) {
-            ccBuilder.setUrlConnectionFactory(urlConnFactory);
+        if (carrierConfig == null) {
+            CarrierConfig.Builder ccBuilder = CarrierConfig.builder()
+                    .setServerUrl(mEntitlementServerAddress.toString());
+            carrierConfig = ccBuilder.build();
+        } else {
+            if (TextUtils.isEmpty(carrierConfig.serverUrl())) {
+                throw new IllegalArgumentException(
+                        "getAuthToken: CarrierConfig doesn't have serverUrl " + carrierConfig);
+            }
         }
-        CarrierConfig carrierConfig = ccBuilder.build();
 
         if (mServiceEntitlement == null) {
             int subId = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID;
