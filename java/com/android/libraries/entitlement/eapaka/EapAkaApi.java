@@ -238,6 +238,14 @@ public class EapAkaApi {
             ImmutableList<String> cookies = HttpCookieJar
                     .parseSetCookieHeaders(challengeResponse.cookies())
                     .toCookieHeaders();
+            if (carrierConfig.preflattenCookies()) {
+                // some http stacks (GMS Network Engine) can't handle multiple
+                // cookie headers, so flatten them into a single header:
+                // "<cookie1>; <cookie2>"
+                String flatCookie = String.join("; ", cookies);
+                cookies = ImmutableList.of(flatCookie);
+            }
+
             return respondToEapAkaChallenge(
                     carrierConfig,
                     eapAkaChallenge,
@@ -458,13 +466,20 @@ public class EapAkaApi {
                         ERROR_MALFORMED_HTTP_RESPONSE,
                         "Failed to parse EAP-AKA challenge: " + challengeResponse.body());
             }
-            ImmutableList<String> cookies = HttpCookieJar
-                    .parseSetCookieHeaders(challengeResponse.cookies())
-                    .toCookieHeaders();
+
+            // some http stacks (GMS Network Engine) can't handle multiple
+            // cookie headers, so flatten them into a single header:
+            // "<cookie1>, <cookie2>"
+            ImmutableList<String> cookieList =
+                    HttpCookieJar.parseSetCookieHeaders(
+                            challengeResponse.cookies()).toCookieHeaders();
+            String flatCookie = String.join(", ", cookieList);
+            ImmutableList<String> flatCookies = ImmutableList.of(flatCookie);
+
             return respondToEapAkaChallenge(
                     carrierConfig,
                     eapAkaChallenge,
-                    cookies,
+                    flatCookies,
                     MAX_EAP_AKA_ATTEMPTS,
                     request.acceptContentType(),
                     userAgent,

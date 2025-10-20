@@ -21,6 +21,7 @@ import android.net.Network;
 import androidx.annotation.Nullable;
 
 import com.android.libraries.entitlement.utils.UrlConnectionFactory;
+
 import com.google.auto.value.AutoValue;
 
 /**
@@ -64,6 +65,17 @@ public abstract class CarrierConfig {
     /** The EAP-AKA realm. See {@link Builder#setEapAkaRealm}. */
     public abstract String eapAkaRealm();
 
+    /**
+     * Pre-flatten cookies rather than pass several cookie headers to the http stack.
+     *
+     * Some stacks can't handle duplicate cookies being added individually.  This
+     * Option will combine the cookies into a single "cookie=[cookie1=foo; cookie2=bar]".
+     * See {@link Builder#setPreflattenCookies}.
+     *
+     * Defaults to {@code false}
+     */
+    public abstract boolean preflattenCookies();
+
     /** Returns a new {@link Builder} object. */
     public static Builder builder() {
         return new AutoValue_CarrierConfig.Builder()
@@ -71,7 +83,8 @@ public abstract class CarrierConfig {
                 .setClientTs43("")
                 .setUseHttpPost(false)
                 .setTimeoutInSec(DEFAULT_TIMEOUT_IN_SEC)
-                .setEapAkaRealm("nai.epc");
+                .setEapAkaRealm("nai.epc")
+                .setPreflattenCookies(false);
     }
 
     /** Builder. */
@@ -117,5 +130,15 @@ public abstract class CarrierConfig {
          * 23.003 clause 19.3.2.
          */
         public abstract Builder setEapAkaRealm(String eapAkaRealm);
+
+        /**
+         * Pre-flatten cookies rather than pass several cookie headers to the http stack.
+         *
+         * Some stacks can't handle duplicate cookies being added individually.  This
+         * Option will combine the cookies into a single "cookie=[cookie1=foo; cookie2=bar]"
+         *
+         * Defaults to {@code false}
+         */
+        public abstract Builder setPreflattenCookies(boolean preflattenCookies);
     }
 }

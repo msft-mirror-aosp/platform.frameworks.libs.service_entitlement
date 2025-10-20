@@ -170,6 +170,44 @@ public class Ts43Authentication {
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType)
             throws ServiceEntitlementException {
+        return getAuthToken(slotIndex, appId, appName, appVersion, acceptContentType, null);
+    }
+
+
+    /**
+     * Get the authentication token for TS.43 operations with EAP-AKA described in TS.43
+     * Service Entitlement Configuration section 2.8.1.
+     *
+     * @param slotIndex The logical SIM slot index involved in ODSA operation.
+     * See {@link SubscriptionInfo#getSubscriptionId()}.
+     *
+     * @param appId Application id. For example, {@link Ts43Constants#APP_VOWIFI} for VoWifi,
+     * {@link Ts43Constants#APP_ODSA_PRIMARY} for ODSA primary device. Refer GSMA to Service
+     * Entitlement Configuration section 2.3.
+     * @param appName The calling client's package name. Used for {@code app_name} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
+     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
+     * @param acceptContentType The accepted content type of the HTTP response, or {@code null} to
+     *                          use the default.
+     * @param carrierConfig An optional CarrierConfig with configuration options.  Must include
+     *                      the server URL at a minimum.
+     *
+     * @return The authentication token.
+     *
+     * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
+     * error from the server, the error code can be retrieved by
+     * {@link ServiceEntitlementException#getHttpStatus()}.
+     * @throws IllegalArgumentException when {@code slotIndex} or {@code appId} is invalid.
+     * @throws NullPointerException when {@code context}, {@code entitlementServerAddress}, or
+     * {@code appId} is {@code null}.
+     */
+
+    @NonNull
+    public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
+            @Nullable String appName, @Nullable String appVersion,
+            @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)
+            throws ServiceEntitlementException {
         checkNotNull(appId);
         if (!Ts43Constants.isValidAppId(appId)) {
             throw new IllegalArgumentException("getAuthToken: invalid app id " + appId);
@@ -196,9 +234,16 @@ public class Ts43Authentication {
             builder.setAcceptContentType(acceptContentType);
         }
         ServiceEntitlementRequest request = builder.build();
-        CarrierConfig carrierConfig = CarrierConfig.builder()
-                .setServerUrl(mEntitlementServerAddress.toString())
-                .build();
+        if (carrierConfig == null) {
+            CarrierConfig.Builder ccBuilder = CarrierConfig.builder()
+                    .setServerUrl(mEntitlementServerAddress.toString());
+            carrierConfig = ccBuilder.build();
+        } else {
+            if (TextUtils.isEmpty(carrierConfig.serverUrl())) {
+                throw new IllegalArgumentException(
+                        "getAuthToken: CarrierConfig doesn't have serverUrl " + carrierConfig);
+            }
+        }
 
         if (mServiceEntitlement == null) {
             int subId = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID;
