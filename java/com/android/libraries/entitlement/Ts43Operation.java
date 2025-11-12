@@ -65,6 +65,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /** TS43 operations described in GSMA Service Entitlement Configuration spec. */
@@ -1171,7 +1172,7 @@ public abstract class Ts43Operation {
             // Retry with uppercase
             msisdn = ts43XmlDoc.get(
                     ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
-                    Ts43XmlDoc.Parm.MSISDN.toUpperCase());
+                    Ts43XmlDoc.Parm.MSISDN.toUpperCase(Locale.ROOT));
         }
 
         if (!TextUtils.isEmpty(msisdn)) {
