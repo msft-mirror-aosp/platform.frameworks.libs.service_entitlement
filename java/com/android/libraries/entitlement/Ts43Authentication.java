@@ -29,6 +29,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.libraries.entitlement.http.HttpResponse;
@@ -166,6 +167,7 @@ public class Ts43Authentication {
      * {@code appId} is {@code null}.
      */
     @NonNull
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType)
@@ -204,6 +206,7 @@ public class Ts43Authentication {
      */
 
     @NonNull
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)

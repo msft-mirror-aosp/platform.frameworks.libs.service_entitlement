@@ -25,7 +25,7 @@ java_defaults {
         "error_prone_annotations",
     ],
     plugins: ["auto_value_plugin"],
-    sdk_version: "system_current",
+    sdk_version: "system_35",
     min_sdk_version: "29",
     errorprone: {
         extra_check_modules: ["//external/nullaway:nullaway_plugin"],
@@ -55,6 +55,7 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.wifi",
+        "com.android.telephonycore",
     ],
 }
 
@@ -68,6 +69,7 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.wifi",
+        "com.android.telephonycore",
     ],
 }
 
@@ -92,10 +94,8 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.wifi",
+        "com.android.telephonycore",
     ],
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
 
 java_library {
@@ -118,5 +118,6 @@ java_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.wifi",
+        "com.android.telephonycore",
     ],
 }

@@ -314,6 +314,23 @@ public class Ts43OperationTest {
                     + "</characteristic>\n"
                     + "</wap-provisioningdoc>";
 
+    public String GET_PHONE_NUMBER_RESPONSE_MSISDN =
+            "<?xml version=\"1.0\"?>\n"
+                    + "<wap-provisioningdoc version=\"1.1\">\n"
+                    + "<characteristic type=\"VERS\">\n"
+                    + "    <parm name=\"version\" value=\"1\"/>\n"
+                    + "    <parm name=\"validity\" value=\"172800\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"TOKEN\">\n"
+                    + "    <parm name=\"token\" value=\"ASH127AHHA88SF\"/>\n"
+                    + "</characteristic>\n"
+                    + "<characteristic type=\"APPLICATION\">\n"
+                    + "    <parm name=\"AppID\" value=\"ap2014\"/>\n"
+                    + "    <parm name=\"OperationResult\" value=\"1\"/>\n"
+                    + "    <parm name=\"MSISDN\" value=\"" + MSISDN + "\"/>\n"
+                    + "</characteristic>\n"
+                    + "</wap-provisioningdoc>";
+
     @Mock
     private EapAkaApi mMockEapAkaApi;
 
@@ -616,6 +633,34 @@ public class Ts43OperationTest {
     @Test
     public void testGetPhoneNumber() throws Exception {
         doReturn(GET_PHONE_NUMBER_RESPONSE).when(mMockHttpResponse).body();
+
+        GetPhoneNumberRequest request = GetPhoneNumberRequest.builder()
+                .setTerminalId(TERMINAL_ID)
+                .build();
+
+        GetPhoneNumberResponse response = mTs43Operation.getPhoneNumber(request);
+        assertThat(response.operationResult()).isEqualTo(
+                EsimOdsaOperation.OPERATION_RESULT_SUCCESS);
+        assertThat(response.msisdn()).isEqualTo(MSISDN);
+
+        ArgumentCaptor<ServiceEntitlementRequest> captor =
+                ArgumentCaptor.forClass(ServiceEntitlementRequest.class);
+        ArgumentCaptor<EsimOdsaOperation> operationCaptor =
+                ArgumentCaptor.forClass(EsimOdsaOperation.class);
+        verify(mMockEapAkaApi).performEsimOdsaOperation(any(), any(), captor.capture(),
+                operationCaptor.capture(), any());
+        assertThat(captor.getValue().appName()).isEqualTo(APP_NAME);
+        assertThat(captor.getValue().appVersion()).isEqualTo(APP_VERSION);
+        assertThat(captor.getValue().entitlementVersion()).isEqualTo(ENTITLEMENT_VERSION);
+        assertThat(captor.getValue().terminalId()).isEqualTo(TERMINAL_ID);
+
+        assertThat(operationCaptor.getValue().operation()).isEqualTo(
+                EsimOdsaOperation.OPERATION_GET_PHONE_NUMBER);
+    }
+
+    @Test
+    public void testGetPhoneNumberWithUpperCaseMsisdn() throws Exception {
+        doReturn(GET_PHONE_NUMBER_RESPONSE_MSISDN).when(mMockHttpResponse).body();
 
         GetPhoneNumberRequest request = GetPhoneNumberRequest.builder()
                 .setTerminalId(TERMINAL_ID)
