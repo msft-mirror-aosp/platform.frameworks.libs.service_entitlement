@@ -18,9 +18,10 @@ package com.android.libraries.entitlement.http;
 
 import static com.android.libraries.entitlement.utils.DebugUtils.logPii;
 
-import com.google.common.collect.ImmutableList;
 
 import java.net.HttpCookie;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,9 +32,9 @@ import java.util.List;
  * follow-up HTTP requests.
  */
 public class HttpCookieJar {
-    private final ImmutableList<HttpCookie> mCookies;
+    private final List<HttpCookie> mCookies;
 
-    private HttpCookieJar(ImmutableList<HttpCookie> cookies) {
+    private HttpCookieJar(List<HttpCookie> cookies) {
         mCookies = cookies;
     }
 
@@ -41,23 +42,23 @@ public class HttpCookieJar {
      * Parses the "Set-Cookie" headers in HTTP responses from servers.
      */
     public static HttpCookieJar parseSetCookieHeaders(List<String> rawCookies) {
-        ImmutableList.Builder<HttpCookie> parsedCookies = ImmutableList.builder();
+        List<HttpCookie> parsedCookies = new ArrayList<>();
         for (String rawCookie : rawCookies) {
             List<HttpCookie> cookies = parseCookiesSafely(rawCookie);
             parsedCookies.addAll(cookies);
         }
-        return new HttpCookieJar(parsedCookies.build());
+        return new HttpCookieJar(Collections.unmodifiableList(parsedCookies));
     }
 
     /**
      * Returns the cookies as "Cookie" headers in HTTP requests to servers.
      */
-    public ImmutableList<String> toCookieHeaders() {
-        ImmutableList.Builder<String> cookieHeader = ImmutableList.builder();
+    public List<String> toCookieHeaders() {
+        List<String> cookieHeader = new ArrayList<>();
         for (HttpCookie cookie : mCookies) {
             cookieHeader.add(removeObsoleteCookieAttributes(cookie).toString());
         }
-        return cookieHeader.build();
+        return Collections.unmodifiableList(cookieHeader);
     }
 
     private static List<HttpCookie> parseCookiesSafely(String rawCookie) {
@@ -65,7 +66,7 @@ public class HttpCookieJar {
             return HttpCookie.parse(rawCookie);
         } catch (IllegalArgumentException e) {
             logPii("Failed to parse cookie: " + rawCookie);
-            return ImmutableList.of();
+            return Collections.emptyList();
         }
     }
 

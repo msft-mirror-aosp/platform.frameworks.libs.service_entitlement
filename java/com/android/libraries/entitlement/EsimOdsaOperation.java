@@ -21,10 +21,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringDef;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * HTTP request parameters specific to on device service activation (ODSA). See GSMA spec TS.43
@@ -250,7 +252,8 @@ public abstract class EsimOdsaOperation {
      * Returns the comma separated list of operation targets used with temporary token from
      * AcquireTemporaryToken operation. Used by HTTP parameter {@code operation_targets}.
      */
-    public abstract ImmutableList<String> operationTargets();
+    @SuppressWarnings("AutoValueImmutableFields")
+    public abstract List<String> operationTargets();
 
     /**
      * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -325,7 +328,8 @@ public abstract class EsimOdsaOperation {
      * <p>This is a non-standard params required by some carriers.
      */
     @NonNull
-    public abstract ImmutableList<String> targetTerminalIds();
+    @SuppressWarnings("AutoValueImmutableFields")
+    public abstract List<String> targetTerminalIds();
 
     /**
      * Returns the ICCID primary device eSIM. Used by HTTP parameter {@code target_terminal_iccid}.
@@ -403,7 +407,7 @@ public abstract class EsimOdsaOperation {
                 .setIpv6Address("")
                 .setIpv4Address("")
                 .setOperationType(OPERATION_TYPE_NOT_SET)
-                .setOperationTargets(ImmutableList.of())
+                .setOperationTargets(Collections.emptyList())
                 .setCompanionTerminalId("")
                 .setCompanionTerminalVendor("")
                 .setCompanionTerminalModel("")
@@ -415,7 +419,7 @@ public abstract class EsimOdsaOperation {
                 .setTerminalIccid("")
                 .setTerminalEid("")
                 .setTargetTerminalId("")
-                .setTargetTerminalIds(ImmutableList.of())
+                .setTargetTerminalIds(Collections.emptyList())
                 .setTargetTerminalIccid("")
                 .setTargetTerminalEid("")
                 .setTargetTerminalSerialNumber("")
@@ -480,7 +484,7 @@ public abstract class EsimOdsaOperation {
          */
         @NonNull
         public abstract Builder setOperationTargets(
-                @NonNull @OdsaOperation ImmutableList<String> operationTargets);
+                @NonNull @OdsaOperation List<String> operationTargets);
 
         /**
          * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -639,7 +643,7 @@ public abstract class EsimOdsaOperation {
          * @return The builder.
          */
         public abstract Builder setTargetTerminalIds(
-                @NonNull ImmutableList<String> targetTerminalIds);
+                @NonNull List<String> targetTerminalIds);
 
         /**
          * Sets the ICCID primary device eSIM in case of multiple SIM. Used by HTTP parameter {@code
@@ -781,8 +785,20 @@ public abstract class EsimOdsaOperation {
         @NonNull
         public abstract Builder setIpv4Address(@NonNull String ipv4Address);
 
+        abstract List<String> operationTargets();
+
+        abstract List<String> targetTerminalIds();
+
+        abstract EsimOdsaOperation autoBuild();
+
         /** Returns the {@link EsimOdsaOperation} object. */
         @NonNull
-        public abstract EsimOdsaOperation build();
+        public EsimOdsaOperation build() {
+            setOperationTargets(
+                    Collections.unmodifiableList(new ArrayList<>(operationTargets())));
+            setTargetTerminalIds(
+                    Collections.unmodifiableList(new ArrayList<>(targetTerminalIds())));
+            return autoBuild();
+        }
     }
 }

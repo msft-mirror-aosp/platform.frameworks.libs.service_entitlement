@@ -49,7 +49,6 @@ java_library {
         "java/com/android/libraries/entitlement/http/*.java",
     ],
     static_libs: [
-        "guava",
         "service-entitlement-data",
     ],
     apex_available: [
@@ -86,7 +85,6 @@ java_library {
         "java/com/android/libraries/entitlement/Ts43Operation.java",
     ],
     static_libs: [
-        "guava",
         "service-entitlement-data",
         "service-entitlement-impl",
 
@@ -111,9 +109,6 @@ java_library {
         "java/com/android/libraries/entitlement/ServiceEntitlementRequest.java",
         "java/com/android/libraries/entitlement/odsa/*.java",
         "java/com/android/libraries/entitlement/utils/*.java",
-    ],
-    static_libs: [
-        "guava",
     ],
     apex_available: [
         "//apex_available:platform",

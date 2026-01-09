@@ -67,6 +67,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.util.Collections;
+
 @RunWith(AndroidJUnit4.class)
 public class EapAkaApiTest {
     private static final String TEST_URL = "https://test.url/test-path";
@@ -175,7 +177,8 @@ public class EapAkaApiTest {
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getValue().network()).isEqualTo(mMockNetwork);
         assertThat(mHttpRequestCaptor.getValue().requestMethod()).isEqualTo(RequestMethod.GET);
-        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry(
+                "Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -208,7 +211,8 @@ public class EapAkaApiTest {
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getValue().network()).isEqualTo(mMockNetwork);
         assertThat(mHttpRequestCaptor.getValue().requestMethod()).isEqualTo(RequestMethod.POST);
-        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry(
+                "Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -253,20 +257,19 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(
                 mHttpRequestCaptor
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
                 .contains("EAP_ID=0234107813240779%40nai.epc.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues().get(1)
+                .requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -342,16 +345,15 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
                 .contains("EAP_ID=0234107813240779%40wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -403,20 +405,19 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(
                 mHttpRequestCaptor
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
                 .isEqualTo("0234107813240779@nai.epc.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -469,16 +470,15 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("EAP_ID"))
                 .isEqualTo("0234107813240779@wlan.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -534,13 +534,13 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(
                 mHttpRequestCaptor
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).url())
                 .contains("EAP_ID=0234107813240779%40nai.epc.mnc010.mcc234.3gppnetwork.org");
         // Verify that the 2nd request has cookies set by the 1st response
@@ -637,10 +637,9 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -649,7 +648,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
@@ -658,7 +657,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(2).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(2).network()).isNull();
@@ -667,7 +666,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(2)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -706,10 +705,9 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the subsequent requests have cookies set by the 1st response
         verify(mMockHttpClient, times(4)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -718,7 +716,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
@@ -727,7 +725,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(2).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(2).network()).isNull();
@@ -736,7 +734,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(2)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(3).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(3).network()).isNull();
@@ -745,7 +743,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(3)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -811,7 +809,8 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getValue().url()).contains(ServiceEntitlement.APP_VOLTE);
         assertThat(mHttpRequestCaptor.getValue().timeoutInSec()).isEqualTo(70);
         assertThat(mHttpRequestCaptor.getValue().network()).isNull();
-        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry(
+                "Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -879,13 +878,13 @@ public class EapAkaApiTest {
         // Verify that the 2nd/3rd request has cookie set by the 1st/2nd response
         verify(mMockHttpClient, times(3)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+                .containsEntry(HTTP_HEADER_COOKIE, Collections.singletonList(COOKIE_VALUE));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(2).requestProperties())
-                .containsEntry(HTTP_HEADER_COOKIE, COOKIE_VALUE);
+                .containsEntry(HTTP_HEADER_COOKIE, Collections.singletonList(COOKIE_VALUE));
         assertThat(mHttpRequestCaptor.getAllValues().get(2).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1007,10 +1006,9 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         // Verify that the 2nd request has cookies set by the 1st response
         verify(mMockHttpClient, times(2)).request(mHttpRequestCaptor.capture());
-        assertThat(mHttpRequestCaptor.getAllValues().get(1).requestProperties())
-                .containsAtLeast(
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                        HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+        assertThat(mHttpRequestCaptor.getAllValues()
+                .get(1).requestProperties().get(HTTP_HEADER_COOKIE))
+                .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).network()).isNull();
@@ -1019,7 +1017,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).timeoutInSec())
                 .isEqualTo(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC);
         assertThat(mHttpRequestCaptor.getAllValues().get(1).network()).isNull();
@@ -1028,7 +1026,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         verify(mMockTelephonyManagerForSubId, times(0))
                 .getIccAuthentication(anyInt(), anyInt(), any());
         assertThat(
@@ -1081,7 +1079,8 @@ public class EapAkaApiTest {
         verify(mMockHttpClient).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getValue().requestProperties().get(HttpHeaders.ACCEPT))
                 .containsExactly(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON_AND_XML);
-        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry("Key", "Value");
+        assertThat(mHttpRequestCaptor.getValue().requestProperties()).containsEntry(
+                "Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1367,7 +1366,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(
@@ -1375,15 +1374,13 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(
                 mHttpRequestCaptor
                         .getAllValues()
                         .get(1)
-                        .requestProperties())
-                        .containsAtLeast(
-                                HTTP_HEADER_COOKIE, COOKIE_VALUE,
-                                HTTP_HEADER_COOKIE, COOKIE_VALUE_1);
+                        .requestProperties().get(HTTP_HEADER_COOKIE))
+                        .containsAtLeast(COOKIE_VALUE, COOKIE_VALUE_1);
     }
 
     @Test
@@ -1432,7 +1429,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(
@@ -1440,7 +1437,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(
                 mHttpRequestCaptor
                         .getAllValues()
@@ -1495,7 +1492,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(1).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(
@@ -1503,7 +1500,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(1)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1540,7 +1537,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1576,7 +1573,7 @@ public class EapAkaApiTest {
         assertThat(response).isEqualTo(xmlResponse);
         verify(mMockHttpClient, times(1)).request(mHttpRequestCaptor.capture());
         assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("ipv4_addr"))
                 .isEqualTo("1.2.3.4");
         assertThat(mHttpRequestCaptor.getAllValues().get(0).postData().getString("ipv6_addr"))
@@ -1615,7 +1612,7 @@ public class EapAkaApiTest {
         assertThat(mHttpRequestCaptor.getAllValues().get(0).requestMethod())
                 .isEqualTo(RequestMethod.POST);
         assertThat(mHttpRequestCaptor.getAllValues().get(0).requestProperties())
-                .containsEntry("Key", "Value");
+                .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1690,7 +1687,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1721,7 +1718,7 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 
     @Test
@@ -1746,6 +1743,6 @@ public class EapAkaApiTest {
                         .getAllValues()
                         .get(0)
                         .requestProperties())
-                        .containsEntry("Key", "Value");
+                        .containsEntry("Key", Collections.singletonList("Value"));
     }
 }

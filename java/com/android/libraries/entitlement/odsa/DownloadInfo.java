@@ -19,7 +19,10 @@ package com.android.libraries.entitlement.odsa;
 import androidx.annotation.NonNull;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Download information described in GSMA Service Entitlement Configuration section 6.5.3 table 38.
@@ -38,7 +41,8 @@ public abstract class DownloadInfo {
      * #profileActivationCode()} is not empty.
      */
     @NonNull
-    public abstract ImmutableList<String> profileSmdpAddresses();
+    @SuppressWarnings("AutoValueImmutableFields")
+    public abstract List<String> profileSmdpAddresses();
 
     /**
      * Activation code as defined in SGP.22 to permit the download of an eSIM profile from an
@@ -52,7 +56,7 @@ public abstract class DownloadInfo {
     public static Builder builder() {
         return new AutoValue_DownloadInfo.Builder()
                 .setProfileActivationCode("")
-                .setProfileSmdpAddresses(ImmutableList.of())
+                .setProfileSmdpAddresses(Collections.emptyList())
                 .setProfileIccid("");
     }
 
@@ -85,10 +89,18 @@ public abstract class DownloadInfo {
          * @return The builder.
          */
         @NonNull
-        public abstract Builder setProfileSmdpAddresses(@NonNull ImmutableList<String> smdpAddress);
+        public abstract Builder setProfileSmdpAddresses(@NonNull List<String> smdpAddress);
+
+        abstract List<String> profileSmdpAddresses();
+
+        abstract DownloadInfo autoBuild();
 
         /** Build the DownloadInfo object. */
         @NonNull
-        public abstract DownloadInfo build();
+        public DownloadInfo build() {
+            setProfileSmdpAddresses(
+                    Collections.unmodifiableList(new ArrayList<>(profileSmdpAddresses())));
+            return autoBuild();
+        }
     }
 }

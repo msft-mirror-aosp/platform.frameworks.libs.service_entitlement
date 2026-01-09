@@ -29,10 +29,12 @@ import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Acquire configuration operation described in GSMA Service Entitlement Configuration section 6.
@@ -519,14 +521,15 @@ public final class AcquireConfigurationOperation {
          * carry a configuration for ODSA.
          */
         @NonNull
-        public abstract ImmutableList<Configuration> configurations();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<Configuration> configurations();
 
         /** Returns the builder. */
         @NonNull
         public static Builder builder() {
             return new AutoValue_AcquireConfigurationOperation_AcquireConfigurationResponse
                     .Builder()
-                    .setConfigurations(ImmutableList.of());
+                    .setConfigurations(Collections.emptyList());
         }
 
         /** The builder of {@link AcquireConfigurationResponse} */
@@ -543,14 +546,19 @@ public final class AcquireConfigurationOperation {
              */
             @NonNull
             public abstract Builder setConfigurations(
-                    @NonNull ImmutableList<Configuration> configs);
+                    @NonNull List<Configuration> configs);
+
+            abstract List<Configuration> configurations();
+
+            abstract AcquireConfigurationResponse autoBuild();
 
             /** Returns build the {@link AcquireConfigurationResponse} object. */
             @NonNull
-            public abstract AcquireConfigurationResponse build();
+            public AcquireConfigurationResponse build() {
+                setConfigurations(
+                        Collections.unmodifiableList(new ArrayList<>(configurations())));
+                return autoBuild();
+            }
         }
-    }
-
-    private AcquireConfigurationOperation() {
     }
 }

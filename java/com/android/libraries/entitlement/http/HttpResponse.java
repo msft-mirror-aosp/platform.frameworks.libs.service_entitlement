@@ -19,8 +19,9 @@ package com.android.libraries.entitlement.http;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,7 +43,8 @@ public abstract class HttpResponse {
     /**
      * Content of the "Set-Cookie" response header.
      */
-    public abstract ImmutableList<String> cookies();
+    @SuppressWarnings("AutoValueImmutableFields")
+    public abstract List<String> cookies();
 
     /**
      * Content of the "Location" response header.
@@ -54,8 +56,6 @@ public abstract class HttpResponse {
      */
     @AutoValue.Builder
     public abstract static class Builder {
-        public abstract HttpResponse build();
-
         public abstract Builder setContentType(int contentType);
 
         public abstract Builder setBody(String body);
@@ -73,6 +73,20 @@ public abstract class HttpResponse {
          * Sets the content of the "Location" response header.
          */
         public abstract Builder setLocation(String location);
+
+        abstract List<String> cookies();
+
+        abstract HttpResponse autoBuild();
+
+        /**
+         * Builds the {@link HttpResponse} object.
+         *
+         * <p>The {@code cookies} list is defensively copied to ensure immutability.
+         */
+        public HttpResponse build() {
+            setCookies(Collections.unmodifiableList(new ArrayList<>(cookies())));
+            return autoBuild();
+        }
     }
 
     public static Builder builder() {
@@ -81,7 +95,7 @@ public abstract class HttpResponse {
                 .setBody("")
                 .setResponseCode(0)
                 .setResponseMessage("")
-                .setCookies(ImmutableList.of())
+                .setCookies(Collections.emptyList())
                 .setLocation("");
     }
 

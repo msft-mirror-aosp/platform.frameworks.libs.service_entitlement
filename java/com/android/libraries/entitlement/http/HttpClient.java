@@ -21,8 +21,7 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_SERVER_NOT_CONNECTABLE;
 import static com.android.libraries.entitlement.http.HttpConstants.RequestMethod.POST;
 import static com.android.libraries.entitlement.utils.DebugUtils.logPii;
-
-import static com.google.common.base.Strings.nullToEmpty;
+import static com.android.libraries.entitlement.utils.StringUtils.nullToEmpty;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -35,11 +34,9 @@ import androidx.annotation.WorkerThread;
 
 import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
+import com.android.libraries.entitlement.http.HttpConstants.Headers;
 import com.android.libraries.entitlement.utils.StreamUtils;
 import com.android.libraries.entitlement.utils.UrlConnectionFactory;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.net.HttpHeaders;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -49,6 +46,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -133,8 +131,10 @@ public class HttpClient {
 
             connection.setInstanceFollowRedirects(false);
             // add HTTP headers
-            for (Map.Entry<String, String> entry : request.requestProperties().entries()) {
-                connection.addRequestProperty(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, List<String>> entry : request.requestProperties().entrySet()) {
+                for (String value : entry.getValue()) {
+                    connection.addRequestProperty(entry.getKey(), value);
+                }
             }
 
             // set parameters
@@ -163,13 +163,13 @@ public class HttpClient {
                 throw new ServiceEntitlementException(
                         ERROR_HTTP_STATUS_NOT_SUCCESS,
                         responseCode,
-                        connection.getHeaderField(HttpHeaders.RETRY_AFTER),
+                        connection.getHeaderField(Headers.RETRY_AFTER),
                         "Invalid connection response: " + responseCode);
             }
             responseBuilder.setResponseCode(responseCode);
             responseBuilder.setResponseMessage(nullToEmpty(connection.getResponseMessage()));
             responseBuilder.setLocation(
-                    nullToEmpty(connection.getHeaderField(HttpHeaders.LOCATION)));
+                    nullToEmpty(connection.getHeaderField(Headers.LOCATION)));
         } catch (IOException e) {
             throw new ServiceEntitlementException(
                     ERROR_HTTP_STATUS_NOT_SUCCESS, "Read response code failed!", e);
@@ -216,7 +216,7 @@ public class HttpClient {
     }
 
     private static List<String> getCookies(URLConnection connection) {
-        List<String> cookies = connection.getHeaderFields().get(HttpHeaders.SET_COOKIE);
-        return cookies == null ? ImmutableList.of() : cookies;
+        List<String> cookies = connection.getHeaderFields().get(Headers.SET_COOKIE);
+        return cookies == null ? Collections.emptyList() : cookies;
     }
 }

@@ -26,9 +26,11 @@ import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Acquire temporary token operation described in GSMA Service Entitlement Configuration section 6.
@@ -56,7 +58,8 @@ public final class AcquireTemporaryTokenOperation {
          */
         @NonNull
         @OdsaOperation
-        public abstract ImmutableList<String> operationTargets();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<String> operationTargets();
 
         /**
          * Returns the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -81,7 +84,7 @@ public final class AcquireTemporaryTokenOperation {
             return new AutoValue_AcquireTemporaryTokenOperation_AcquireTemporaryTokenRequest
                     .Builder()
                     .setAppId(Ts43Constants.APP_UNKNOWN)
-                    .setOperationTargets(ImmutableList.of())
+                    .setOperationTargets(Collections.emptyList())
                     .setCompanionTerminalId("")
                     .setTargetTerminalEntitlementProtocol(
                             EsimOdsaOperation.ENTITLEMENT_PROTOCOL_UNKNOWN);
@@ -113,7 +116,7 @@ public final class AcquireTemporaryTokenOperation {
              */
             @NonNull
             public abstract Builder setOperationTargets(
-                    @NonNull @OdsaOperation ImmutableList<String> operationTargets);
+                    @NonNull @OdsaOperation List<String> operationTargets);
 
             /**
              * Sets the unique identifier of the companion device, like IMEI. Used by HTTP parameter
@@ -140,9 +143,17 @@ public final class AcquireTemporaryTokenOperation {
             public abstract Builder setTargetTerminalEntitlementProtocol(
                     @NonNull @EntitlementProtocol String targetTerminalEntitlementProtocol);
 
+            abstract List<String> operationTargets();
+
+            abstract AcquireTemporaryTokenRequest autoBuild();
+
             /** Returns the {@link AcquireTemporaryTokenRequest} object. */
             @NonNull
-            public abstract AcquireTemporaryTokenRequest build();
+            public AcquireTemporaryTokenRequest build() {
+                setOperationTargets(
+                        Collections.unmodifiableList(new ArrayList<>(operationTargets())));
+                return autoBuild();
+            }
         }
     }
 
@@ -168,7 +179,8 @@ public final class AcquireTemporaryTokenOperation {
         /** The allowed ODSA operations requested using {@link #temporaryToken()}. */
         @NonNull
         @OdsaOperation
-        public abstract ImmutableList<String> operationTargets();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<String> operationTargets();
 
         /** Returns a new {@link AcquireTemporaryTokenRequest.Builder} object. */
         @NonNull
@@ -177,7 +189,7 @@ public final class AcquireTemporaryTokenOperation {
                     .Builder()
                     .setTemporaryToken("")
                     .setTemporaryTokenExpiry(Instant.EPOCH)
-                    .setOperationTargets(ImmutableList.of());
+                    .setOperationTargets(Collections.emptyList());
         }
 
         /** Builder. */
@@ -214,11 +226,19 @@ public final class AcquireTemporaryTokenOperation {
              */
             @NonNull
             public abstract Builder setOperationTargets(
-                    @NonNull @OdsaOperation ImmutableList<String> operationTargets);
+                    @NonNull @OdsaOperation List<String> operationTargets);
+
+            abstract List<String> operationTargets();
+
+            abstract AcquireTemporaryTokenResponse autoBuild();
 
             /** Returns the {@link AcquireTemporaryTokenResponse} object. */
             @NonNull
-            public abstract AcquireTemporaryTokenResponse build();
+            public AcquireTemporaryTokenResponse build() {
+                setOperationTargets(
+                        Collections.unmodifiableList(new ArrayList<>(operationTargets())));
+                return autoBuild();
+            }
         }
     }
 

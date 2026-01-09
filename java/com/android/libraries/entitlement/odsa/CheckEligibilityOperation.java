@@ -30,11 +30,13 @@ import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** Check eligibility operation described in GSMA Service Entitlement Configuration section 6. */
 public final class CheckEligibilityOperation {
@@ -286,7 +288,8 @@ public final class CheckEligibilityOperation {
         /** Indicates the applicable companion device services. */
         @NonNull
         @CompanionService
-        public abstract ImmutableList<String> companionDeviceServices();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<String> companionDeviceServices();
 
         /**
          * The provided URL shall present a web view to user on the reason(s) why the ODSA app
@@ -316,7 +319,7 @@ public final class CheckEligibilityOperation {
         public static Builder builder() {
             return new AutoValue_CheckEligibilityOperation_CheckEligibilityResponse.Builder()
                     .setAppEligibility(ELIGIBILITY_RESULT_UNKNOWN)
-                    .setCompanionDeviceServices(ImmutableList.of())
+                    .setCompanionDeviceServices(Collections.emptyList())
                     .setNotEnabledUserData("")
                     .setNotEnabledContentsType(HttpConstants.UNKNOWN);
         }
@@ -341,7 +344,7 @@ public final class CheckEligibilityOperation {
              */
             @NonNull
             public abstract Builder setCompanionDeviceServices(
-                    @NonNull @CompanionService ImmutableList<String> companionDeviceServices);
+                    @NonNull @CompanionService List<String> companionDeviceServices);
 
             /**
              * Set the URL presenting a web view to user on the reason(s) why the ODSA app cannot be
@@ -384,8 +387,16 @@ public final class CheckEligibilityOperation {
             public abstract Builder setNotEnabledContentsType(
                     @ContentType int notEnabledContentsType);
 
+            abstract List<String> companionDeviceServices();
+
+            abstract CheckEligibilityResponse autoBuild();
+
             /** Build the {@link CheckEligibilityResponse} object. */
-            public abstract CheckEligibilityResponse build();
+            public CheckEligibilityResponse build() {
+                setCompanionDeviceServices(
+                        Collections.unmodifiableList(new ArrayList<>(companionDeviceServices())));
+                return autoBuild();
+            }
         }
     }
 

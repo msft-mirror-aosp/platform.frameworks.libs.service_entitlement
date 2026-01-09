@@ -21,17 +21,20 @@ import android.net.Network;
 
 import androidx.annotation.Nullable;
 
-import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 import com.android.libraries.entitlement.CarrierConfig;
+import com.android.libraries.entitlement.http.HttpConstants.Headers;
+import com.android.libraries.entitlement.utils.UrlConnectionFactory;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.net.HttpHeaders;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** The parameters of an http request. */
 @AutoValue
@@ -46,7 +49,8 @@ public abstract class HttpRequest {
     public abstract JSONObject postData();
 
     /** HTTP header fields. */
-    public abstract ImmutableListMultimap<String, String> requestProperties();
+    @SuppressWarnings("AutoValueImmutableFields")
+    public abstract Map<String, List<String>> requestProperties();
 
     /** The client side timeout, in seconds. See {@link Builder#setTimeoutInSec}. */
     public abstract int timeoutInSec();
@@ -65,7 +69,21 @@ public abstract class HttpRequest {
     /** Builder of {@link HttpRequest}. */
     @AutoValue.Builder
     public abstract static class Builder {
-        public abstract HttpRequest build();
+        abstract Builder setRequestProperties(Map<String, List<String>> requestProperties);
+
+        abstract HttpRequest autoBuild();
+
+        /** Creates the configured HttpRequest object. */
+        public HttpRequest build() {
+            Map<String, List<String>> properties = new HashMap<>();
+            for (Map.Entry<String, List<String>> entry : mRequestProperties.entrySet()) {
+                properties.put(
+                        entry.getKey(),
+                        Collections.unmodifiableList(new ArrayList<>(entry.getValue())));
+            }
+            setRequestProperties(Collections.unmodifiableMap(properties));
+            return autoBuild();
+        }
 
         /** Sets the URL. */
         public abstract Builder setUrl(String url);
@@ -80,12 +98,15 @@ public abstract class HttpRequest {
         /** For "POST" request method, sets the body of the request in JSON format. */
         public abstract Builder setPostData(JSONObject postData);
 
-        abstract ImmutableListMultimap.Builder<String, String> requestPropertiesBuilder();
+        private final Map<String, List<String>> mRequestProperties = new HashMap<>();
 
         /** Adds an HTTP header field. */
         @CanIgnoreReturnValue
         public Builder addRequestProperty(String key, String value) {
-            requestPropertiesBuilder().put(key, value);
+            if (!mRequestProperties.containsKey(key)) {
+                mRequestProperties.put(key, new ArrayList<>());
+            }
+            mRequestProperties.get(key).add(value);
             return this;
         }
 
@@ -96,7 +117,10 @@ public abstract class HttpRequest {
           */
         @CanIgnoreReturnValue
         public Builder addRequestProperty(String key, List<String> value) {
-            requestPropertiesBuilder().putAll(key, value);
+            if (!mRequestProperties.containsKey(key)) {
+                mRequestProperties.put(key, new ArrayList<>());
+            }
+            mRequestProperties.get(key).addAll(value);
             return this;
         }
 
@@ -130,7 +154,7 @@ public abstract class HttpRequest {
                 .setPostData(new JSONObject())
                 .setTimeoutInSec(CarrierConfig.DEFAULT_TIMEOUT_IN_SEC)
                 .addRequestProperty(
-                        HttpHeaders.ACCEPT_LANGUAGE,
+                        Headers.ACCEPT_LANGUAGE,
                         Resources.getSystem()
                                 .getConfiguration()
                                 .getLocales()

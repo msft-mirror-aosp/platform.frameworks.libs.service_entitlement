@@ -19,8 +19,6 @@ package com.android.libraries.entitlement.eapaka;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_ICC_AUTHENTICATION_NOT_AVAILABLE;
 import static com.android.libraries.entitlement.eapaka.EapAkaChallenge.SUBTYPE_AKA_CHALLENGE;
 import static com.android.libraries.entitlement.eapaka.EapAkaChallenge.TYPE_EAP_AKA;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Strings.nullToEmpty;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
