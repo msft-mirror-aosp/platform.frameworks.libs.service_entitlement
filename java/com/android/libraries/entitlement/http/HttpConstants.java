@@ -50,4 +50,21 @@ public final class HttpConstants {
 
         public static final String NAME = "Content-Type";
     }
+
+    /**
+     * Standard HTTP headers.
+     */
+    public static final class Headers {
+        private Headers() {
+        }
+
+        public static final String ACCEPT = "Accept";
+        public static final String ACCEPT_LANGUAGE = "Accept-Language";
+        public static final String CONTENT_TYPE = "Content-Type";
+        public static final String COOKIE = "Cookie";
+        public static final String LOCATION = "Location";
+        public static final String RETRY_AFTER = "Retry-After";
+        public static final String SET_COOKIE = "Set-Cookie";
+        public static final String USER_AGENT = "User-Agent";
+    }
 }

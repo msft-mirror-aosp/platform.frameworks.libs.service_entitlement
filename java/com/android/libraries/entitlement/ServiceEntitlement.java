@@ -27,10 +27,9 @@ import com.android.libraries.entitlement.http.HttpResponse;
 import com.android.libraries.entitlement.utils.DebugUtils;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implements protocol for carrier service entitlement configuration query and operation, based on
@@ -220,7 +219,7 @@ public class ServiceEntitlement {
     @NonNull
     public String queryEntitlementStatus(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return queryEntitlementStatus(ImmutableList.of(appId), request);
+        return queryEntitlementStatus(Collections.singletonList(appId), request);
     }
 
     /**
@@ -234,7 +233,7 @@ public class ServiceEntitlement {
      */
     @NonNull
     public String queryEntitlementStatus(
-            ImmutableList<String> appIds, ServiceEntitlementRequest request)
+            List<String> appIds, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         return getEntitlementStatusResponse(appIds, request).body();
     }
@@ -251,9 +250,9 @@ public class ServiceEntitlement {
      */
     @NonNull
     public String queryEntitlementStatus(
-            ImmutableList<String> appIds,
+            List<String> appIds,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return getEntitlementStatusResponse(appIds, request, additionalHeaders).body();
     }
@@ -263,14 +262,14 @@ public class ServiceEntitlement {
      * request/response. For on device service activation (ODSA) of eSIM for companion/primary
      * devices, use {@link #performEsimOdsa} instead.
      *
-     * <p>Same as {@link #queryEntitlementStatus(ImmutableList, ServiceEntitlementRequest)}
+     * <p>Same as {@link #queryEntitlementStatus(List, ServiceEntitlementRequest)}
      * except that it returns the full HTTP response instead of just the body.
      */
     @NonNull
-    public HttpResponse getEntitlementStatusResponse(ImmutableList<String> appIds,
+    public HttpResponse getEntitlementStatusResponse(List<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return getEntitlementStatusResponse(appIds, request, ImmutableMap.of());
+        return getEntitlementStatusResponse(appIds, request, Collections.emptyMap());
     }
 
     /**
@@ -280,9 +279,9 @@ public class ServiceEntitlement {
      */
     @NonNull
     public HttpResponse getEntitlementStatusResponse(
-            ImmutableList<String> appIds,
+            List<String> appIds,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return eapAkaApi.queryEntitlementStatus(appIds, carrierConfig, request, additionalHeaders);
     }
@@ -301,7 +300,7 @@ public class ServiceEntitlement {
     public String performEsimOdsa(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
-        return performEsimOdsa(appId, request, operation, ImmutableMap.of());
+        return performEsimOdsa(appId, request, operation, Collections.emptyMap());
     }
 
     /**
@@ -320,7 +319,7 @@ public class ServiceEntitlement {
             String appId,
             ServiceEntitlementRequest request,
             EsimOdsaOperation operation,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return getEsimOdsaResponse(appId, request, operation, additionalHeaders).body();
     }
@@ -336,7 +335,7 @@ public class ServiceEntitlement {
     public HttpResponse getEsimOdsaResponse(
             String appId, ServiceEntitlementRequest request, EsimOdsaOperation operation)
             throws ServiceEntitlementException {
-        return getEsimOdsaResponse(appId, request, operation, ImmutableMap.of());
+        return getEsimOdsaResponse(appId, request, operation, Collections.emptyMap());
     }
 
     /**
@@ -352,7 +351,7 @@ public class ServiceEntitlement {
             String appId,
             ServiceEntitlementRequest request,
             EsimOdsaOperation operation,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return eapAkaApi.performEsimOdsaOperation(
                 appId, carrierConfig, request, operation, additionalHeaders);
@@ -372,7 +371,7 @@ public class ServiceEntitlement {
     @NonNull
     public String acquireOidcAuthenticationEndpoint(String appId, ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
-        return acquireOidcAuthenticationEndpoint(appId, request, ImmutableMap.of());
+        return acquireOidcAuthenticationEndpoint(appId, request, Collections.emptyMap());
     }
 
     /**
@@ -391,7 +390,7 @@ public class ServiceEntitlement {
     public String acquireOidcAuthenticationEndpoint(
             String appId,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         mOidcRequest = request;
         return eapAkaApi.acquireOidcAuthenticationEndpoint(
@@ -424,7 +423,7 @@ public class ServiceEntitlement {
     @NonNull
     public HttpResponse getEntitlementStatusResponseFromOidc(String url)
             throws ServiceEntitlementException {
-        return getEntitlementStatusResponseFromOidc(url, ImmutableMap.of());
+        return getEntitlementStatusResponseFromOidc(url, Collections.emptyMap());
     }
 
     /**
@@ -439,7 +438,7 @@ public class ServiceEntitlement {
      */
     @NonNull
     public HttpResponse getEntitlementStatusResponseFromOidc(
-            String url, ImmutableMap<String, String> additionalHeaders)
+            String url, Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         if (mOidcRequest == null) {
             throw new IllegalStateException(

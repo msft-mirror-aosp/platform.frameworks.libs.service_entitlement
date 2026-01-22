@@ -16,8 +16,9 @@
 
 package com.android.libraries.entitlement;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Strings.nullToEmpty;
+import static com.android.libraries.entitlement.utils.StringUtils.nullToEmpty;
+
+import static java.util.Objects.requireNonNull;
 
 import android.content.Context;
 import android.os.Build;
@@ -38,9 +39,11 @@ import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43XmlDoc;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The class responsible for TS.43 authentication process.
@@ -68,7 +71,8 @@ public class Ts43Authentication {
          * The list of cookies from the {@code Set-Cookie} header of the TS.43 response.
          */
         @NonNull
-        public abstract ImmutableList<String> cookies();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<String> cookies();
 
         /**
          * Indicates the validity of the token. Note this value is server dependent. The client is
@@ -87,8 +91,9 @@ public class Ts43Authentication {
          * @return The {@link Ts43AuthToken} object.
          */
         public static Ts43AuthToken create(@NonNull String token,
-                @NonNull ImmutableList<String> cookie, long validity) {
-            return new AutoValue_Ts43Authentication_Ts43AuthToken(token, cookie, validity);
+                @NonNull List<String> cookie, long validity) {
+            return new AutoValue_Ts43Authentication_Ts43AuthToken(
+                    token, Collections.unmodifiableList(new ArrayList<>(cookie)), validity);
         }
     }
 
@@ -130,8 +135,8 @@ public class Ts43Authentication {
      */
     public Ts43Authentication(@NonNull Context context, @NonNull URL entitlementServerAddress,
             @Nullable String entitlementVersion) {
-        mContext = checkNotNull(context);
-        mEntitlementServerAddress = checkNotNull(entitlementServerAddress);
+        mContext = requireNonNull(context);
+        mEntitlementServerAddress = requireNonNull(entitlementServerAddress);
 
         if (entitlementVersion != null) {
             mEntitlementVersion = entitlementVersion;
@@ -211,7 +216,7 @@ public class Ts43Authentication {
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)
             throws ServiceEntitlementException {
-        checkNotNull(appId);
+        requireNonNull(appId);
         if (!Ts43Constants.isValidAppId(appId)) {
             throw new IllegalArgumentException("getAuthToken: invalid app id " + appId);
         }
@@ -268,7 +273,7 @@ public class Ts43Authentication {
         String rawXml;
         try {
             response = mServiceEntitlement.getEntitlementStatusResponse(
-                    ImmutableList.of(appId), request);
+                    Collections.singletonList(appId), request);
             rawXml = response == null ? "" : response.body();
             Log.d(TAG, "getAuthToken: rawXml=" + rawXml);
         } catch (ServiceEntitlementException e) {
@@ -276,11 +281,13 @@ public class Ts43Authentication {
             throw e;
         }
 
-        ImmutableList<String> cookies = response == null ? ImmutableList.of() : response.cookies();
+        List<String> cookies = response == null ? Collections.emptyList() : response.cookies();
 
         Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
-        String authToken = ts43XmlDoc.get(
-                ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.TOKEN);
+        String authToken =
+                ts43XmlDoc.get(
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.TOKEN),
+                        Ts43XmlDoc.Parm.TOKEN);
         if (TextUtils.isEmpty(authToken)) {
             Log.w(TAG, "Failed to parse authentication token");
             throw new ServiceEntitlementException(
@@ -288,7 +295,7 @@ public class Ts43Authentication {
                     "Failed to parse authentication token");
         }
 
-        String validityString = nullToEmpty(ts43XmlDoc.get(ImmutableList.of(
+        String validityString = nullToEmpty(ts43XmlDoc.get(Collections.singletonList(
                 Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
         long validity;
         try {

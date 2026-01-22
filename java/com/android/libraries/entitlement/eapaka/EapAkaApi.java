@@ -22,7 +22,8 @@ import static com.android.libraries.entitlement.ServiceEntitlementException.ERRO
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_MALFORMED_HTTP_RESPONSE;
 import static com.android.libraries.entitlement.ServiceEntitlementException.ERROR_INVALID_MCC_MNC_IMSI;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -41,20 +42,19 @@ import com.android.libraries.entitlement.ServiceEntitlementException;
 import com.android.libraries.entitlement.ServiceEntitlementRequest;
 import com.android.libraries.entitlement.http.HttpClient;
 import com.android.libraries.entitlement.http.HttpConstants.ContentType;
+import com.android.libraries.entitlement.http.HttpConstants.Headers;
 import com.android.libraries.entitlement.http.HttpConstants.RequestMethod;
 import com.android.libraries.entitlement.http.HttpCookieJar;
 import com.android.libraries.entitlement.http.HttpRequest;
 import com.android.libraries.entitlement.http.HttpResponse;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.net.HttpHeaders;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class EapAkaApi {
     private static final String TAG = "ServiceEntitlement";
@@ -169,10 +169,10 @@ public class EapAkaApi {
      */
     @NonNull
     public HttpResponse queryEntitlementStatus(
-            ImmutableList<String> appIds,
+            List<String> appIds,
             CarrierConfig carrierConfig,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
@@ -201,13 +201,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            checkNotNull(postData),
+                            requireNonNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            checkNotNull(urlBuilder).toString(),
+                            requireNonNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -218,13 +218,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    checkNotNull(postData),
+                                    requireNonNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    checkNotNull(urlBuilder).toString(),
+                                    requireNonNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -235,7 +235,7 @@ public class EapAkaApi {
                         ERROR_MALFORMED_HTTP_RESPONSE,
                         "Failed to parse EAP-AKA challenge: " + challengeResponse.body());
             }
-            ImmutableList<String> cookies = HttpCookieJar
+            List<String> cookies = HttpCookieJar
                     .parseSetCookieHeaders(challengeResponse.cookies())
                     .toCookieHeaders();
             if (carrierConfig.preflattenCookies()) {
@@ -243,7 +243,7 @@ public class EapAkaApi {
                 // cookie headers, so flatten them into a single header:
                 // "<cookie1>; <cookie2>"
                 String flatCookie = String.join("; ", cookies);
-                cookies = ImmutableList.of(flatCookie);
+                cookies = Collections.singletonList(flatCookie);
             }
 
             return respondToEapAkaChallenge(
@@ -280,11 +280,11 @@ public class EapAkaApi {
     private HttpResponse respondToEapAkaChallenge(
             CarrierConfig carrierConfig,
             String eapAkaChallenge,
-            ImmutableList<String> cookies,
+            List<String> cookies,
             int remainingAttempts,
             String acceptContentType,
             String userAgent,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         if (!mBypassEapAkaResponse.isEmpty()) {
             return challengeResponse(
@@ -369,10 +369,10 @@ public class EapAkaApi {
     private HttpResponse challengeResponse(
             String eapAkaChallengeResponse,
             CarrierConfig carrierConfig,
-            ImmutableList<String> cookies,
+            List<String> cookies,
             String acceptContentType,
             String userAgent,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         JSONObject postData = new JSONObject();
         try {
@@ -403,7 +403,7 @@ public class EapAkaApi {
             CarrierConfig carrierConfig,
             ServiceEntitlementRequest request,
             EsimOdsaOperation odsaOperation,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
@@ -411,13 +411,13 @@ public class EapAkaApi {
             postData = new JSONObject();
             appendParametersForAuthentication(postData, request, carrierConfig);
             appendParametersForServiceEntitlementRequest(
-                    postData, ImmutableList.of(appId), request);
+                    postData, Collections.singletonList(appId), request);
             appendParametersForEsimOdsaOperation(postData, odsaOperation);
         } else {
             urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
             appendParametersForAuthentication(urlBuilder, request, carrierConfig);
             appendParametersForServiceEntitlementRequest(
-                    urlBuilder, ImmutableList.of(appId), request);
+                    urlBuilder, Collections.singletonList(appId), request);
             appendParametersForEsimOdsaOperation(urlBuilder, odsaOperation);
         }
         String userAgent =
@@ -432,13 +432,13 @@ public class EapAkaApi {
             Log.d(TAG, "Fast Re-Authentication");
             return carrierConfig.useHttpPost()
                     ? httpPost(
-                            checkNotNull(postData),
+                            requireNonNull(postData),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
                             additionalHeaders)
                     : httpGet(
-                            checkNotNull(urlBuilder).toString(),
+                            requireNonNull(urlBuilder).toString(),
                             carrierConfig,
                             request.acceptContentType(),
                             userAgent,
@@ -449,13 +449,13 @@ public class EapAkaApi {
             HttpResponse challengeResponse =
                     carrierConfig.useHttpPost()
                             ? httpPost(
-                                    checkNotNull(postData),
+                                    requireNonNull(postData),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
                                     additionalHeaders)
                             : httpGet(
-                                    checkNotNull(urlBuilder).toString(),
+                                    requireNonNull(urlBuilder).toString(),
                                     carrierConfig,
                                     CONTENT_TYPE_EAP_RELAY_JSON,
                                     userAgent,
@@ -467,7 +467,7 @@ public class EapAkaApi {
                         "Failed to parse EAP-AKA challenge: " + challengeResponse.body());
             }
 
-            ImmutableList<String> cookies = HttpCookieJar
+            List<String> cookies = HttpCookieJar
                     .parseSetCookieHeaders(challengeResponse.cookies())
                     .toCookieHeaders();
             if (carrierConfig.preflattenCookies()) {
@@ -475,7 +475,7 @@ public class EapAkaApi {
                 // cookie headers, so flatten them into a single header:
                 // "cookie1>; <cookie2>"
                 String flatCookie = String.join("; ", cookies);
-                cookies = ImmutableList.of(flatCookie);
+                cookies = Collections.singletonList(flatCookie);
             }
 
             return respondToEapAkaChallenge(
@@ -502,18 +502,18 @@ public class EapAkaApi {
             String appId,
             CarrierConfig carrierConfig,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = null;
         JSONObject postData = null;
         if (carrierConfig.useHttpPost()) {
             postData = new JSONObject();
             appendParametersForServiceEntitlementRequest(
-                    postData, ImmutableList.of(appId), request);
+                    postData, Collections.singletonList(appId), request);
         } else {
             urlBuilder = Uri.parse(carrierConfig.serverUrl()).buildUpon();
             appendParametersForServiceEntitlementRequest(
-                    urlBuilder, ImmutableList.of(appId), request);
+                    urlBuilder, Collections.singletonList(appId), request);
         }
         String userAgent =
                 getUserAgent(
@@ -525,13 +525,13 @@ public class EapAkaApi {
         HttpResponse response =
                 carrierConfig.useHttpPost()
                         ? httpPost(
-                                checkNotNull(postData),
+                                requireNonNull(postData),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
                                 additionalHeaders)
                         : httpGet(
-                                checkNotNull(urlBuilder).toString(),
+                                requireNonNull(urlBuilder).toString(),
                                 carrierConfig,
                                 request.acceptContentType(),
                                 userAgent,
@@ -552,7 +552,7 @@ public class EapAkaApi {
             String url,
             CarrierConfig carrierConfig,
             ServiceEntitlementRequest request,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         Uri.Builder urlBuilder = Uri.parse(url).buildUpon();
         String userAgent =
@@ -622,7 +622,7 @@ public class EapAkaApi {
 
     private void appendParametersForServiceEntitlementRequest(
             Uri.Builder urlBuilder,
-            ImmutableList<String> appIds,
+            List<String> appIds,
             ServiceEntitlementRequest request) {
         if (!TextUtils.isEmpty(request.notificationToken())) {
             urlBuilder
@@ -673,7 +673,7 @@ public class EapAkaApi {
 
     private void appendParametersForServiceEntitlementRequest(
             JSONObject postData,
-            ImmutableList<String> appIds,
+            List<String> appIds,
             ServiceEntitlementRequest request)
             throws ServiceEntitlementException {
         try {
@@ -880,7 +880,7 @@ public class EapAkaApi {
     }
 
     private void appendOptionalQueryParameter(
-            Uri.Builder urlBuilder, String key, ImmutableList<String> values) {
+            Uri.Builder urlBuilder, String key, List<String> values) {
         for (String value : values) {
             if (!TextUtils.isEmpty(value)) {
                 urlBuilder.appendQueryParameter(key, value);
@@ -889,7 +889,7 @@ public class EapAkaApi {
     }
 
     private void appendOptionalQueryParameter(
-            JSONObject postData, String key, ImmutableList<String> values) throws JSONException {
+            JSONObject postData, String key, List<String> values) throws JSONException {
         for (String value : values) {
             if (!TextUtils.isEmpty(value)) {
                 postData.put(key, value);
@@ -903,14 +903,14 @@ public class EapAkaApi {
             CarrierConfig carrierConfig,
             String acceptContentType,
             String userAgent,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         HttpRequest.Builder builder =
                 HttpRequest.builder()
                         .setUrl(url)
                         .setRequestMethod(RequestMethod.GET)
-                        .addRequestProperty(HttpHeaders.ACCEPT, acceptContentType)
-                        .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
+                        .addRequestProperty(Headers.ACCEPT, acceptContentType)
+                        .addRequestProperty(Headers.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
                         .setUrlConnectionFactory(carrierConfig.urlConnectionFactory());
@@ -929,7 +929,7 @@ public class EapAkaApi {
             CarrierConfig carrierConfig,
             String acceptContentType,
             String userAgent,
-            ImmutableMap<String, String> additionalHeaders)
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         return httpPost(
                 postData,
@@ -937,7 +937,7 @@ public class EapAkaApi {
                 acceptContentType,
                 userAgent,
                 ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_JSON,
-                ImmutableList.of(),
+                Collections.emptyList(),
                 additionalHeaders);
     }
 
@@ -948,18 +948,18 @@ public class EapAkaApi {
             String acceptContentType,
             String userAgent,
             String contentType,
-            ImmutableList<String> cookies,
-            ImmutableMap<String, String> additionalHeaders)
+            List<String> cookies,
+            Map<String, String> additionalHeaders)
             throws ServiceEntitlementException {
         HttpRequest.Builder builder =
                 HttpRequest.builder()
                         .setUrl(carrierConfig.serverUrl())
                         .setRequestMethod(RequestMethod.POST)
                         .setPostData(postData)
-                        .addRequestProperty(HttpHeaders.ACCEPT, acceptContentType)
-                        .addRequestProperty(HttpHeaders.CONTENT_TYPE, contentType)
-                        .addRequestProperty(HttpHeaders.COOKIE, cookies)
-                        .addRequestProperty(HttpHeaders.USER_AGENT, userAgent)
+                        .addRequestProperty(Headers.ACCEPT, acceptContentType)
+                        .addRequestProperty(Headers.CONTENT_TYPE, contentType)
+                        .addRequestProperty(Headers.COOKIE, cookies)
+                        .addRequestProperty(Headers.USER_AGENT, userAgent)
                         .setTimeoutInSec(carrierConfig.timeoutInSec())
                         .setNetwork(carrierConfig.network())
                         .setUrlConnectionFactory(carrierConfig.urlConnectionFactory());

@@ -16,7 +16,7 @@
 
 package com.android.libraries.entitlement;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import android.content.Context;
 import android.os.Build;
@@ -49,12 +49,11 @@ import com.android.libraries.entitlement.odsa.ManageSubscriptionOperation.Manage
 import com.android.libraries.entitlement.odsa.MessageInfo;
 import com.android.libraries.entitlement.odsa.OdsaResponse;
 import com.android.libraries.entitlement.odsa.PlanOffer;
+import com.android.libraries.entitlement.utils.StringUtils;
 import com.android.libraries.entitlement.utils.Ts43Constants;
 import com.android.libraries.entitlement.utils.Ts43XmlDoc;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -66,7 +65,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 /** TS43 operations described in GSMA Service Entitlement Configuration spec. */
 @AutoValue
@@ -400,7 +398,7 @@ public abstract class Ts43Operation {
                 }
                 imei = telephonyManager.getImei(slotIndex());
             }
-            setImei(Strings.nullToEmpty(imei));
+            setImei(StringUtils.nullToEmpty(imei));
 
             // Auto generate the rest of the fields
             return autoBuild();
@@ -462,7 +460,7 @@ public abstract class Ts43Operation {
     public CheckEligibilityResponse checkEligibility(
             @NonNull CheckEligibilityRequest checkEligibilityRequest)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(checkEligibilityRequest);
+        requireNonNull(checkEligibilityRequest);
 
         ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder();
 
@@ -492,7 +490,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     checkEligibilityRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
@@ -516,12 +514,12 @@ public abstract class Ts43Operation {
         // Parse the eligibility
         String eligibilityString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.PRIMARY_APP_ELIGIBILITY);
         if (TextUtils.isEmpty(eligibilityString)) {
             eligibilityString =
                     ts43XmlDoc.get(
-                            ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                            Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                             Ts43XmlDoc.Parm.COMPANION_APP_ELIGIBILITY);
         }
 
@@ -544,21 +542,21 @@ public abstract class Ts43Operation {
         // Parse companion device services
         String companionDeviceServices =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.COMPANION_DEVICE_SERVICES);
 
         if (!TextUtils.isEmpty(companionDeviceServices)) {
             List<String> companionDeviceServicesList =
                     Arrays.asList(companionDeviceServices.split("\\s*,\\s*"));
             responseBuilder.setCompanionDeviceServices(
-                    ImmutableList.copyOf(companionDeviceServicesList));
+                    companionDeviceServicesList);
         }
 
         // Parse notEnabledURL
         URL notEnabledURL;
         String notEnabledURLString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.NOT_ENABLED_URL);
 
         try {
@@ -571,7 +569,7 @@ public abstract class Ts43Operation {
         // Parse notEnabledUserData
         String notEnabledUserData =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.NOT_ENABLED_USER_DATA);
 
         if (!TextUtils.isEmpty(notEnabledUserData)) {
@@ -581,7 +579,7 @@ public abstract class Ts43Operation {
         // Parse notEnabledContentsType
         String notEnabledContentsTypeString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.NOT_ENABLED_CONTENTS_TYPE);
 
         int notEnabledContentsType = HttpConstants.ContentType.UNKNOWN;
@@ -614,7 +612,7 @@ public abstract class Ts43Operation {
     public ManageSubscriptionResponse manageSubscription(
             @NonNull ManageSubscriptionRequest manageSubscriptionRequest)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(manageSubscriptionRequest);
+        requireNonNull(manageSubscriptionRequest);
 
         ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder()
                 .setAcceptContentType(ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML);
@@ -668,7 +666,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     manageSubscriptionRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageSubscription: Failed to perform ODSA operation. e=" + e);
@@ -694,7 +692,7 @@ public abstract class Ts43Operation {
         // Parse subscription result.
         String subscriptionResultString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.SUBSCRIPTION_RESULT);
 
         if (!TextUtils.isEmpty(subscriptionResultString)) {
@@ -705,7 +703,8 @@ public abstract class Ts43Operation {
 
                     String subscriptionServiceURLString =
                             ts43XmlDoc.get(
-                                    ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                                    Collections.singletonList(
+                                            Ts43XmlDoc.CharacteristicType.APPLICATION),
                                     Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_URL);
 
                     if (!TextUtils.isEmpty(subscriptionServiceURLString)) {
@@ -715,7 +714,7 @@ public abstract class Ts43Operation {
 
                             String subscriptionServiceUserDataString =
                                     ts43XmlDoc.get(
-                                            ImmutableList.of(
+                                            Collections.singletonList(
                                                     Ts43XmlDoc.CharacteristicType.APPLICATION),
                                             Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_USER_DATA);
                             if (!TextUtils.isEmpty(subscriptionServiceUserDataString)) {
@@ -725,7 +724,7 @@ public abstract class Ts43Operation {
 
                             String subscriptionServiceContentsTypeString =
                                     ts43XmlDoc.get(
-                                            ImmutableList.of(
+                                            Collections.singletonList(
                                                     Ts43XmlDoc.CharacteristicType.APPLICATION),
                                             Ts43XmlDoc.Parm.SUBSCRIPTION_SERVICE_CONTENTS_TYPE);
                             if (!TextUtils.isEmpty(subscriptionServiceContentsTypeString)) {
@@ -750,7 +749,7 @@ public abstract class Ts43Operation {
                             ManageSubscriptionResponse.SUBSCRIPTION_RESULT_DOWNLOAD_PROFILE;
                     DownloadInfo downloadInfo =
                             parseDownloadInfo(
-                                    ImmutableList.of(
+                                    Arrays.asList(
                                             Ts43XmlDoc.CharacteristicType.APPLICATION,
                                             Ts43XmlDoc.CharacteristicType.DOWNLOAD_INFO),
                                     ts43XmlDoc);
@@ -801,7 +800,7 @@ public abstract class Ts43Operation {
     @NonNull
     public ManageServiceResponse manageService(@NonNull ManageServiceRequest manageServiceRequest)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(manageServiceRequest);
+        requireNonNull(manageServiceRequest);
 
         ServiceEntitlementRequest request = getServiceEntitlementRequestBuilder().build();
 
@@ -823,7 +822,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     manageServiceRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "manageService: Failed to perform ODSA operation. e=" + e);
@@ -847,7 +846,7 @@ public abstract class Ts43Operation {
         // Parse service status.
         String serviceStatusString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.SERVICE_STATUS);
 
         if (!TextUtils.isEmpty(serviceStatusString)) {
@@ -871,7 +870,7 @@ public abstract class Ts43Operation {
     public AcquireConfigurationResponse acquireConfiguration(
             @NonNull AcquireConfigurationRequest acquireConfigurationRequest)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(acquireConfigurationRequest);
+        requireNonNull(acquireConfigurationRequest);
 
         ServiceEntitlementRequest.Builder builder = getServiceEntitlementRequestBuilder();
 
@@ -902,7 +901,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     acquireConfigurationRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "acquireConfiguration: Failed to perform ODSA operation. e=" + e);
@@ -927,7 +926,7 @@ public abstract class Ts43Operation {
         // Parse service status.
         String serviceStatusString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(
+                        Arrays.asList(
                                 Ts43XmlDoc.CharacteristicType.APPLICATION,
                                 Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
                         Ts43XmlDoc.Parm.SERVICE_STATUS);
@@ -939,7 +938,7 @@ public abstract class Ts43Operation {
         // Parse ICCID
         String iccIdString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(
+                        Arrays.asList(
                                 Ts43XmlDoc.CharacteristicType.APPLICATION,
                                 Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
                         Ts43XmlDoc.Parm.ICCID);
@@ -951,7 +950,7 @@ public abstract class Ts43Operation {
         // Parse polling interval
         String pollingIntervalString =
                 ts43XmlDoc.get(
-                        ImmutableList.of(
+                        Arrays.asList(
                                 Ts43XmlDoc.CharacteristicType.APPLICATION,
                                 Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION),
                         Ts43XmlDoc.Parm.POLLING_INTERVAL);
@@ -969,7 +968,7 @@ public abstract class Ts43Operation {
         // Parse download info
         DownloadInfo downloadInfo =
                 parseDownloadInfo(
-                        ImmutableList.of(
+                        Arrays.asList(
                                 Ts43XmlDoc.CharacteristicType.APPLICATION,
                                 Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION,
                                 Ts43XmlDoc.CharacteristicType.DOWNLOAD_INFO),
@@ -981,7 +980,7 @@ public abstract class Ts43Operation {
         // Parse message info
         MessageInfo messageInfo =
                 parseMessageInfo(
-                        ImmutableList.of(
+                        Arrays.asList(
                                 Ts43XmlDoc.CharacteristicType.APPLICATION,
                                 Ts43XmlDoc.CharacteristicType.PRIMARY_CONFIGURATION,
                                 Ts43XmlDoc.CharacteristicType.MSG),
@@ -995,7 +994,9 @@ public abstract class Ts43Operation {
                 AcquireConfigurationResponse.Configuration.CONFIGURATION_TYPE_PRIMARY);
 
         // TODO: Support multiple configurations.
-        return responseBuilder.setConfigurations(ImmutableList.of(configBuilder.build())).build();
+        return responseBuilder
+                .setConfigurations(Collections.singletonList(configBuilder.build()))
+                .build();
     }
 
     /**
@@ -1027,7 +1028,7 @@ public abstract class Ts43Operation {
     public AcquireTemporaryTokenResponse acquireTemporaryToken(
             @NonNull AcquireTemporaryTokenRequest acquireTemporaryTokenRequest)
             throws ServiceEntitlementException {
-        Objects.requireNonNull(acquireTemporaryTokenRequest);
+        requireNonNull(acquireTemporaryTokenRequest);
 
         ServiceEntitlementRequest request = getServiceEntitlementRequestBuilder().build();
 
@@ -1040,7 +1041,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     acquireTemporaryTokenRequest.appId(), request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "acquireTemporaryToken: Failed to perform ODSA operation. e=" + e);
@@ -1061,18 +1062,19 @@ public abstract class Ts43Operation {
 
         // Parse the operation targets.
         String operationTargets =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(
-                                ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                                Collections.singletonList(
+                                        Ts43XmlDoc.CharacteristicType.APPLICATION),
                                 Ts43XmlDoc.Parm.OPERATION_TARGETS));
 
         List<String> operationTargetsList = Arrays.asList(operationTargets.split("\\s*,\\s*"));
-        responseBuilder.setOperationTargets(ImmutableList.copyOf(operationTargetsList));
+        responseBuilder.setOperationTargets(operationTargetsList);
 
         // Parse the temporary token
         String temporaryToken =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.TEMPORARY_TOKEN);
 
         if (temporaryToken == null) {
@@ -1085,7 +1087,7 @@ public abstract class Ts43Operation {
 
         String temporaryTokenExpiry =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.TEMPORARY_TOKEN_EXPIRY);
 
         if (temporaryTokenExpiry == null) {
@@ -1142,7 +1144,7 @@ public abstract class Ts43Operation {
 
         String rawXml;
         try {
-            rawXml = checkNotNull(serviceEntitlement()).performEsimOdsa(
+            rawXml = requireNonNull(serviceEntitlement()).performEsimOdsa(
                     Ts43Constants.APP_PHONE_NUMBER_INFORMATION, request, operation);
         } catch (ServiceEntitlementException e) {
             Log.w(TAG, "getPhoneNumber: Failed to perform ODSA operation. e=" + e);
@@ -1166,12 +1168,12 @@ public abstract class Ts43Operation {
         // Parse msisdn.
         String msisdn =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.MSISDN);
         if (TextUtils.isEmpty(msisdn)) {
             // Retry with uppercase
             msisdn = ts43XmlDoc.get(
-                    ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                    Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                     Ts43XmlDoc.Parm.MSISDN.toUpperCase(Locale.ROOT));
         }
 
@@ -1192,15 +1194,16 @@ public abstract class Ts43Operation {
     @Nullable
     @SuppressWarnings("AndroidJdkLibsChecker") // java.util.Base64
     private DownloadInfo parseDownloadInfo(
-            @NonNull ImmutableList<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
+            @NonNull List<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
         String activationCode =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.PROFILE_ACTIVATION_CODE));
         String smdpAddress =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.PROFILE_SMDP_ADDRESS));
         String iccid =
-                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.PROFILE_ICCID));
+                StringUtils.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.PROFILE_ICCID));
 
         // DownloadInfo should contain either activationCode or smdpAddress + iccid
         if (!activationCode.isEmpty()) {
@@ -1219,7 +1222,7 @@ public abstract class Ts43Operation {
             return DownloadInfo.builder()
                     .setProfileIccid(iccid)
                     .setProfileSmdpAddresses(
-                            ImmutableList.copyOf(Arrays.asList(smdpAddress.split("\\s*,\\s*"))))
+                            Arrays.asList(smdpAddress.split("\\s*,\\s*")))
                     .build();
         } else {
             Log.w(
@@ -1243,21 +1246,23 @@ public abstract class Ts43Operation {
      */
     @Nullable
     private MessageInfo parseMessageInfo(
-            @NonNull ImmutableList<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
+            @NonNull List<String> characteristics, @NonNull Ts43XmlDoc ts43XmlDoc) {
         String message =
-                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.MESSAGE));
+                StringUtils.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.MESSAGE));
         String acceptButton =
-                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_BUTTON));
+                StringUtils.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_BUTTON));
         String acceptButtonLabel =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_BUTTON_LABEL));
         String rejectButton =
-                Strings.nullToEmpty(ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.REJECT_BUTTON));
+                StringUtils.nullToEmpty(
+                        ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.REJECT_BUTTON));
         String rejectButtonLabel =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.REJECT_BUTTON_LABEL));
         String acceptFreetext =
-                Strings.nullToEmpty(
+                StringUtils.nullToEmpty(
                         ts43XmlDoc.get(characteristics, Ts43XmlDoc.Parm.ACCEPT_FREETEXT));
 
         // MessageInfo should contain message, accept button, reject button, and accept freetext
@@ -1304,7 +1309,7 @@ public abstract class Ts43Operation {
         // Parse the operation result.
         String operationResult =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.OPERATION_RESULT);
 
         builder.setOperationResult(EsimOdsaOperation.OPERATION_RESULT_UNKNOWN);
@@ -1338,7 +1343,7 @@ public abstract class Ts43Operation {
         // Parse the general error URL
         String generalErrorUrl =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.GENERAL_ERROR_URL);
         if (!TextUtils.isEmpty(generalErrorUrl)) {
             builder.setGeneralErrorUrl(new URL(generalErrorUrl));
@@ -1347,7 +1352,7 @@ public abstract class Ts43Operation {
         // Parse the general error URL user data
         String generalErrorUserData =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.GENERAL_ERROR_USER_DATA);
         if (!TextUtils.isEmpty(generalErrorUserData)) {
             builder.setGeneralErrorUserData(generalErrorUserData);
@@ -1356,7 +1361,7 @@ public abstract class Ts43Operation {
         // Parse the general error text
         String generalErrorText =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.APPLICATION),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.APPLICATION),
                         Ts43XmlDoc.Parm.GENERAL_ERROR_TEXT);
         if (!TextUtils.isEmpty(generalErrorText)) {
             builder.setGeneralErrorText(generalErrorText);
@@ -1365,7 +1370,7 @@ public abstract class Ts43Operation {
         // Parse the token for next operation.
         String token =
                 ts43XmlDoc.get(
-                        ImmutableList.of(Ts43XmlDoc.CharacteristicType.TOKEN),
+                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.TOKEN),
                         Ts43XmlDoc.Parm.TOKEN);
         if (!TextUtils.isEmpty(token)) {
             // Some servers issue the new token in operation result for next operation to use.

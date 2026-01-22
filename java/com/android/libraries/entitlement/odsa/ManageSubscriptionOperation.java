@@ -32,11 +32,13 @@ import com.android.libraries.entitlement.utils.Ts43Constants.AppId;
 import com.android.libraries.entitlement.utils.Ts43Constants.NotificationAction;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Manage subscription operation described in GSMA Service Entitlement Configuration section 6.5.3.
@@ -149,7 +151,8 @@ public final class ManageSubscriptionOperation {
          * <p>This is a non-standard params required by some carriers.
          */
         @NonNull
-        public abstract ImmutableList<String> targetTerminalIds();
+        @SuppressWarnings("AutoValueImmutableFields")
+        public abstract List<String> targetTerminalIds();
 
         /**
          * Returns the ICCID primary device eSIM. Used by HTTP parameter
@@ -259,7 +262,7 @@ public final class ManageSubscriptionOperation {
                     .setTerminalIccid("")
                     .setTerminalEid("")
                     .setTargetTerminalId("")
-                    .setTargetTerminalIds(ImmutableList.of())
+                    .setTargetTerminalIds(Collections.emptyList())
                     .setTargetTerminalIccid("")
                     .setTargetTerminalEid("")
                     .setTargetTerminalSerialNumber("")
@@ -442,7 +445,7 @@ public final class ManageSubscriptionOperation {
              */
             @NonNull
             public abstract Builder setTargetTerminalIds(
-                    @NonNull ImmutableList<String> targetTerminalIds);
+                    @NonNull List<String> targetTerminalIds);
 
             /**
              * Sets the unique identifier of the primary device eSIM in case of multiple SIM, like
@@ -609,9 +612,17 @@ public final class ManageSubscriptionOperation {
             @NonNull
             public abstract Builder setMessageButton(@NonNull String messageButton);
 
+            abstract List<String> targetTerminalIds();
+
+            abstract ManageSubscriptionRequest autoBuild();
+
             /** Returns the {@link ManageSubscriptionRequest} object. */
             @NonNull
-            public abstract ManageSubscriptionRequest build();
+            public ManageSubscriptionRequest build() {
+                setTargetTerminalIds(
+                        Collections.unmodifiableList(new ArrayList<>(targetTerminalIds())));
+                return autoBuild();
+            }
         }
     }
 

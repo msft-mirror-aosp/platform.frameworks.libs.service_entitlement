@@ -22,8 +22,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.common.collect.ImmutableList;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -171,7 +169,7 @@ public final class Ts43XmlDoc {
      * for {@code PrimaryConfiguration}, this will also check for {@code PrimaryConfigurations} if
      * the former doesn't exist.
      */
-    public boolean contains(ImmutableList<String> characteristicTypes) {
+    public boolean contains(List<String> characteristicTypes) {
         boolean contains =
                 mCharacteristicsMap.containsKey(TextUtils.join("|", characteristicTypes));
         if (!contains
@@ -196,7 +194,7 @@ public final class Ts43XmlDoc {
      * profile(s).
      */
     @Nullable
-    public String get(ImmutableList<String> characteristicTypes, String parameterName) {
+    public String get(List<String> characteristicTypes, String parameterName) {
         String get = getHelper(characteristicTypes, parameterName);
         if (TextUtils.isEmpty(get)
                 && characteristicTypes.contains(CharacteristicType.PRIMARY_CONFIGURATION)
@@ -210,7 +208,7 @@ public final class Ts43XmlDoc {
     }
 
     @Nullable
-    private String getHelper(ImmutableList<String> characteristicTypes, String parameterName) {
+    private String getHelper(List<String> characteristicTypes, String parameterName) {
         Map<String, List<String>> parmMap =
                 mCharacteristicsMap.get(TextUtils.join("|", characteristicTypes));
         if (parmMap == null) {
@@ -220,15 +218,14 @@ public final class Ts43XmlDoc {
         return parmValues == null ? null : parmValues.get(0);
     }
 
-    private static ImmutableList<String> getPrimaryConfigurationsCharacteristicTypes(
-            ImmutableList<String> characteristicTypes) {
+    private static List<String> getPrimaryConfigurationsCharacteristicTypes(
+            List<String> characteristicTypes) {
         int index = characteristicTypes.indexOf(CharacteristicType.PRIMARY_CONFIGURATION);
         // Insert PrimaryConfigurations right before PrimaryConfiguration to get the nested value
-        return ImmutableList.<String>builder()
-                .addAll(characteristicTypes.subList(0, index))
-                .add(CharacteristicType.PRIMARY_CONFIGURATIONS)
-                .addAll(characteristicTypes.subList(index, characteristicTypes.size()))
-                .build();
+        List<String> result = new ArrayList<>(characteristicTypes.subList(0, index));
+        result.add(CharacteristicType.PRIMARY_CONFIGURATIONS);
+        result.addAll(characteristicTypes.subList(index, characteristicTypes.size()));
+        return result;
     }
 
     /**
