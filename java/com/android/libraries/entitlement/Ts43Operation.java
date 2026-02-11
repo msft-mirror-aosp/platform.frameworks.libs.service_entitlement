@@ -403,6 +403,69 @@ public abstract class Ts43Operation {
             // Auto generate the rest of the fields
             return autoBuild();
         }
+
+        /**
+         * Builds the {@link Ts43Operation}, supporting older SDK versions.
+         *
+         * @return The build {@link Ts43Operation} object.
+         */
+        @NonNull
+        @RequiresApi(Build.VERSION_CODES.Q)
+        public Ts43Operation buildLegacy() {
+            if (TextUtils.isEmpty(initialAuthToken()) && TextUtils.isEmpty(temporaryToken())) {
+                throw new IllegalArgumentException("Either initialAuthToken or temporaryToken "
+                        + "must be set.");
+            }
+
+            CarrierConfig carrierConfig = carrierConfig();
+            if (carrierConfig == null) {
+                carrierConfig = CarrierConfig.builder()
+                        .setServerUrl(entitlementServerAddress().toString())
+                        .build();
+                setCarrierConfig(carrierConfig);
+            }
+
+            if (serviceEntitlement() == null) {
+                int subscriptionId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    subscriptionId = SubscriptionManager.getSubscriptionId(slotIndex());
+                } else {
+                    // before Android 14 this method didn't exist.  Fall back to older method
+                    SubscriptionManager subscriptionManager = context()
+                            .getSystemService(SubscriptionManager.class);
+                    int[] subscriptionIds =
+                            subscriptionManager.getSubscriptionIds(slotIndex());
+                    if (subscriptionIds == null || subscriptionIds.length < 1) {
+                        throw new IllegalArgumentException(
+                            "Ts43Operation: no valid subscription for slot index "
+                            + slotIndex());
+                    }
+                    subscriptionId = subscriptionIds[0];
+                }
+                setServiceEntitlement(new ServiceEntitlement(context(),
+                        carrierConfig, subscriptionId));
+            }
+
+            String imei = null;
+            TelephonyManager telephonyManager = context().getSystemService(TelephonyManager.class);
+            if (telephonyManager != null) {
+                int modemCount = 0;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    modemCount = telephonyManager.getActiveModemCount();
+                } else {
+                    modemCount = telephonyManager.getPhoneCount();
+                }
+                if (slotIndex() < 0 || slotIndex() >= modemCount) {
+                    throw new IllegalArgumentException("Ts43Operation: invalid slot index "
+                            + slotIndex());
+                }
+                imei = telephonyManager.getImei(slotIndex());
+            }
+            setImei(StringUtils.nullToEmpty(imei));
+
+            // Auto generate the rest of the fields
+            return autoBuild();
+        }
     }
 
     /** Returns a new {@link Ts43Operation.Builder} object. */
@@ -411,7 +474,8 @@ public abstract class Ts43Operation {
                 .setEntitlementVersion(Ts43Constants.DEFAULT_ENTITLEMENT_VERSION)
                 .setInitialAuthToken("")
                 .setTemporaryToken("")
-                .setSlotIndex(SubscriptionManager.getDefaultSubscriptionId())
+                .setSlotIndex(SubscriptionManager.getSlotIndex(
+                          SubscriptionManager.getDefaultSubscriptionId()))
                 .setAppName("")
                 .setAppVersion("")
                 .setServiceEntitlement(null)
