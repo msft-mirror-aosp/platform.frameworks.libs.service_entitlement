@@ -220,4 +220,40 @@ public class Ts43AuthenticationTest {
             assertThat(e.getHttpStatus()).isEqualTo(1234);
         }
     }
+
+    @Test
+    public void testGetAuthTokenLegacy_receivedValidToken() throws Exception {
+        doReturn(HTTP_RESPONSE_WITH_TOKEN).when(mMockHttpResponse).body();
+        Ts43AuthToken mToken = mTs43Authentication.getAuthTokenLegacy(
+                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML, null);
+        assertThat(mToken.token()).isEqualTo(TOKEN);
+        assertThat(mToken.validity()).isEqualTo(VALIDITY);
+    }
+
+    @Test
+    public void testGetAuthTokenLegacy_tokenNotAvailable_throwException() {
+        doReturn(HTTP_RESPONSE_WITHOUT_TOKEN).when(mMockHttpResponse).body();
+
+        try {
+            mTs43Authentication.getAuthTokenLegacy(
+                    0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                    ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML, null);
+            fail("Expected to get exception.");
+        } catch (ServiceEntitlementException e) {
+            assertThat(e.getErrorCode()).isEqualTo(
+                    ServiceEntitlementException.ERROR_TOKEN_NOT_AVAILABLE);
+        }
+    }
+
+    @Test
+    public void testGetAuthTokenLegacy_validityNotAvailable() throws Exception {
+        doReturn(HTTP_RESPONSE_WITHOUT_VALIDITY).when(mMockHttpResponse).body();
+        Ts43AuthToken mToken = mTs43Authentication.getAuthTokenLegacy(
+                0, Ts43Constants.APP_ODSA_PRIMARY, APP_NAME, APP_VERSION,
+                ServiceEntitlementRequest.ACCEPT_CONTENT_TYPE_XML, null);
+        assertThat(mToken.token()).isEqualTo(TOKEN);
+        assertThat(mToken.validity()).isEqualTo(Ts43AuthToken.VALIDITY_NOT_AVAILABLE);
+    }
+
 }
