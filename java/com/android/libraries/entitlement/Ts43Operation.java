@@ -469,6 +469,7 @@ public abstract class Ts43Operation {
     }
 
     /** Returns a new {@link Ts43Operation.Builder} object. */
+    @RequiresApi(Build.VERSION_CODES.Q)
     public static Ts43Operation.Builder builder() {
         return new AutoValue_Ts43Operation.Builder()
                 .setEntitlementVersion(Ts43Constants.DEFAULT_ENTITLEMENT_VERSION)
