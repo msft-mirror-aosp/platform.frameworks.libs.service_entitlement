@@ -172,7 +172,7 @@ public class Ts43Authentication {
      * {@code appId} is {@code null}.
      */
     @NonNull
-    @RequiresApi(Build.VERSION_CODES.R)
+    @RequiresApi(Build.VERSION_CODES.Q)
     public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType)
@@ -210,133 +210,8 @@ public class Ts43Authentication {
      * {@code appId} is {@code null}.
      */
     @NonNull
-    @RequiresApi(Build.VERSION_CODES.R)
-    public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
-            @Nullable String appName, @Nullable String appVersion,
-            @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)
-            throws ServiceEntitlementException {
-        requireNonNull(appId);
-        if (!Ts43Constants.isValidAppId(appId)) {
-            throw new IllegalArgumentException("getAuthToken: invalid app id " + appId);
-        }
-
-        String imei = null;
-        TelephonyManager telephonyManager = mContext.getSystemService(TelephonyManager.class);
-        if (telephonyManager != null) {
-            if (slotIndex < 0 || slotIndex >= telephonyManager.getActiveModemCount()) {
-                throw new IllegalArgumentException("getAuthToken: invalid slot index " + slotIndex);
-            }
-            imei = telephonyManager.getImei(slotIndex);
-        }
-
-        // Build the HTTP request. The default params are specified in
-        // ServiceEntitlementRequest.builder() already.
-        ServiceEntitlementRequest.Builder builder =
-                ServiceEntitlementRequest.builder()
-                        .setEntitlementVersion(mEntitlementVersion)
-                        .setTerminalId(nullToEmpty(imei))
-                        .setAppName(nullToEmpty(appName))
-                        .setAppVersion(nullToEmpty(appVersion));
-        if (acceptContentType != null) {
-            builder.setAcceptContentType(acceptContentType);
-        }
-        ServiceEntitlementRequest request = builder.build();
-        if (carrierConfig == null) {
-            CarrierConfig.Builder ccBuilder = CarrierConfig.builder()
-                    .setServerUrl(mEntitlementServerAddress.toString());
-            carrierConfig = ccBuilder.build();
-        } else {
-            if (TextUtils.isEmpty(carrierConfig.serverUrl())) {
-                throw new IllegalArgumentException(
-                        "getAuthToken: CarrierConfig doesn't have serverUrl " + carrierConfig);
-            }
-        }
-
-        if (mServiceEntitlement == null) {
-            int subId = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID;
-            if (Build.VERSION.SDK_INT < 34) {
-                SubscriptionManager subscriptionManager =
-                        mContext.getSystemService(SubscriptionManager.class);
-                int[] subIds = subscriptionManager.getSubscriptionIds(slotIndex);
-                if (subIds != null && subIds.length > 0) {
-                    subId = subIds[0];
-                }
-            } else {
-                subId = SubscriptionManager.getSubscriptionId(slotIndex);
-            }
-            mServiceEntitlement = new ServiceEntitlement(mContext, carrierConfig, subId);
-        }
-
-        // Get the full HTTP response instead of just the body so we can reuse the same cookies.
-        HttpResponse response;
-        String rawXml;
-        try {
-            response = mServiceEntitlement.getEntitlementStatusResponse(
-                    Collections.singletonList(appId), request);
-            rawXml = response == null ? "" : response.body();
-            Log.d(TAG, "getAuthToken: rawXml=" + rawXml);
-        } catch (ServiceEntitlementException e) {
-            Log.w(TAG, "Failed to get authentication token. e=" + e);
-            throw e;
-        }
-
-        List<String> cookies = response == null ? Collections.emptyList() : response.cookies();
-
-        Ts43XmlDoc ts43XmlDoc = new Ts43XmlDoc(rawXml);
-        String authToken =
-                ts43XmlDoc.get(
-                        Collections.singletonList(Ts43XmlDoc.CharacteristicType.TOKEN),
-                        Ts43XmlDoc.Parm.TOKEN);
-        if (TextUtils.isEmpty(authToken)) {
-            Log.w(TAG, "Failed to parse authentication token");
-            throw new ServiceEntitlementException(
-                    ServiceEntitlementException.ERROR_TOKEN_NOT_AVAILABLE,
-                    "Failed to parse authentication token");
-        }
-
-        String validityString = nullToEmpty(ts43XmlDoc.get(Collections.singletonList(
-                Ts43XmlDoc.CharacteristicType.TOKEN), Ts43XmlDoc.Parm.VALIDITY));
-        long validity;
-        try {
-            validity = Long.parseLong(validityString);
-        } catch (NumberFormatException e) {
-            validity = Ts43AuthToken.VALIDITY_NOT_AVAILABLE;
-        }
-
-        return Ts43AuthToken.create(authToken, cookies, validity);
-    }
-
-    /**
-     * Get the authentication token for TS.43 operations with EAP-AKA described in TS.43
-     * Service Entitlement Configuration section 2.8.1.
-     *
-     * @param slotIndex The logical SIM slot index involved in ODSA operation.
-     * See {@link SubscriptionInfo#getSubscriptionId()}.
-     *
-     * @param appId Application id. For example, {@link Ts43Constants#APP_VOWIFI} for VoWifi,
-     * {@link Ts43Constants#APP_ODSA_PRIMARY} for ODSA primary device. Refer GSMA to Service
-     * Entitlement Configuration section 2.3.
-     * @param appName The calling client's package name. Used for {@code app_name} in HTTP GET
-     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
-     * @param appVersion The calling client's version. Used for {@code app_version} in HTTP GET
-     * request in GSMA TS.43 Service Entitlement Configuration section 2.3.
-     * @param acceptContentType The accepted content type of the HTTP response, or {@code null} to
-     *                          use the default.
-     * @param carrierConfig An optional CarrierConfig with configuration options.  Must include
-     *                      the server URL at a minimum.
-     *
-     * @return The authentication token.
-     *
-     * @throws ServiceEntitlementException The exception for error case. If it's an HTTP response
-     * error from the server, the error code can be retrieved by
-     * {@link ServiceEntitlementException#getHttpStatus()}.
-     * @throws IllegalArgumentException when {@code slotIndex} or {@code appId} is invalid.
-     * @throws NullPointerException when {@code context}, {@code entitlementServerAddress}, or
-     * {@code appId} is {@code null}.
-     */
-    @NonNull
     @RequiresApi(Build.VERSION_CODES.Q)
-    public Ts43AuthToken getAuthTokenLegacy(int slotIndex, @NonNull @AppId String appId,
+    public Ts43AuthToken getAuthToken(int slotIndex, @NonNull @AppId String appId,
             @Nullable String appName, @Nullable String appVersion,
             @Nullable String acceptContentType, @Nullable CarrierConfig carrierConfig)
             throws ServiceEntitlementException {
