@@ -417,45 +417,6 @@ public class Ts43OperationTest {
                 .build());
     }
 
-    @Test
-    public void testLegacyBuilder() throws Exception {
-        assertThat(Ts43Operation.builder()).isNotNull();
-
-        // Exception should be thrown if required fields are missing
-        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder().buildLegacy());
-        // Exception should be thrown if required fields are missing
-        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
-                .setContext(mContext).buildLegacy());
-
-        // Exception should be thrown if required fields are missing
-        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
-                .setEntitlementServerAddress(new URL(TEST_URL)).buildLegacy());
-
-        // Exception should be thrown if required fields are missing
-        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
-                .setContext(mContext)
-                .setEntitlementServerAddress(new URL(TEST_URL)).buildLegacy());
-
-        assertThat(Ts43Operation.builder()
-                .setContext(mContext)
-                .setEntitlementServerAddress(new URL(TEST_URL))
-                .setInitialAuthToken("token")
-                .buildLegacy()).isNotNull();
-
-        assertThat(Ts43Operation.builder()
-                .setContext(mContext)
-                .setEntitlementServerAddress(new URL(TEST_URL))
-                .setTemporaryToken("temp token")
-                .buildLegacy()).isNotNull();
-
-        // Exception should be thrown if slot index is invalid
-        assertThrows(IllegalArgumentException.class, () -> Ts43Operation.builder()
-                .setContext(mContext)
-                .setSlotIndex(3)
-                .setEntitlementServerAddress(new URL(TEST_URL))
-                .setInitialAuthToken("token")
-                .buildLegacy());
-    }
     private void verifyOdsaOperation(@NonNull String expectedOperation) throws Exception {
         ArgumentCaptor<ServiceEntitlementRequest> captor =
                 ArgumentCaptor.forClass(ServiceEntitlementRequest.class);

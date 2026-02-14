@@ -369,49 +369,8 @@ public abstract class Ts43Operation {
          * @return The built {@link Ts43Operation} object.
          */
         @NonNull
-        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-        public Ts43Operation build() {
-            if (TextUtils.isEmpty(initialAuthToken()) && TextUtils.isEmpty(temporaryToken())) {
-                throw new IllegalArgumentException("Either initialAuthToken or temporaryToken "
-                        + "must be set.");
-            }
-
-            CarrierConfig carrierConfig = carrierConfig();
-            if (carrierConfig == null) {
-                carrierConfig = CarrierConfig.builder()
-                        .setServerUrl(entitlementServerAddress().toString())
-                        .build();
-                setCarrierConfig(carrierConfig);
-            }
-
-            if (serviceEntitlement() == null) {
-                setServiceEntitlement(new ServiceEntitlement(context(),
-                        carrierConfig, SubscriptionManager.getSubscriptionId(slotIndex())));
-            }
-
-            String imei = null;
-            TelephonyManager telephonyManager = context().getSystemService(TelephonyManager.class);
-            if (telephonyManager != null) {
-                if (slotIndex() < 0 || slotIndex() >= telephonyManager.getActiveModemCount()) {
-                    throw new IllegalArgumentException("Ts43Operation: invalid slot index "
-                            + slotIndex());
-                }
-                imei = telephonyManager.getImei(slotIndex());
-            }
-            setImei(StringUtils.nullToEmpty(imei));
-
-            // Auto generate the rest of the fields
-            return autoBuild();
-        }
-
-        /**
-         * Builds the {@link Ts43Operation}, supporting older SDK versions.
-         *
-         * @return The build {@link Ts43Operation} object.
-         */
-        @NonNull
         @RequiresApi(Build.VERSION_CODES.Q)
-        public Ts43Operation buildLegacy() {
+        public Ts43Operation build() {
             if (TextUtils.isEmpty(initialAuthToken()) && TextUtils.isEmpty(temporaryToken())) {
                 throw new IllegalArgumentException("Either initialAuthToken or temporaryToken "
                         + "must be set.");
