@@ -574,8 +574,10 @@ public class EapAkaApi {
             Uri.Builder urlBuilder, ServiceEntitlementRequest request, CarrierConfig carrierConfig)
             throws ServiceEntitlementException {
         if (!TextUtils.isEmpty(request.authenticationToken())) {
-            // auth token required for fast AuthN.
-            urlBuilder.appendQueryParameter(TOKEN, request.authenticationToken());
+            // IMSI and token required for fast AuthN.
+            urlBuilder
+                    .appendQueryParameter(IMSI, mTelephonyManager.getSubscriberId())
+                    .appendQueryParameter(TOKEN, request.authenticationToken());
         } else if (!TextUtils.isEmpty(request.temporaryToken())) {
             // temporary_token required for fast AuthN.
             urlBuilder.appendQueryParameter(TEMPORARY_TOKEN, request.temporaryToken());
@@ -596,7 +598,8 @@ public class EapAkaApi {
             throws ServiceEntitlementException {
         try {
             if (!TextUtils.isEmpty(request.authenticationToken())) {
-                // auth token required for fast AuthN.
+                // IMSI and token required for fast AuthN.
+                postData.put(IMSI, mTelephonyManager.getSubscriberId());
                 postData.put(TOKEN, request.authenticationToken());
             } else if (!TextUtils.isEmpty(request.temporaryToken())) {
                 // temporary_token required for fast AuthN.
